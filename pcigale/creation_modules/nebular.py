@@ -139,9 +139,8 @@ class NebularEmission(CreationModule):
             self.idx_Ly_break = np.searchsorted(sed.wavelength_grid, 91.)
             self.absorbed_old = np.zeros(sed.wavelength_grid.size)
             self.absorbed_young = np.zeros(sed.wavelength_grid.size)
-        if self.parameters['f_esc'] > 0.:
-            self.absorbed_old[:self.idx_Ly_break] -= sed.get_lumin_contribution('stellar.old')[:self.idx_Ly_break] * (1. - self.parameters['f_esc'])
-            self.absorbed_young[:self.idx_Ly_break] -= sed.get_lumin_contribution('stellar.young')[:self.idx_Ly_break] * (1. - self.parameters['f_esc'])
+        self.absorbed_old[:self.idx_Ly_break] -= sed.get_lumin_contribution('stellar.old')[:self.idx_Ly_break] * (1. - self.parameters['f_esc'])
+        self.absorbed_young[:self.idx_Ly_break] -= sed.get_lumin_contribution('stellar.young')[:self.idx_Ly_break] * (1. - self.parameters['f_esc'])
 
         sed.add_module(self.name, self.parameters)
         sed.add_info('nebular.logU', self.parameters['logU'])
