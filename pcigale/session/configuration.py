@@ -219,6 +219,10 @@ class Configuration(object):
             self.config['sed_creation_modules'].comments[module_name] = [
                 creation_modules.get_module(module_name, blank=True).comments]
 
+        if 'nebular' not in self.config['creation_modules']:
+            print("WARNING: no nebular module selected. The Lyman continuum "
+                  "is left untouched.")
+
         # Configuration for the analysis method
         self.config['analysis_configuration'] = {}
         self.config.comments['analysis_configuration'] = ["", ""] + wrap(

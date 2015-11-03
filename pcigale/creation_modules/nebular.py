@@ -117,6 +117,10 @@ class NebularEmission(CreationModule):
         self.conv_line = gamma_Hbeta / alpha_B * k
         self.conv_cont = k
 
+        self.idx_Ly_break = None
+        self.absorbed_old = None
+        self.absorbed_young = None
+
     def process(self, sed):
         """Add the nebular emission lines
 
@@ -131,6 +135,14 @@ class NebularEmission(CreationModule):
         lines = self.lines_template[sed.info['stellar.metallicity']]
         cont = self.cont_template[sed.info['stellar.metallicity']]
 
+        if self.idx_Ly_break is None:
+            self.idx_Ly_break = np.searchsorted(sed.wavelength_grid, 91.)
+            self.absorbed_old = np.zeros(sed.wavelength_grid.size)
+            self.absorbed_young = np.zeros(sed.wavelength_grid.size)
+        if self.parameters['f_esc'] > 0.:
+            self.absorbed_old[:self.idx_Ly_break] -= sed.get_lumin_contribution('stellar.old')[:self.idx_Ly_break] * (1. - self.parameters['f_esc'])
+            self.absorbed_young[:self.idx_Ly_break] -= sed.get_lumin_contribution('stellar.young')[:self.idx_Ly_break] * (1. - self.parameters['f_esc'])
+
         sed.add_module(self.name, self.parameters)
         sed.add_info('nebular.logU', self.parameters['logU'])
         sed.add_info('nebular.f_esc', self.parameters['f_esc'])
@@ -139,6 +151,11 @@ class NebularEmission(CreationModule):
         sed.add_info('dust.luminosity', (sed.info['stellar.lum_ly_young'] +
                      sed.info['stellar.lum_ly_old']) *
                      self.parameters['f_dust'], True)
+
+        sed.add_contribution('nebular.absorption_old', sed.wavelength_grid,
+                             self.absorbed_old)
+        sed.add_contribution('nebular.absorption_young', sed.wavelength_grid,
+                             self.absorbed_young)
 
         sed.add_contribution('nebular.lines_old', lines.wave,
                              lines.ratio * NLy_old * self.conv_line)
