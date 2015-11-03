@@ -132,7 +132,7 @@ class Configuration(object):
             ["Order of the modules use for SED creation. Available modules:"] +
             ["SFH: sfh2exp, sfhdelayed, sfhfromfile, sfhperiodic"] +
             ["SSP: bc03, m2005"] +
-            ["Nebular emission: nebular"] +
+            ["Nebular emission: nebular, nebular_noemission"] +
             ["Dust attenuation: dustatt_calzleit, dustatt_powerlaw"] +
             ["Dust emission: casey2012, dale2014, dl2007, dl2014"] +
             ["AGN: dale2014, fritz2006"] +
@@ -219,7 +219,8 @@ class Configuration(object):
             self.config['sed_creation_modules'].comments[module_name] = [
                 creation_modules.get_module(module_name, blank=True).comments]
 
-        if 'nebular' not in self.config['creation_modules']:
+        if ('nebular' not in self.config['creation_modules'] and
+            'nebular_noemission' not in self.config['creation_modules']):
             print("WARNING: no nebular module selected. The Lyman continuum "
                   "is left untouched.")
 
