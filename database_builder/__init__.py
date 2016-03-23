@@ -278,7 +278,8 @@ def build_bc2003(base):
     }
 
     for key, imf in itertools.product(metallicity, ["salp", "chab"]):
-        base_filename = bc03_dir + "bc2003_lr_" + key + "_" + imf + "_ssp"
+        #base_filename = bc03_dir + "bc2003_lr_" + key + "_" + imf + "_ssp"
+        base_filename = bc03_dir + "bc2003_hr_" + key + "_" + imf + "_ssp"
         ssp_filename = base_filename + ".ised_ASCII"
         color3_filename = base_filename + ".3color"
         color4_filename = base_filename + ".4color"
@@ -742,7 +743,7 @@ def build_base():
     build_schreiber2016(base)
     print("\nDONE\n")
     print('#' * 78)
-    
+
     base.session.close_all()
 
 
