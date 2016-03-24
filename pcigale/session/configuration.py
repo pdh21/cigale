@@ -216,58 +216,56 @@ class Configuration(object):
         configuration: dictionary
             Dictionary containing the information provided in pcigale.ini.
         """
-<<<<<<< Updated upstream
         self.complete_redshifts()
         self.complete_analysed_parameters()
-=======
-        configuration = {}
 
-        # Before building the configuration dictionary, we ensure that all the
-        # fields are filled
-        if not self.config['parameters_file']:
-            self.complete_redshifts()
+        #configuration = {}
 
-        for section in ['data_file', 'parameters_file', 'column_list',
-                        'creation_modules', 'analysis_method']:
-            configuration[section] = self.config[section]
-        configuration['cores'] = int(self.config['cores'])
+        ## Before building the configuration dictionary, we ensure that all the
+        ## fields are filled
+        #if not self.config['parameters_file']:
+        #    self.complete_redshifts()
 
-        # Parsing the SED modules parameters
-        configuration['creation_modules_params'] = []
-        for module in self.config['creation_modules']:
-            module_params = {}
-            for key, value in \
-                    self.config['sed_creation_modules'][module].items():
-                module_params[key] = evaluate_description(value)
-            configuration['creation_modules_params'].append(module_params)
+        #for section in ['data_file', 'parameters_file', 'column_list',
+        #                'creation_modules', 'analysis_method']:
+        #    configuration[section] = self.config[section]
+        #configuration['cores'] = int(self.config['cores'])
 
-        if (self.config['analysis_method'] == 'savefluxes' and
-            not self.config['analysis_configuration']['variables']):
-            warehouse = SedWarehouse()
-            params = ParametersHandler(configuration)
-            sed = warehouse.get_sed(params.modules,
-                                    params.from_index(0))
-            info = list(sed.info.keys())
-            info.sort()
-            self.config['analysis_configuration']['variables'] = info
-        elif (self.config['analysis_method'] == 'pdf_analysis' and
-              not self.config['analysis_configuration']['analysed_variables']):
-            warehouse = SedWarehouse()
-            params = ParametersHandler(configuration)
-            sed = warehouse.get_sed(params.modules,
-                                    params.from_index(0))
-            info = list(sed.info.keys())
-            info.sort()
-            self.config['analysis_configuration']['analysed_variables'] = info
-        elif (self.config['analysis_method'] == 'flare'):
-            warehouse = SedWarehouse()
-            params = ParametersHandler(configuration)
-            sed = warehouse.get_sed(params.modules,
-                                    params.from_index(0))
-            info = list(sed.info.keys())
-            info.sort()
-            self.config['analysis_configuration']['analysed_variables'] = info
->>>>>>> Stashed changes
+        ## Parsing the SED modules parameters
+        #configuration['creation_modules_params'] = []
+        #for module in self.config['creation_modules']:
+        #    module_params = {}
+        #    for key, value in \
+        #            self.config['sed_creation_modules'][module].items():
+        #        module_params[key] = evaluate_description(value)
+        #    configuration['creation_modules_params'].append(module_params)
+
+        #if (self.config['analysis_method'] == 'savefluxes' and
+        #    not self.config['analysis_configuration']['variables']):
+        #    warehouse = SedWarehouse()
+        #    params = ParametersHandler(configuration)
+        #    sed = warehouse.get_sed(params.modules,
+        #                            params.from_index(0))
+        #    info = list(sed.info.keys())
+        #    info.sort()
+        #    self.config['analysis_configuration']['variables'] = info
+        #elif (self.config['analysis_method'] == 'pdf_analysis' and
+        #      not self.config['analysis_configuration']['analysed_variables']):
+        #    warehouse = SedWarehouse()
+        #    params = ParametersHandler(configuration)
+        #    sed = warehouse.get_sed(params.modules,
+        #                            params.from_index(0))
+        #    info = list(sed.info.keys())
+        #    info.sort()
+        #    self.config['analysis_configuration']['analysed_variables'] = info
+        #elif (self.config['analysis_method'] == 'flare'):
+        #    warehouse = SedWarehouse()
+        #    params = ParametersHandler(configuration)
+        #    sed = warehouse.get_sed(params.modules,
+        #                            params.from_index(0))
+        #    info = list(sed.info.keys())
+        #    info.sort()
+        #    self.config['analysis_configuration']['analysed_variables'] = info
 
         vdt = validate.Validator(validation.functions)
         validity = self.config.validate(vdt, preserve_errors=True)
@@ -328,14 +326,11 @@ class Configuration(object):
         configuration file and must be extracted from the input flux file.
         """
 
-<<<<<<< Updated upstream
-        z_mod = self.config['sed_modules_params']['redshifting']['redshift']
-=======
-        if 'redshifting' in self.config['creation_modules']:
-            z_mod = self.config['sed_creation_modules']['redshifting']['redshift']
-        if 'z_formation' in self.config['creation_modules']:
-            z_mod = self.config['sed_creation_modules']['z_formation']['redshift']
->>>>>>> Stashed changes
+        if 'redshifting' in self.config['sed_modules']:
+            z_mod = self.config['sed_modules_params']['redshifting']['redshift']
+        if 'z_formation' in self.config['sed_modules']:
+            z_mod = self.config['sed_modules_params']['z_formation']['redshift']
+
         if type(z_mod) is str and not z_mod:
             if self.config['data_file']:
                 obs_table = read_table(self.config['data_file'])

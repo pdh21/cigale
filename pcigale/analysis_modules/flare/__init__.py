@@ -378,7 +378,7 @@ class FLARE(AnalysisModule):
 
     parameter_list = OrderedDict([
         ("variables", (
-            "array of strings",
+            "cigale_list(minvalue=0., maxvalue=30.)",
             "List of the physical properties to save. Leave empty to save all "
             "the physical properties (not recommended when there are many "
             "models).",
@@ -488,29 +488,27 @@ class FLARE(AnalysisModule):
         # Rename the output directory if it exists
         backup_dir()
 
-        save_sfh = conf['analysis_method_params']['save_sfh'].lower() == "true"
-        lambda_norm = float(conf['analysis_method_params']['lambda_norm'])
-        mag_norm = float(conf['analysis_method_params']['mag_norm'])
-        exptime = float(conf['analysis_method_params']['exptime'])
-        SNR = float(conf['analysis_method_params']['SNR'])
-        S_line = float(conf['analysis_method_params']['S_line'])
+        save_sfh = conf['analysis_params']['save_sfh']
+        lambda_norm = float(conf['analysis_params']['lambda_norm'])
+        mag_norm = float(conf['analysis_params']['mag_norm'])
+        exptime = float(conf['analysis_params']['exptime'])
+        SNR = float(conf['analysis_params']['SNR'])
+        S_line = float(conf['analysis_params']['S_line'])
 
-        create_tables = conf['analysis_method_params']['create_tables'].lower() == "true"
-        flag_background = conf['analysis_method_params']['flag_background'].lower() == "true"
-        flag_phot = conf['analysis_method_params']['flag_phot'].lower() == "true"
-        flag_spec = conf['analysis_method_params']['flag_spec'].lower() == "true"
-        flag_line = conf['analysis_method_params']['flag_line'].lower() == "true"
-        flag_sim = conf['analysis_method_params']['flag_sim'].lower() == "true"
+        create_tables = conf['analysis_params']['create_tables']
+        flag_background = conf['analysis_params']['flag_background']
+        flag_phot = conf['analysis_params']['flag_phot']
+        flag_spec = conf['analysis_params']['flag_spec']
+        flag_line = conf['analysis_params']['flag_line']
+        flag_sim = conf['analysis_params']['flag_sim']
 
-        out_file = conf['analysis_method_params']['output_file']
+        out_file = conf['analysis_params']['output_file']
 
         # FOV in arcmin
-        FoV_axis1 = float(conf['analysis_method_params']['FoV_axis1'])
-        FoV_axis2 = float(conf['analysis_method_params']['FoV_axis2'])
+        FoV_axis1 = float(conf['analysis_params']['FoV_axis1'])
+        FoV_axis2 = float(conf['analysis_params']['FoV_axis2'])
 
-        redshifts = conf['creation_modules_params'] \
-                        [conf['creation_modules'].index('z_formation')] \
-                        ['redshift']
+        redshifts = conf['sed_modules_params']['z_formation']['redshift']
         #RA_sample, Dec_sample, z_sample = density_z(FoV_axis1, FoV_axis2, redshifts)
         #print('Echantillon', len(RA_sample), len(Dec_sample), len(z_sample))
         RA_sample, Dec_sample, z_sample, M_sample = density_m(
@@ -538,7 +536,7 @@ class FLARE(AnalysisModule):
         params = ParametersHandler(conf)
         n_params = params.size
 
-        info = conf['analysis_method_params']['variables']
+        info = conf['analysis_params']['variables']
         n_info = len(info)
 
         model_spectra = (RawArray(ctypes.c_double, n_params*n_pixels),

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016 Denis Burgarella, Yannick Roehlly, Médéric Boquien
+# Copyright (C) 2014 Yannick Roehlly, Médéric Boquien, Denis Burgarella
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
-# Author: Denis Burgarella, Yannick Roehlly, Médéric Boquien
+# Author: Yannick Roehlly, Médéric Boquien, Denis Burgarella
 
 """
 Redshifting module
@@ -18,6 +18,8 @@ is changed, this module may need to be adapted.
 
 """
 
+from collections import OrderedDict
+
 import numpy as np
 from scipy.constants import parsec
 from scipy.misc import factorial
@@ -26,7 +28,7 @@ from astropy.cosmology import z_at_value
 import astropy.units as u
 import scipy.constants as cst
 
-from ..creation_modules import CreationModule
+from . import SedModule
 from math import erf
 
 def igm_transmission(wavelength, redshift, lines_width):
@@ -152,17 +154,10 @@ def igm_transmission(wavelength, redshift, lines_width):
 
     igm_transmission = np.exp(-tau_taun-tau_l_igm-tau_l_lls) * weight
 
-    #filename='IGM'+str(redshift)+'_Meiksin2006.dat'
-    #IGM = open(filename, 'w')
-    #IGM.write('# z wave IGM_transmission \n')
-    #for i in range(len(igm_transmission)):
-    #    IGM.write('%.2f %.2f %.4e %2s' %(redshift, wavelength[i], igm_transmission[i], '\n'))
-    #IGM.close()
-
     return igm_transmission
 
 
-class z_formation(CreationModule):
+class z_formation(SedModule):
     """Redshift a SED
 
     This module reads the redshift at which the galaxy formed.
@@ -171,9 +166,9 @@ class z_formation(CreationModule):
 
     """
 
-    parameter_list = dict([
+    parameter_list = OrderedDict([
         ("redshift", (
-            "float",
+            "cigale_list(minvalue=0.)",
             "\"eval np.linspace(z_min, z_max, N_z)\" (warning: z_min > 0.5*step_z)",
             "eval np.linspace(0., 20., 100)"
         ))
@@ -184,6 +179,13 @@ class z_formation(CreationModule):
         """
 
         self.redshift = float(self.parameters["redshift"])
+
+        # Raise an error when applying a negative redshift. This module is
+        # not for blue-shifting.
+        if self.redshift < 0.:
+            raise Exception("The redshift provided is negative <{}>."
+                            .format(self.redshift))
+
         self.universe_age = cosmology.age(self.redshift).value * 1000.
         if self.redshift == 0.:
             self.luminosity_distance = 10. * parsec
@@ -212,19 +214,13 @@ class z_formation(CreationModule):
             raise Exception("The SED is already redshifted <z={}>."
                             .format(sed.info['universe.redshift']))
 
-        # Raise an error when applying a negative redshift.
-        # This module is not for blue-shifting.
-        if redshift < 0:
-            raise Exception("The redshift provided is negative <{}>."
-                            .format(redshift))
-
         if redshift > 0.:
             # We redshift directly the SED wavelength grid
             sed.wavelength_grid *= 1. + redshift
 
             # We modify each luminosity contribution to keep energy constant
-            sed.luminosities /= 1. + redshift
-            sed.luminosity /= 1. + redshift
+            sed.luminosities *= 1. / (1. + redshift)
+            sed.luminosity *= 1. / (1. + redshift)
 
         sed.add_info("universe.redshift", redshift)
         sed.add_info("universe.luminosity_distance", self.luminosity_distance)
@@ -245,5 +241,5 @@ class z_formation(CreationModule):
                              self.igm_attenuation[key] * sed.luminosity)
         sed.add_module(self.name, self.parameters)
 
-# CreationModule to be returned by get_module
+# SedModule to be returned by get_module
 Module = z_formation
