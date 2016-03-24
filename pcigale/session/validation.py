@@ -23,7 +23,7 @@ class VdtValueRepeatedError(vdt.VdtValueError):
 def is_cigale_list(inobject, dtype='float', minvalue=None, maxvalue=None,
                    options=None):
     """Function that returns a list made of float or int numpy. It also checks
-    if any element is lower/high then a set minimum/maximum value or if any
+    if any element is lower/higher than a set minimum/maximum value or if any
     does not belong to a predefined list. If any of the tests fails, an
     exception is thrown. All the parameters besides "value" are strings because
     configobj/validate pass arguments as such.
