@@ -444,7 +444,7 @@ class FLARE(AnalysisModule):
             "List of the physical properties to save. Leave empty to save all "
             "the physical properties (not recommended when there are many "
             "models).",
-            ["stellar.m_star", "attenuation.FUV", "dust.luminosity"]
+            ["stellar.m_star", "attenuation.FUV", "param.FUV_luminosity"]
         )),
         ("output_file", (
             "string()",
