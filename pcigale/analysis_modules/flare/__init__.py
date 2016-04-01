@@ -65,7 +65,7 @@ def plot_N_z(x, y, sample):
     ax2.set_ylim(np.log10(3600.*ymin), np.log10(3600.*ymax))
     ax2.set_ylabel('$log_{10}$ N$_{galaxies}$ $deg^{-2}$ $(dz=1)^{-1}$', fontsize=20)
 
-    plt.show()
+    #plt.show()
 
 def montecarlo(x, y):
 
@@ -357,10 +357,8 @@ def density_m(FoV_axis1, FoV_axis2, redshifts):
     #ax6.set_xlim(1, 20)
     #ax6.set_ylim(-8, 8)
 
-    #plt.show()
-
     # Plot distribution.
-    plt.show()
+    #plt.show()
 
     # Random create of RA and Dec within the FoV
     RA_sample = [60.*random.uniform(0., FoV_axis1)
