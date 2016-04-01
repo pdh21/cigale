@@ -1038,9 +1038,16 @@ def simulation(idx):
 
     #----------------------------------------------------------------------
     #
+
+    # TODO: for the time being
+    norm = 1.
+    if sed.sfh is not None:
+        time_grid = np.arange(sed.sfh.size)
+        sfr = norm * sed.sfh
+
     # If requested, we save the SFH in a file.
-    time_grid = sed.sfh[0]
-    sfr = sed.sfh[1]
+    #time_grid = sed.sfh[0]
+    #sfr = sed.sfh[1]
 
     # BC03 SSPS used
     if 'stellar.m_star' in sed.info:
@@ -1420,9 +1427,6 @@ def simulation(idx):
         err_f_lambda[i_T_tel] = 1.00 / SNR_line[i_T_tel]
         err_side_lambda[i_T_tel] = 1.00 / SNR_line_side[i_T_tel]
 
-    #noisy_f_lambda = np.zeros_like(SNR_line)
-    #noisy_side_lambda = np.zeros_like(SNR_line_side)
-
     N_rows, N_cols = int(np.round(slice_length/slice_width, 0)), len(new_wavelength)
     data = np.zeros((N_rows, N_cols, len(T_tel)), dtype=float)
     nodata = np.zeros((N_rows, N_cols, len(T_tel)), dtype=float)
@@ -1430,16 +1434,8 @@ def simulation(idx):
     for i_T_tel, T_tel_i in enumerate(T_tel):
 
         # We fill out the array with background only
-        #for i_row in range(0, N_rows-1):
-        #    data[i_row, :, i_T_tel] = np.random.normal(
-        #        new_bckd_lambda[i_T_tel,:],
-        #        new_bckd_lambda[i_T_tel,:]*err_side_lambda[i_T_tel])
 
         i_obj = randint(0, N_rows-1)
-        #print('scale', i_obj,
-        #       new_f_lambda, new_bckd_lambda[i_T_tel,:], err_f_lambda[i_T_tel],
-        #       np.min(new_f_lambda), np.min(new_bckd_lambda[i_T_tel,:]), np.min(err_f_lambda[i_T_tel]),
-        #       )
 
         data[i_obj, :, i_T_tel] =  np.random.normal(
                  new_f_lambda+new_bckd_lambda[i_T_tel,:],
@@ -1447,16 +1443,8 @@ def simulation(idx):
         nodata[i_obj, :, i_T_tel] =  np.random.normal(
                 new_bckd_lambda[i_T_tel,:],
                 new_bckd_lambda[i_T_tel,:]*err_side_lambda[i_T_tel])
-        #max_data = np.max(data)
-        #print('spectra[idx, :]', idx, len(spectra[idx, :]))
         spectra[idx, :] = data[i_obj, :, i_T_tel]
-        no_spectra[idx, :] = nodata[i_obj, :, i_T_tel]
-        #print('spectra[idx, :]', idx, spectra[idx, :])
-        #data = np.rint(np.round(32768.*data/max_data, 0))
-
-        #filename = 'z'+str(round(10*redshift, 0))+'_'+str(idx)+'_'+str(i_T_tel)+'_ima.fits'
-        #hdu = pyfits.PrimaryHDU(data[:,:,i_T_tel])
-        #hdu.writeto(filename)
+        no_spectra[i_obj, :] = nodata[i_obj, :, i_T_tel]
 
     if flag_sim == True:
         PlotSimSpectrum(1e-9*new_wavelength, new_f_lambda, data[i_obj, :, :],
