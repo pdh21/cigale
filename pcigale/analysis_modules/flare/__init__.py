@@ -709,7 +709,7 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
     spectral_image = np.zeros((naxis1, naxis2))
 
     for i in range(naxis1):
-        l = randint(0, n_params-1)
+        l = randint(0, naxis2-1)
         spectral_image[i, :] = out_background[l, :]/max_spectra
 
     # Now, we need to build the observed spectral image by:
