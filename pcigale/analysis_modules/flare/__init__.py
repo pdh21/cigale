@@ -25,6 +25,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from itertools import tee, islice, chain
 import numpy as np
+import numpy.ma as ma
 
 from .. import AnalysisModule
 from ..utils import backup_dir, save_fluxes
@@ -86,6 +87,38 @@ def montecarlo(x, y):
     plot_N_z(x, y, sample)
 
     return sample
+
+def sampleFromMF(N, alpha, logM_star, logPhi_star, logM_min, logM_max):
+
+    import random as random
+    # Draw random samples from Salpeter IMF.
+    # N     ... number of samples.
+    # alpha ... power-law index.
+    # logM_star of the MF
+    # logPhi_star of the MF
+    # logM_min ... lower bound of mass interval.
+    # logM_max ... upper bound of mass interval.
+
+    # Since MF decays, maximum likelihood occurs at M_min
+    #maxlik = Phi_star * (10**(0.4*(M_star-M_min)))**(alpha+1) * math.exp(-10**(0.4*(M_star-M_min))) # This is for LFs
+    maxlik = np.log(10)*10**logPhi_star * 10**((logM_min-logM_star)*(1+alpha)) * np.exp(-10**(logM_min-logM_star)) # This is for MFs
+
+    # Prepare array for output magnitudes.
+    Masses = []
+    # Fill in array.
+    while (len(Masses) < N):
+        # Draw candidate from logM interval.
+        logM = random.uniform(logM_min, logM_max)
+
+        # Compute likelihood of candidate from Salpeter SMF.
+        #likelihood = Phi_star * (10**(0.4*(M_star-M)))**(alpha+1) * math.exp(-10**(0.4*(M_star-M))) # This is for LFs
+        likelihood = np.log(10)*10**logPhi_star * 10**((logM-logM_star)*(1+alpha)) * np.exp(-10**(logM-logM_star)) # This is for MFs
+        # Accept randomly.
+        u = random.uniform(0.0, maxlik)
+        if (u < likelihood):
+            Masses.append(logM)
+
+    return Masses
 
 def func(x, a, b, c, d):
     from scipy.special import erf, erfc
@@ -157,7 +190,6 @@ def density_m(FoV_axis1, FoV_axis2, redshifts):
     N_ages = 100
     ages_data = np.linspace(1., cosmology.age(0.).value * 1000., N_ages)
 
-    #Phi_M = (Phi_star*/M_star) * (M/M_star)**alpha * np.exp(-M/M_star)
     fig, ax1 = plt.subplots(1, 1)
     ax1.plot(cosmology.age(z_1).value * 1000., alpha_1, 'r', marker='+', linestyle='None', markersize=12, label=" Furlong et al. (2015)")
     ax1.plot(cosmology.age(z_2).value * 1000., alpha_2, 'g', marker='x', linestyle='None', markersize=12, label=" Song et al. (2015).")
@@ -240,8 +272,16 @@ def density_m(FoV_axis1, FoV_axis2, redshifts):
     # (100 Mpc)**3 = (100 * 1000)**3 = 1e15 and to /arcmin2/dz
     sum = 0.
     fig, ax4 = plt.subplots(1, 1)
+    fig, ax5 = plt.subplots(1, 1)
     cmap = mpl.cm.rainbow
     SMD = []
+    m_sample = []
+    z_sample = []
+    N_bin_masses = 20
+    N_redshifts = len(redshifts)
+
+    #m_sample = np.zeros((N_redshifts, N_masses))
+
     for previous, item, next in previous_and_next(redshifts):
         if item == 0:
             previous = 0
@@ -249,64 +289,86 @@ def density_m(FoV_axis1, FoV_axis2, redshifts):
             previous = item - min(next - item, item)
         if next is None:
             next = item + (item - previous)
-        l = FoV_axis1*(1e-3*cosmology.kpc_proper_per_arcmin(next)).value
-        h = FoV_axis2*(1e-3*cosmology.kpc_proper_per_arcmin(next)).value
-        L = (cosmology.comoving_distance(next).value-
-                cosmology.comoving_distance(item).value)
-        volume = L * l * h
-        #print('z, l, h, L volume', item, FoV_axis1, FoV_axis2, l, h, L, volume)
+        #l = FoV_axis1*(1e-3*cosmology.kpc_proper_per_arcmin(next)).value
+        #h = FoV_axis2*(1e-3*cosmology.kpc_proper_per_arcmin(next)).value
+        #L = (cosmology.comoving_distance(next).value-
+        #        cosmology.comoving_distance(item).value)
+        #volume1 = L * l * h # Volume in Mpc^2 for each redshift bin
+        # Volume in Mpc**3 for the FoV
+        volume = (cosmology.comoving_volume(next).value - cosmology.comoving_volume(item).value) \
+                   / (4*np.pi*(180/np.pi)**2) / 3600. * FoV_axis1 * FoV_axis2
+        #print('z, FoV_axis1, FoV_axis2, volume', item, FoV_axis1, FoV_axis2, volume)
         z = (item + next)/2.
 
         # We compute alpha, log10(M_star) and log10(Phi_star)
         alpha = func(cosmology.age(z).value * 1000., *popt1)
         logM_star = (func(cosmology.age(z).value * 1000., *popt2))
         logPhi_star = (func(cosmology.age(z).value * 1000., *popt3))
-        #print('LF', item, cosmology.age(z).value * 1000., alpha, np.log10(M_star), np.log10(Phi_star))
+        #print('LF', item, cosmology.age(z).value * 1000., alpha, logM_star, logPhi_star)
 
-        N_masses = 20
         # We sample the stellar masses range, logarithmically
-        logM = np.linspace(8, 13, N_masses)
-        Phi_M = np.log(10)*10**logPhi_star * 10**((logM-logM_star)*(1+alpha)) * np.exp(-10**(logM-logM_star))
-        #Phi_M = (Phi_star/M_star) * (M/M_star)**alpha * np.exp(-(M/M_star))
+        logM = np.linspace(8., 13., N_bin_masses)
 
-        I = simps(Phi_M, 10**logM)
-        I2 = np.trapz(Phi_M, 10**logM)
-        SMD.append(np.log10(I2))
-        sum +=  I*volume
-        #print('SMD', item, volume, I2, np.log10(I2), I2*volume, sum)
-        #print('SMD', item, volume, I2, 8+np.log10(I2), I*volume, sum)
+        # We compute the mass function [log10 Phi [Mpc^-3 dex^-1] for each redshift bin
+        Phi_M = np.log(10)*10**logPhi_star * 10**((logM-logM_star)*(1+alpha)) * np.exp(-10**(logM-logM_star))
+
+        #I2 = np.trapz(Phi_M, 10**logM) # integration of MF for each redshift bin per Mpc^3
+        #SMD.append(np.log10(I2)) # log10 N [Mpc^-3 M_sun]
+        I1 = np.trapz(Phi_M, logM) # integration of MF for each redshift bin per Mpc^3
+        I2 = np.trapz(10**logM*Phi_M, logM) # integration of MF for each redshift bin per Mpc^3
+        SMD.append(np.log10(I2)) # log10 N [Mpc^-3 M_sun]
+
+        N_masses = int(I1 * volume)
+        sum +=  I1 * volume
+        #print('N_masses', item, I1, N_masses, sum)
         ax4.plot(logM, Phi_M, color=cmap(item/max(redshifts)))
         #ax4.set_xscale('log')
         ax4.set_yscale('log')
+
+        #print(redshifts, item, i_redshift)
+        sample = sampleFromMF(N_masses,
+                              alpha, logM_star, logPhi_star,
+                              np.min(logM), np.max(logM))
+        if len(sample) > 0:
+            m_sample = np.hstack((m_sample, sample))
+            z_sample = np.hstack((z_sample, N_masses*[item]))
+            #z_sample.append([N_masses*[item]])
+            #print('m_sample 332', m_sample, z_sample)
+
+        ax5.hist(sample, 100, histtype='step', color=cmap(item/max(redshifts)), lw=2, log=True)
+        #ax5.plot(logM, m_sample, color=cmap(item/max(redshifts)))
+        ax5.set_xlim(8, 13)
+
     ax4.set_xlabel('$log_{10}$ M${\star}$', fontsize=20)
-    ax4.set_ylabel('$log_{10}$ Phi$_\star$ dex$^{-1}$', fontsize=20)
+    ax4.set_ylabel('$log_{10}$ Phi [Mpc$^{-3}$ dex$^{-1}$]', fontsize=20)
     ax4.text(0.6, 0.95, 'CIGALE Mass Functions from z = %.1f to z = %.1f' %(np.min(redshifts), np.max(redshifts)), ha='center', va='center', transform=ax4.transAxes)
     ax4.legend(loc=0, fontsize=6)
     ax4.grid(True)
     ax4.set_xlim(8, 13)
     ax4.set_ylim(1e-10, 1e-1)
 
-    fig, ax5 = plt.subplots(1, 1)
-    ax5.plot(redshifts, SMD)
-    ax5.set_xlabel('redshift', fontsize=20)
-    ax5.set_ylabel('$log_{10}$ N [Mpc$^{-3}$ M$_\odot$]', fontsize=20)
-    #ax5.text(0.6, 0.95, 'CIGALE Mass Functions from z = %.1f to z = %.1f' %(np.min(redshifts), np.max(redshifts)), ha='center', va='center', transform=ax4.transAxes)
-    ax5.legend(loc=0, fontsize=6)
+    fig, ax6 = plt.subplots(1, 1)
+    ax6.plot(redshifts, SMD)
+    ax6.set_xlabel('redshift', fontsize=20)
+    ax6.set_ylabel('$log_{10}$ $N$ [Mpc$^{-3}$ M$_\odot$]', fontsize=20)
+    #ax6.text(0.6, 0.95, 'CIGALE Mass Functions from z = %.1f to z = %.1f' %(np.min(redshifts), np.max(redshifts)), ha='center', va='center', transform=ax4.transAxes)
+    ax6.legend(loc=0, fontsize=6)
     ax5.grid(True)
-    #ax5.set_xlim(1, 20)
-    #ax5.set_ylim(-8, 8)
+    #ax6.set_xlim(1, 20)
+    #ax6.set_ylim(-8, 8)
 
+    #plt.show()
+
+    # Plot distribution.
     plt.show()
-    #m_sample = montecarlo(m, N_m.value)
 
     # Random create of RA and Dec within the FoV
-    #RA_sample = [60.*random.uniform(0., FoV_axis1)
-    #             for ind in range(len(z_sample))]
-    #Dec_sample = [60.*random.uniform(0, FoV_axis2)
-     #            for ind in range(len(z_sample))]
+    RA_sample = [60.*random.uniform(0., FoV_axis1)
+                 for ind in range(len(m_sample))]
+    Dec_sample = [60.*random.uniform(0, FoV_axis2)
+                for ind in range(len(m_sample))]
 
-    #return RA_sample, Dec_sample, m_sample, z_sample
-
+    return RA_sample, Dec_sample, m_sample, z_sample
 
 
 def density_z(FoV_axis1, FoV_axis2, z):
@@ -378,92 +440,92 @@ class FLARE(AnalysisModule):
 
     parameter_list = OrderedDict([
         ("variables", (
-            "cigale_list(minvalue=0., maxvalue=30.)",
+            "cigale_string_list()",
             "List of the physical properties to save. Leave empty to save all "
             "the physical properties (not recommended when there are many "
             "models).",
-            None
+            ["stellar.m_star", "attenuation.FUV", "dust.luminosity"]
         )),
         ("output_file", (
-            "string",
+            "string()",
             "Name of the output file that contains the modelled observations"
             "(photometry and spectra)",
             "cigale_sims"
         )),
         ("save_sfh", (
-            "boolean",
+            "boolean()",
             "If True, save the generated Star Formation History for each model.",
             "True"
         )),
         ("FoV_axis1", (
-            "float",
+            "float()",
             "Field ov View (arcmin)",
             1.0
         )),
         ("FoV_axis2", (
-            "float",
+            "float()",
             "Field ov View (arcmin)",
             1.0
         )),
         ('exptime', (
-            'float',
+            'float()',
             "Exposure time [sec]. Since FLARE photometric and spectroscopic observations"
             "are taken in parallel, we only need 1 exposure time",
             3600.0
         )),
         ("SNR", (
-            "float",
+            "float()",
             "What is the goal for the SNR?",
             5.0
         )),
         ("S_line", (
-            "float",
+            "float()",
             "What is the goal for S_line[erg/cm2/s]?",
             3e-18
         )),
         ("lambda_norm", (
-            "float",
+            "float()",
             "Observed wavelength[nm] of the spectrum to which the spectrum is normalised."
             "If 0., no normalisation.",
             0.
         )),
         ("mag_norm", (
-            "float",
+            "float()",
             "Magnitude used to normalise the spectrum at lambda_norm given above."
             "If 0., no normalisation.",
             0.
         )),
         ("create_tables", (
-            "boolean",
+            "boolean()",
             "Do you want to create output tables in addition to pdf plots?",
             True
         )),
         ("flag_background", (
-            "boolean",
+            "boolean()",
             "If True, save the background information "
             "for each model.",
             True
         )),
         ("flag_phot", (
-            "boolean",
+            "boolean()",
             "If True, save the photometric sensitivity information"
             "for each model.",
             True
         )),
         ("flag_spec", (
-            "boolean",
+            "boolean()",
             "If True, save the spectroscopic sensitivity (continuum) information"
             "for each model.",
             True
         )),
         ("flag_line", (
-            "boolean",
+            "boolean()",
             "If True, save the spectroscopic sensitivity (line) information"
             "for each model.",
             True
         )),
         ("flag_sim", (
-            "boolean",
+            "boolean()",
             "If True, save the simulated spectroscopic observations with noises"
             "for each model.",
             True
@@ -511,8 +573,8 @@ class FLARE(AnalysisModule):
         redshifts = conf['sed_modules_params']['z_formation']['redshift']
         #RA_sample, Dec_sample, z_sample = density_z(FoV_axis1, FoV_axis2, redshifts)
         #print('Echantillon', len(RA_sample), len(Dec_sample), len(z_sample))
-        RA_sample, Dec_sample, z_sample, M_sample = density_m(
-                                            FoV_axis1, FoV_axis2, redshifts)
+        RA_sample, Dec_sample, m_sample, z_sample = density_m(FoV_axis1, FoV_axis2, redshifts)
+        #print('m_sample 572', m_sample)
 
         # We create FLARE spectra over 2048 pixels with 0.4x0.366-arcsec2 pixels
         slice_length = 25 # arcsec
@@ -524,7 +586,7 @@ class FLARE(AnalysisModule):
         n_pixels = 2048
         naxis2 = n_pixels
 
-        filters = [name for name in conf['column_list'] if not
+        filters = [name for name in conf['bands'] if not
                    name.endswith('_err')]
         n_filters = len(filters)
 
@@ -545,6 +607,8 @@ class FLARE(AnalysisModule):
                         (naxis1, naxis2))
         model_redshift = (RawArray(ctypes.c_double, n_params),
                         (n_params))
+        #model_masses = (RawArray(ctypes.c_double, n_params),
+        #                (n_params))
         model_fluxes = (RawArray(ctypes.c_double, n_params * n_filters),
                         (n_params, n_filters))
         model_parameters = (RawArray(ctypes.c_double, n_params * n_info),
@@ -571,13 +635,15 @@ class FLARE(AnalysisModule):
                     out_format=out_format_txt)
 
         out_file_fits = out_file+'.fits'
-        save_spectra(RA_sample, Dec_sample, z_sample, model_spectra, model_background,
-                     model_redshift, naxis1, naxis2,
+        save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
+                     model_spectra, model_background, model_redshift,
+                     naxis1, naxis2,
                      n_params, n_pixels, model_parameters, filters, info, out_file_fits,
                      FoV_axis1, FoV_axis2, pixel_spec1, pixel_spec2)
 
-def save_spectra(RA_sample, Dec_sample, z_sample, model_spectra, model_background,
-                 model_redshift, naxis1, naxis2,
+def save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
+                 model_spectra, model_background, model_redshift,
+                 naxis1, naxis2,
                  n_params, n_pixels, model_parameters, filters, names, out_file,
                  FoV_axis1, FoV_axis2, pixel_spec1, pixel_spec2):
     """Save spectra fluxes and associated parameters into a table.
@@ -606,6 +672,10 @@ def save_spectra(RA_sample, Dec_sample, z_sample, model_spectra, model_backgroun
     out_redshift = np.ctypeslib.as_array(model_redshift[0])
     out_redshift = out_redshift.reshape(n_params)
 
+    # array containing the stellar mass of each model
+    #out_mass = np.ctypeslib.as_array(model_mass[0])
+    #out_mass = out_mass.reshape(n_params)
+
     # array containing each modelled spectrum
     out_background = np.ctypeslib.as_array(model_background[0])
     out_background = out_background.reshape(naxis1, naxis2)
@@ -618,6 +688,9 @@ def save_spectra(RA_sample, Dec_sample, z_sample, model_spectra, model_backgroun
     # array containing the parameters, if any, associated to each model
     out_params = np.ctypeslib.as_array(model_parameters[0])
     out_params = out_params.reshape(model_parameters[1])
+    out_mass = out_params[:, 0]
+    out_A_fuv = out_params[:, 1]
+    out_L_fuv = out_params[:, 2]
 
     # We convert the spectra to integers [0 - 32768]
     out_spectra = out_spectra/max_spectra
@@ -639,36 +712,78 @@ def save_spectra(RA_sample, Dec_sample, z_sample, model_spectra, model_backgroun
 
     for i in range(naxis1):
         l = randint(0, n_params-1)
-        spectral_image[i, :] = out_background[l,:]/max_spectra
+        spectral_image[i, :] = out_background[l, :]/max_spectra
 
-    # Now, we need to build the observed spectral image by using:
-    # - the information on the position (RA_sample, Dec_sample) for each object
-    # - the information on the redshift (z_sample) for each object
-    # - randomly picking up a spectrum at the good redshift among the ones built
+    # Now, we need to build the observed spectral image by:
+    # - using the information on the position (RA_sample, Dec_sample) for each object
+    # - using the information on the stellar mass and redshift (m_sample) for each object
+    # - randomly picking up a spectrum at the good mass+redshift among the ones built
+    count_m = 0
+    count_afuv = 0
+    count_zma = 0
     for ind_z, z in enumerate(z_sample):
-        indices = [ind for ind, x in enumerate(out_redshift) if x == z]
-        #print('found:', ind_z, z, indices)
-        i = int(round((RA_sample[ind_z] - round(RA_sample[ind_z] / slice_length, 0)) / pixel_spec2, 0))
-        #print('i', i)
-        j = int(round(Dec_sample[ind_z] / pixel_spec1, 0))
-        #print('j', j)
-        k = min(67 * i + j, naxis1-1)
-        #print('k', k)
-        l = random.choice(indices)
-        #print('l', l)
-        #print(spectral_image[k, :].dtype, out_spectra[l,:].dtype)
-        #print(spectral_image[k, :], out_spectra[l,:])
-        spectral_image[k, :] = out_spectra[l,:]
-        #print(spectral_image[k, :], out_spectra[l,:])
-        #print('At row:', k, 'we insert the modelled observation', l, 'at z = ', round(z, 2),
-        #                    'and (RA, Dec)=', round(RA_sample[ind_z], 4), round(Dec_sample[ind_z], 4))
 
-        param = ' '.join(str(par) for par in out_params[l, :])
-        #print(ind_z, out_params[l, :], param)
-        simulation.write('%.5d %5d %.2f %.4f %.4f %s ' %(k, l, round(z, 2),
-                          round(RA_sample[ind_z], 4), round(Dec_sample[ind_z], 4), param
-                          ))
-        simulation.write('\n')
+        m_mf = 10**m_sample[ind_z]
+        # From Pannella et al. (2015): AUV = 1.6×logM∗ − 13.5 mag for z = 1.2 − 4.
+        A_fuv_mf = max(0., 1.6 * np.log10(m_mf) - 13.5)
+        # We select the models with the requested stellar mass
+        i_m_best, m_best = min(enumerate(out_mass), key=lambda x: abs(x[1]-m_mf))
+        #print('i_m_best, m_best, m_mf, A_fuv_mf', i_m_best, m_best, m_mf, A_fuv_mf)
+        # If the requested stellar mass is not in out_mass, we take the closest one
+        if ((m_best-m_mf)/m_mf < -0.5 or (m_best-m_mf)/m_mf > 1.0):
+            count_m += 1
+            #print('count_m', count_m, m_best, m_mf)
+        m = m_best
+
+        dA_fuv = 0.2
+        j_A_fuv_best, A_fuv_best = min(enumerate(out_A_fuv), key=lambda x: abs(x[1]-A_fuv_mf))
+        if (A_fuv_best < A_fuv_mf*(1.-dA_fuv) or A_fuv_best > A_fuv_mf*(1.+dA_fuv)):
+            count_afuv += 1
+            #print('count_afuv', count_afuv, A_fuv_best, A_fuv_mf, out_A_fuv)
+        A_fuv = A_fuv_best
+
+        # We create a mask for models with the good redshift and good stellar mass
+        mask_zma = (out_mass == m) & (out_redshift == z) & \
+                   (out_A_fuv >= A_fuv*(1.-dA_fuv)) & (out_A_fuv <= A_fuv*(1.+dA_fuv))
+        masked_indx = np.where(mask_zma)
+
+        if len(masked_indx[0])==0:
+            print('No model found, we skip it')
+            count_zma += 1
+        else:
+        #print('0.m>', out_mass == m)
+        #print('0.z>', out_redshift == z)
+        #print('0.A_fuv>', (out_A_fuv >= A_fuv*(1.-dA_fuv)) & (out_A_fuv <= A_fuv*(1.+dA_fuv)))
+        #print('1>', m, z, A_fuv, mask_zma, out_mass[mask_zma], out_redshift[mask_zma], out_A_fuv[mask_zma])
+        #print('2>', masked_indx)
+        #print('3>', out_mass[masked_indx])
+        #print('4>', out_redshift[masked_indx])
+            indx = masked_indx[0][np.random.randint(0, len(masked_indx[0]), size=1)]
+
+            i = int(round((RA_sample[ind_z] - round(RA_sample[ind_z] / slice_length, 0)) / pixel_spec2, 0))
+            j = int(round(Dec_sample[ind_z] / pixel_spec1, 0))
+            k = min(67 * i + j, naxis1-1)
+
+            spectral_image[k, :] = out_spectra[indx, :]
+            #print('At row:', k, 'we insert the modelled observation', indx, 'at z = ', round(z, 2),
+            #                    'and (RA, Dec)=', round(RA_sample[ind_z], 4), round(Dec_sample[ind_z], 4))
+
+            params = ' '.join(str(par) for par in out_params[indx, :][0])
+            simulation.write('%.5d %5d %.2f %.4f %.4f %s ' %(k, indx, round(z, 2),
+                             round(RA_sample[ind_z], 4),
+                             round(Dec_sample[ind_z], 4),
+                             params
+                             ))
+            simulation.write('\n')
+
+    print('WARNING: for', round(100*count_m/len(z_sample), 1), '% of the sources', \
+          'we found no modelled galaxy M* '\
+          'within a factor of 2, and, we picked the closest one.')
+    print('WARNING: for', round(100*count_afuv/len(z_sample), 1), '% of the sources', \
+          'we found no modelled galaxy A_fuv '\
+          'within +/-', 100.*dA_fuv, '%, and, we picked the closest one.')
+    print('WARNING: for', round(100*count_zma/len(z_sample), 1), '% of the sources', \
+          'we found no model galaxy, and, we skipped them.')
 
     hdu2 = pyfits.PrimaryHDU(spectral_image[:,:])
     #hdu2.header['CTYPE1'] = 'RA--SIN'
