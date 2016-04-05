@@ -260,7 +260,8 @@ def ThermalRadiation(wave, T_telescope):
     return(Thermal)
 #
 #----------------------------------------------------------------------
-def PlotBackground(Project, wave, Zodi, Thermal, T_tel, redshift, idx, create_table):
+def PlotBackground(Project, wave, lambda_min, lambda_max,
+                  Zodi, Thermal, T_tel, redshift, idx, create_table):
     """
     Plots the backgrounds
 
@@ -332,18 +333,18 @@ def PlotBackground(Project, wave, Zodi, Thermal, T_tel, redshift, idx, create_ta
     ax1.set_xlabel('Observed wavelength ($\mu m)$', fontsize=20)
     ax1.set_ylabel('$erg/s/cm^2/A/arcsec^2$', fontsize=20)
     ax1.legend(loc=0, fontsize=8)
-    ax1.set_xlim(1, 5)
+    ax1.set_xlim(lambda_min, lambda_max)
     ymin = 0.9*np.min(Zodi[:] + Thermal[i_T_tel, :])
     ymax = 1.1*np.max(Zodi[:] + Thermal[i_T_tel, :])
     ax1.set_ylim(ymin, ymax)
     #ax1.set_yscale('log')
     ax4 = ax1.twiny()
-    ax4.set_xlim(1./(1+redshift), 5./(1+redshift))
+    ax4.set_xlim(lambda_min/(1+redshift), lambda_max/(1+redshift))
     ax4.set_xlabel('Rest-frame Wavelength [$\mu m$]', fontsize=20)
 
     ax2 = ax1.twinx()
     ax2.set_ylabel('$MJy/sr$', fontsize=20)
-    ax2.set_xlim(1, 5)
+    ax2.set_xlim(lambda_min, lambda_max)
     ymin = 0.9*np.min((Zodi[:] + Thermal[i_T_tel, :])*Conv_to_MJypersr[:])
     ymax = 1.1*np.max((Zodi[:] + Thermal[i_T_tel, :])*Conv_to_MJypersr[:])
     ax2.set_ylim(ymin, ymax)
@@ -375,7 +376,8 @@ def PlotBackground(Project, wave, Zodi, Thermal, T_tel, redshift, idx, create_ta
     #plt.show()
 #
 #----------------------------------------------------------------------
-def PlotPhot(S_nu_mAB, S_nu_SNR, SNR_mAB, lambda_min, lambda_max, lambda_eff,
+def PlotPhot(S_nu_mAB, S_nu_SNR, SNR_mAB,
+             lambda_min, lambda_max, lambda_filt_min, lambda_filt_max, lambda_filt_eff,
              FLARE_filters, FLARE_fluxes, FLARE_mAB, FLARE_SNR,
              T_tel, redshift, exptime, R_ima, idx, create_table):
     """
@@ -402,18 +404,19 @@ def PlotPhot(S_nu_mAB, S_nu_SNR, SNR_mAB, lambda_min, lambda_max, lambda_eff,
     ax1 = fig2.add_subplot(211)
     ax2 = fig2.add_subplot(212)
     for i_T_tel, T_tel_i in enumerate(T_tel):
-        ax1.errorbar(1e-3*lambda_eff, FLARE_SNR[i_T_tel, :], xerr=1e-3*lambda_eff/R_ima/2.,
+        ax1.errorbar(1e-3*lambda_filt_eff, FLARE_SNR[i_T_tel, :],
+           xerr=1e-3*lambda_filt_eff/R_ima/2.,
            fmt='o', ecolor=cmap(i_T_tel / max(1, float(len(T_tel)-1))),
            label='SNR_phot for input CIGALE spectrum'+
            ' & Background @ '+str(T_tel_i)+'K @ z ='+str(round(redshift,2)),
            color=cmap(i_T_tel / max(1, float(len(T_tel)-1))), linestyle='None')
-        for i_band in range(len(lambda_eff)):
+        for i_band in range(len(lambda_filt_eff)):
             if FLARE_SNR[i_T_tel, i_band] > 0.01:
                 ax1.annotate(FLARE_filters[i_band]+'='+
                          str(round(FLARE_mAB[i_band], 1)),
-                     xy=(+0.10+1e-3*lambda_eff[i_band], FLARE_SNR[i_T_tel, i_band]),
+                     xy=(+0.10+1e-3*lambda_filt_eff[i_band], FLARE_SNR[i_T_tel, i_band]),
                      rotation=0, size=8)
-    ax1.set_xlim(0.9, 5.1)
+    ax1.set_xlim(lambda_min, lambda_max)
     ymin = max(np.mean(FLARE_SNR[i_T_tel, :])-3.*np.std(FLARE_SNR[i_T_tel, :]),0)
     ymax = np.mean(FLARE_SNR[i_T_tel, :])+3.*np.std(FLARE_SNR[i_T_tel, :])
     ax1.set_ylim(ymin, ymax)
@@ -422,16 +425,17 @@ def PlotPhot(S_nu_mAB, S_nu_SNR, SNR_mAB, lambda_min, lambda_max, lambda_eff,
     ax1.legend(loc=0, fontsize=8, numpoints = 1)
     #ax1.set_yscale('log')
     ax4 = ax1.twiny()
-    ax4.set_xlim(1./(1+redshift), 5./(1+redshift))
+    ax4.set_xlim(lambda_min/(1+redshift), lambda_max/(1+redshift))
     ax4.set_xlabel('Rest-frame Wavelength [$\mu m$]', fontsize=20)
 
     for i_T_tel, T_tel_i in enumerate(T_tel):
-        ax2.errorbar(1e-3*lambda_eff, S_nu_SNR[i_T_tel,:], xerr=1e-3*lambda_eff/R_ima/2.,
+        ax2.errorbar(1e-3*lambda_filt_eff, S_nu_SNR[i_T_tel,:],
+                xerr=1e-3*lambda_filt_eff/R_ima/2.,
                 fmt='o', ecolor=cmap(i_T_tel / max(1, float(len(T_tel)-1))),
                 label='Snu_phot for SNR = '+str(SNR_mAB)+
                 ' & Background @ '+str(T_tel_i)+'K & T_exp='+str(exptime)+' sec',
                 color=cmap(i_T_tel / max(1, float(len(T_tel)-1))), linestyle='None')
-    ax2.set_xlim(0.9, 5.1)
+    ax2.set_xlim(lambda_min, lambda_max)
     ymin = max(np.mean(S_nu_SNR[i_T_tel, :])-2.*np.std(S_nu_SNR[i_T_tel, :]), 1.)
     ymax = np.mean(S_nu_SNR[i_T_tel, :])+3.*np.std(S_nu_SNR[i_T_tel, :])
     ax2.set_ylim(ymin, ymax)
@@ -441,7 +445,7 @@ def PlotPhot(S_nu_mAB, S_nu_SNR, SNR_mAB, lambda_min, lambda_max, lambda_eff,
     ax2.legend(loc=0, fontsize=8, numpoints=1)
 
     ax3 = ax2.twinx()
-    ax3.set_xlim(0.9, 5.1)
+    ax3.set_xlim(lambda_min, lambda_max)
     ax3.set_ylabel('m$_{AB}$', fontsize=20)
     ymin = -2.5*np.log10(ymin)+31.4
     ymax = -2.5*np.log10(ymax)+31.4
@@ -472,7 +476,7 @@ def PlotPhot(S_nu_mAB, S_nu_SNR, SNR_mAB, lambda_min, lambda_max, lambda_eff,
     #plt.show()
 #
 #----------------------------------------------------------------------
-def PlotSpec(wave, SNR_spec, SNR_mAB, mAB_SNR, S_nu_SNR, T_tel,
+def PlotSpec(wave, lambda_min, lambda_max, SNR_spec, SNR_mAB, mAB_SNR, S_nu_SNR, T_tel,
              redshift, exptime, idx, create_table):
 
     """
@@ -501,7 +505,7 @@ def PlotSpec(wave, SNR_spec, SNR_mAB, mAB_SNR, S_nu_SNR, T_tel,
             ' & Background @ '+str(T_tel_i)+'K @ z ='+
             str(round(redshift, 2))+' & T_exp='+str(exptime)+' sec',
             color=cmap(i_T_tel / max(1, float(len(T_tel)-1))))
-    ax1.set_xlim(1, 5)
+    ax1.set_xlim(lambda_min, lambda_max)
     #ax1.set_ylim(0.5*min(SNR_spec[i_T_tel, :]), max(2.*SNR_spec[i_T_tel, :]))
     ymin = max(np.mean(SNR_spec[i_T_tel, :])-3.*np.std(SNR_spec[i_T_tel, :]),0)
     ymax = np.mean(SNR_spec[i_T_tel, :])+3.*np.std(SNR_spec[i_T_tel, :])
@@ -511,7 +515,7 @@ def PlotSpec(wave, SNR_spec, SNR_mAB, mAB_SNR, S_nu_SNR, T_tel,
     ax1.legend(loc=0, fontsize=8)
     #ax1.set_yscale('log')
     ax4 = ax1.twiny()
-    ax4.set_xlim(1./(1+redshift), 5./(1+redshift))
+    ax4.set_xlim(lambda_min/(1+redshift), lambda_max/(1+redshift))
     ax4.set_xlabel('Rest-frame Wavelength [$\mu m$]', fontsize=20)
 
     for i_T_tel, T_tel_i in enumerate(T_tel):
@@ -519,7 +523,7 @@ def PlotSpec(wave, SNR_spec, SNR_mAB, mAB_SNR, S_nu_SNR, T_tel,
                 label='Snu_spec for SNR = '+str(SNR_mAB[0])+
                 ' & Background @ '+str(T_tel_i)+'K & T_exp='+str(exptime)+' sec',
                 color=cmap(i_T_tel / max(1, float(len(T_tel)-1))))
-    ax2.set_xlim(1, 5)
+    ax2.set_xlim(lambda_min, lambda_max)
     #ax2.set_ylim(0.5*min(S_nu_SNR[i_T_tel, :]), max(2.0*S_nu_SNR[i_T_tel, :]))
     ymin = max(np.mean(S_nu_SNR[i_T_tel, :])-3.*np.std(S_nu_SNR[i_T_tel, :]),0)
     ymax = np.mean(S_nu_SNR[i_T_tel, :])+3.*np.std(S_nu_SNR[i_T_tel, :])
@@ -530,7 +534,7 @@ def PlotSpec(wave, SNR_spec, SNR_mAB, mAB_SNR, S_nu_SNR, T_tel,
     ax2.legend(loc=0, fontsize=8)
 
     ax3 = ax2.twinx()
-    ax3.set_xlim(1, 5)
+    ax3.set_xlim(lambda_min, lambda_max)
     ax3.set_ylabel('m$_{AB}$', fontsize=20)
     ax3.set_ylim(-2.5*np.log10(0.99*min(S_nu_SNR[i_T_tel, :]))+31.4,
                  -2.5*np.log10(1.01*max(S_nu_SNR[i_T_tel, :]))+31.4)
@@ -565,7 +569,8 @@ def PlotSpec(wave, SNR_spec, SNR_mAB, mAB_SNR, S_nu_SNR, T_tel,
 
     #plt.show()
 #----------------------------------------------------------------------
-def PlotLine(wave, S_line, SNR_line, SNR_flambda, mAB_SNR, S_line_SNR, T_tel,
+def PlotLine(wave, lambda_min, lambda_max,
+             S_line, SNR_line, SNR_flambda, mAB_SNR, S_line_SNR, T_tel,
              redshift, exptime, idx, create_table):
 
     """
@@ -594,7 +599,7 @@ def PlotLine(wave, S_line, SNR_line, SNR_flambda, mAB_SNR, S_line_SNR, T_tel,
                  '[erg/cm$^2$/s] & Background @ '+str(T_tel_i)+
                  'K @ z ='+str(round(redshift, 2))+' & T_exp='+str(exptime)+' sec',
                  color=cmap(i_T_tel / max(1, float(len(T_tel)-1))))
-    ax1.set_xlim(1, 5)
+    ax1.set_xlim(lambda_min, lambda_max)
     #ax1.set_ylim(0.5*min(SNR_line[i_T_tel, :]), max(2.*SNR_line[i_T_tel, :]))
     ymin = max(np.mean(SNR_line[i_T_tel, :])-3.*np.std(SNR_line[i_T_tel, :]),0)
     ymax = np.mean(SNR_line[i_T_tel, :])+3.*np.std(SNR_line[i_T_tel, :])
@@ -604,7 +609,7 @@ def PlotLine(wave, S_line, SNR_line, SNR_flambda, mAB_SNR, S_line_SNR, T_tel,
     ax1.legend(loc=0, fontsize=8)
     #ax1.set_yscale('log')
     ax4 = ax1.twiny()
-    ax4.set_xlim(1./(1+redshift), 5./(1+redshift))
+    ax4.set_xlim(lambda_min/(1+redshift), lambda_max/(1+redshift))
     ax4.set_xlabel('Rest-frame Wavelength [$\mu m$]', fontsize=20)
 
     for i_T_tel, T_tel_i in enumerate(T_tel):
@@ -612,7 +617,7 @@ def PlotLine(wave, S_line, SNR_line, SNR_flambda, mAB_SNR, S_line_SNR, T_tel,
                  label='S_line for SNR_line = '+str(SNR_flambda[0])+
                  ' & Background @ '+str(T_tel_i)+'K & T_exp='+str(exptime)+' sec',
                  color=cmap(i_T_tel / max(1, float(len(T_tel)-1))))
-    ax2.set_xlim(1, 5)
+    ax2.set_xlim(lambda_min, lambda_max)
     #ax2.set_ylim(0.5*min(S_line_SNR[i_T_tel, :]), max(2.0*S_line_SNR[i_T_tel, :]))
     ymin = max(np.mean(S_line_SNR[i_T_tel, :])-3.*np.std(S_line_SNR[i_T_tel, :]),0)
     ymax = np.mean(S_line_SNR[i_T_tel, :])+3.*np.std(S_line_SNR[i_T_tel, :])
@@ -646,7 +651,7 @@ def PlotLine(wave, S_line, SNR_line, SNR_flambda, mAB_SNR, S_line_SNR, T_tel,
 
     #plt.show()
 #----------------------------------------------------------------------
-def PlotSimSpectrum(wave, f_nu_nonoise, f_nu_noise, S_line, T_tel,
+def PlotSimSpectrum(wave, lambda_min, lambda_max, f_nu_nonoise, f_nu_noise, S_line, T_tel,
                       redshift, logM_star, logsfr10Myrs, A_FUV, logL_dust, metallicity,
                       FLARE_filters, FLARE_lambda, FLARE_fluxes, FLARE_SNR,
                       exptime, idx, create_table):
@@ -676,7 +681,7 @@ def PlotSimSpectrum(wave, f_nu_nonoise, f_nu_noise, S_line, T_tel,
     ax1.plot(wave*1e6, f_nu_nonoise,
                  label='Initial modelled spectrum for T_exp='+str(exptime)+' sec',
                  color='k')
-    ax1.set_xlim(1., 5.)
+    ax1.set_xlim(lambda_min, lambda_max)
     #ax1.set_ylim(0.5*min(f_nu_nonoise), max(2.*SNR_line))
     #ymin = max(np.mean(f_nu_nonoise)-3.*np.std(f_nu_nonoise),0)
     ymax = np.mean(f_nu_nonoise)+5.*np.std(f_nu_nonoise)
@@ -690,7 +695,7 @@ def PlotSimSpectrum(wave, f_nu_nonoise, f_nu_noise, S_line, T_tel,
     #ax1.set_yscale('log')
     ax1.grid(True)
     ax4 = ax1.twiny()
-    ax4.set_xlim(1./(1+redshift), 5./(1+redshift))
+    ax4.set_xlim(lambda_min/(1+redshift), lambda_max/(1+redshift))
     ax4.set_xlabel('Rest-frame Wavelength [$\mu m$]', fontsize=20)
 
     from astropy.convolution import convolve, Box1DKernel
@@ -724,7 +729,7 @@ def PlotSimSpectrum(wave, f_nu_nonoise, f_nu_noise, S_line, T_tel,
                          FLARE_fluxes[i_band]*(3e18/(1e10*FLARE_lambda[i_band])**2)),
                      rotation=0, size=8)
 
-    ax2.set_xlim(1, 5)
+    ax2.set_xlim(lambda_min, lambda_max)
 
     #ax2.set_ylim(0.5*min(f_nu_noise), max(2.0*f_nu_noise))
     #ymin = max(np.mean(f_nu_noise[i_T_tel])-3.*np.std(f_nu_noise[i_T_tel]),0)
@@ -1008,8 +1013,11 @@ def simulation(idx):
     # Convert nm to Hz, still observed-frame.
     nu = lambda_to_nu(wavelength) # observed Hz
 
-    # We select the spectrum in the observed frame from 1 to 5 um for models
-    w_z = np.where((wavelength >= 1000.) & (wavelength <= 5000.))
+    # We select the spectrum in the correct observed frame for models
+    #lambda_min, lambda_max = 1, 5 #um for FLARE
+    lambda_min, lambda_max = 0.6, 2.0 #um for WFIRST
+    w_z = np.where((wavelength >= 1000.*lambda_min) &
+                        (wavelength <= 1000.*lambda_max) )
 
     # Retrieve the parameters necessary to define the telescope FLARE
     onexposure_ima, onexposure_spec, pixel_ima, pixel_spec, slice_width, slice_length, \
@@ -1034,7 +1042,7 @@ def simulation(idx):
     else:
         w_norm = np.where(wavelength[w_z] == lambda_norm)
         if not w_norm:
-            sys.exit('Normalisation wavelength outside FLARE\'s 1 - 5 um range')
+            sys.exit('Normalisation wavelength outside the wavelength range')
 
     #----------------------------------------------------------------------
     #
@@ -1099,7 +1107,7 @@ def simulation(idx):
         Background[i_T_tel, :] = Zodi + Thermal_from_telescope[i_T_tel, :]
 
     if flag_background == True:
-        PlotBackground(Project, 1e-9*wavelength[w_z], Zodi,
+        PlotBackground(Project, 1e-9*wavelength[w_z], lambda_min, lambda_max, Zodi,
                                 Thermal_from_telescope, T_tel, redshift, idx, create_table)
 
     # ----------------------------------------------------------------------------
@@ -1114,9 +1122,9 @@ def simulation(idx):
     FLARE_lambda = np.array([1.15e-6, 1.50e-6, 2.00e-6, 2.77e-6, 3.56e-6, 4.44e-6]) # in m
     FLARE_SNR = np.zeros((len(T_tel), len(FLARE_lambda)))
     S_nu_SNR = np.zeros((len(T_tel), len(FLARE_lambda)))
-    lambda_min = np.zeros_like(FLARE_lambda)
-    lambda_max = np.zeros_like(FLARE_lambda)
-    lambda_eff = np.zeros_like(FLARE_lambda)
+    lambda_filt_min = np.zeros_like(FLARE_lambda)
+    lambda_filt_max = np.zeros_like(FLARE_lambda)
+    lambda_filt_eff = np.zeros_like(FLARE_lambda)
 
     # We will resample the wavelength and properties ('_r' arrays) to get N_wave_r values
     N_wave_r = len(f_nu)
@@ -1126,12 +1134,14 @@ def simulation(idx):
     for ifilt, filter_ in enumerate(FLARE_filters):
         with Database() as db:
                 filter_ = db.get_filter(filter_)
-        lambda_eff[ifilt] = filter_.effective_wavelength # in observed nm
-        lambda_min[ifilt] = filter_.trans_table[0][0] # in observed nm
-        lambda_max[ifilt] = filter_.trans_table[0][-1] # in observed nm
+        lambda_filt_eff[ifilt] = filter_.effective_wavelength # in observed nm
+        lambda_filt_min[ifilt] = filter_.trans_table[0][0] # in observed nm
+        lambda_filt_max[ifilt] = filter_.trans_table[0][-1] # in observed nm
 
         # Observed wavelength in nm and observed frequencies in Hz
-        wavelength_r = np.linspace (lambda_min[ifilt], lambda_max[ifilt], N_wave_r)
+        wavelength_r = np.linspace (lambda_filt_min[ifilt],
+                                    lambda_filt_max[ifilt],
+                                    N_wave_r)
         nu_r = lambda_to_nu(wavelength_r)
 
         # Initialize the detector characteristics.
@@ -1224,7 +1234,9 @@ def simulation(idx):
     S_nu_mAB = -2.5* np.log10(FLARE_fluxes) + 16.4
 
     if flag_phot == True:
-        PlotPhot(S_nu_mAB, S_nu_SNR, SNR_mAB[0], lambda_min, lambda_max, lambda_eff,
+        PlotPhot(S_nu_mAB, S_nu_SNR, SNR_mAB[0],
+             lambda_min, lambda_max,
+             lambda_filt_min, lambda_filt_max, lambda_filt_eff,
              FLARE_filters, FLARE_fluxes, FLARE_mAB, FLARE_SNR,
              T_tel, redshift, exptime, R_ima, idx, create_table)
 
@@ -1262,14 +1274,26 @@ def simulation(idx):
 
     # However, with these models, we have less data than needed => interpolation
 
-    wave_octave1 = np.linspace(1250., 2500., 1024) # in nm
-    wave_octave2 = np.linspace(2500., 5000., 1024) # in nm
+    #lambda_octave1_min = 1.25 # um for FLARE
+    #lambda_octave1_max = 2.50 # um for FLARE
+    #lambda_octave2_min = 2.50 # um for FLARE
+    #lambda_octave2_max = 5.00 # um for FLARE
+    lambda_octave1_min = 0.60 # um for WFIRST
+    lambda_octave1_max = 1.30 # um for WFIRST
+    lambda_octave2_min = 1.30 # um for WFIRST
+    lambda_octave2_max = 2.00 # um for WFIRST
+    wave_octave1 = np.linspace(1000.*lambda_octave1_min,
+                               1000.*lambda_octave1_max, 1024) # in nm
+    wave_octave2 = np.linspace(1000.*lambda_octave2_min,
+                               1000.*lambda_octave2_max, 1024) # in nm
     new_wavelength = np.hstack((wave_octave1, wave_octave2)) # in nm
     new_frequency = c / (1e-9*new_wavelength) # in Hz
 
     # We define masks for the two octaves
-    w_octave1 = np.where((wavelength[w_z] >= 1250.) & (wavelength[w_z] <= 2500.))
-    w_octave2 = np.where((wavelength[w_z] >= 2500.) & (wavelength[w_z] <= 5000.))
+    w_octave1 = np.where((wavelength[w_z] >= 1000.*lambda_octave1_min) &
+                         (wavelength[w_z] <= 1000.*lambda_octave1_max) )
+    w_octave2 = np.where((wavelength[w_z] >= 1000.*lambda_octave2_min) &
+                         (wavelength[w_z] <= 1000.*lambda_octave2_max))
 
     # We interpolate the flux
     f1 = InterpolatedUnivariateSpline(wavelength[w_z][w_octave1],
@@ -1352,7 +1376,8 @@ def simulation(idx):
     S_nu_SNR = S_nu_SNR * 1e32 # in nJy
 
     if flag_spec == True:
-         PlotSpec(1e-9*new_wavelength, SNR_spec, SNR_mAB, mAB_SNR, S_nu_SNR,
+         PlotSpec(1e-9*new_wavelength, lambda_min, lambda_max,
+                  SNR_spec, SNR_mAB, mAB_SNR, S_nu_SNR,
                   T_tel, redshift, exptime, idx, create_table)
 
 # ----------------------------------------------------------------------------------------
@@ -1388,7 +1413,8 @@ def simulation(idx):
                 (h*new_frequency / exptime)) # erg/s/cm2
 
     if flag_line:
-        PlotLine(1e-9*new_wavelength, S_line, SNR_line, SNR_flambda, mAB_SNR,
+        PlotLine(1e-9*new_wavelength, lambda_min, lambda_max,
+                 S_line, SNR_line, SNR_flambda, mAB_SNR,
                  S_line_SNR, T_tel, redshift, exptime, idx, create_table)
 
 # ----------------------------------------------------------------------------------------
@@ -1416,8 +1442,11 @@ def simulation(idx):
     f_lambda_octave2 = f2(wave_octave2)
     new_f_lambda = np.hstack((f_lambda_octave1, f_lambda_octave2)) # in erg/cm2/s/A
     if np.min(new_f_lambda) <= 0.:
-        min_positive = min(value for value in new_f_lambda if value > 0)
-        new_f_lambda[new_f_lambda <= 0] = min_positive
+        if np.max(new_f_lambda) > 0.:
+            min_positive = min(value for value in new_f_lambda if value > 0)
+            new_f_lambda[new_f_lambda <= 0] = min_positive
+        else:
+            new_f_lambda[new_f_lambda <= 0] = 1e-40
     new_bckd_lambda = Background * Omega_spec * pixel_spec**2 # from erg/cm2/s/A/arcsec2 to erg/cm2/s/A/pixel
     #np.set_printoptions(threshold=np.nan)
 
@@ -1447,7 +1476,8 @@ def simulation(idx):
         no_spectra[i_obj, :] = nodata[i_obj, :, i_T_tel]
 
     if flag_sim == True:
-        PlotSimSpectrum(1e-9*new_wavelength, new_f_lambda, data[i_obj, :, :],
+        PlotSimSpectrum(1e-9*new_wavelength, lambda_min, lambda_max,
+                          new_f_lambda, data[i_obj, :, :],
                           S_line_SNR / (10.*(new_wavelength/R_spec)), T_tel, redshift,
                           np.log10(M_star), np.log10(sfr10Myrs), A_FUV, logL_dust,
                           metallicity, FLARE_filters, FLARE_lambda, FLARE_fluxes, FLARE_SNR,

@@ -746,7 +746,7 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
         masked_indx = np.where(mask_zma)
 
         if len(masked_indx[0])==0:
-            print('No model found, we skip it')
+            #print('No model found, we skip it')
             count_zma += 1
         else:
         #print('0.m>', out_mass == m)
