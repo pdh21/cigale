@@ -1014,8 +1014,8 @@ def simulation(idx):
     nu = lambda_to_nu(wavelength) # observed Hz
 
     # We select the spectrum in the correct observed frame for models
-    #lambda_min, lambda_max = 1, 5 #um for FLARE
-    lambda_min, lambda_max = 0.6, 2.0 #um for WFIRST
+    lambda_min, lambda_max = 1, 5 #um for FLARE
+    #lambda_min, lambda_max = 0.6, 2.0 #um for WFIRST
     w_z = np.where((wavelength >= 1000.*lambda_min) &
                         (wavelength <= 1000.*lambda_max) )
 
@@ -1274,14 +1274,14 @@ def simulation(idx):
 
     # However, with these models, we have less data than needed => interpolation
 
-    #lambda_octave1_min = 1.25 # um for FLARE
-    #lambda_octave1_max = 2.50 # um for FLARE
-    #lambda_octave2_min = 2.50 # um for FLARE
-    #lambda_octave2_max = 5.00 # um for FLARE
-    lambda_octave1_min = 0.60 # um for WFIRST
-    lambda_octave1_max = 1.30 # um for WFIRST
-    lambda_octave2_min = 1.30 # um for WFIRST
-    lambda_octave2_max = 2.00 # um for WFIRST
+    lambda_octave1_min = 1.25 # um for FLARE
+    lambda_octave1_max = 2.50 # um for FLARE
+    lambda_octave2_min = 2.50 # um for FLARE
+    lambda_octave2_max = 5.00 # um for FLARE
+    #lambda_octave1_min = 0.60 # um for WFIRST
+    #lambda_octave1_max = 1.30 # um for WFIRST
+    #lambda_octave2_min = 1.30 # um for WFIRST
+    #lambda_octave2_max = 2.00 # um for WFIRST
     wave_octave1 = np.linspace(1000.*lambda_octave1_min,
                                1000.*lambda_octave1_max, 1024) # in nm
     wave_octave2 = np.linspace(1000.*lambda_octave2_min,
