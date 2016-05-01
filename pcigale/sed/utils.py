@@ -409,4 +409,4 @@ def flux_trapz(y, x, key):
     else:
         dx = np.diff(x)
         dx_cache[key] = dx
-    return (dx*(y[1:]+y[:-1])).sum()/2.
+    return np.dot(dx, y[1:]+y[:-1]) * .5

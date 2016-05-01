@@ -5,6 +5,7 @@
 ### Changed
 ### Fixed
 ### Optimised
+- A significant fraction of the total run time is spent computing integrals (e.g. fluxes in passbands). We can make the integration faster by rewriting the trapezoidal rule in terms of np.dot(). This allows to offload the computation to optimised libraries. The end result is that the integration is twice as fast, with a gain of ~10-15% on the total run time. (Médéric Boquien)
 
 ## 0.9.0 (2016-04-04)
 ### Added
