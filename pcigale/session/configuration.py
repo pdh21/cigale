@@ -287,6 +287,9 @@ class Configuration(object):
                 z = list(np.unique(np.around(obs_table['redshift'],
                                         decimals=REDSHIFT_DECIMALS)))
                 self.config['sed_modules_params']['redshifting']['redshift'] = z
+            elif self.config['parameters_file']:
+                # The entry will be ignored anyway. Just pass a dummy list
+                self.config['sed_modules_params']['redshifting']['redshift'] = []
             else:
                 raise Exception("No flux file and no redshift indicated. "
                                 "The spectra cannot be computed. Aborting.")
