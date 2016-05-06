@@ -80,10 +80,10 @@ class Configuration(object):
         self.config.comments['parameters_file'] = [""] + wrap(
             "Optional file containing the list of physical parameters. Each "
             "column must be in the form module_name.parameter_name, with each "
-            "line behind a different model. The columns must be in the order "
+            "line being a different model. The columns must be in the order "
             "the modules will be called. The redshift column must be the last "
-            "one. Finally, if this parameters is not left empty, cigale will "
-            "not interpret the configuration parameters given in pcigale.ini. "
+            "one. Finally, if this parameter is not empty, cigale will not "
+            "interpret the configuration parameters given in pcigale.ini. "
             "They will be given only for information.")
         self.spec['parameters_file'] = "string()"
 
@@ -293,7 +293,7 @@ class Configuration(object):
 
     def complete_analysed_parameters(self):
         """Complete the configuration when the variables are missing from the
-        configuration file and must be extract from a dummy run."""
+        configuration file and must be extracted from a dummy run."""
         if not self.config['analysis_params']['variables']:
             warehouse = SedWarehouse()
             params = ParametersHandler(self.config.dict())
