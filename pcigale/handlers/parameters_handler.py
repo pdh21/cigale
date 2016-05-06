@@ -112,14 +112,14 @@ class ParametersHandlerGrid(object):
 
         return params
 
-    def index_module_changed(self, index1, index2):
+    def index_module_changed(self, idx1, idx2):
         """Find the index of the first module affected by a change of parameters.
 
         Parameters
         ----------
-        index1: int
+        idx1: int
             First index
-        index2: int
+        idx2: int
             Second index
 
         Returns
@@ -128,7 +128,7 @@ class ParametersHandlerGrid(object):
             Index of the first module that has a different parameter
 
         """
-        indices = np.unravel_index((index1, index2), self.shape)
+        indices = np.unravel_index((idx1, idx2), self.shape)
         for module_idx, (i, j) in enumerate(indices):
             if i != j:
                 return module_idx
@@ -204,14 +204,14 @@ class ParametersHandlerFile(object):
 
         return params
 
-    def index_module_changed(self, index1, index2):
+    def index_module_changed(self, idx1, idx2):
         """Find the index of the first module affected by a change of parameters.
 
         Parameters
         ----------
-        index1: int
+        idx1: int
             First index
-        index2: int
+        idx2: int
             Second index
 
         Returns
@@ -221,11 +221,8 @@ class ParametersHandlerFile(object):
 
         """
 
-        params1 = [table[index1].as_void() for table in self.parameters]
-        params2 = [table[index2].as_void() for table in self.parameters]
+        for module_idx, module in enumerate(self.parameters):
+            if any([param[idx1] != param[idx2] for param in module.values()]):
+                return module_idx
 
-        idx = next((i for i, (param1, param2) in
-                    enumerate(zip(params1, params2)) if param1 != param2),
-                   len(self.modules))
-
-        return idx
+        return len(self.parameters)
