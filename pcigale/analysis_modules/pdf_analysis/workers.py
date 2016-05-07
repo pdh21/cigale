@@ -158,13 +158,13 @@ def sed(idx):
                                 gbl_params.from_index(idx))
 
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
-        gbl_model_fluxes[idx, :] = np.full(len(gbl_filters), np.nan)
-        gbl_model_variables[idx, :] = np.full(len(gbl_analysed_variables),
+        gbl_model_fluxes[:, idx] = np.full(len(gbl_filters), np.nan)
+        gbl_model_variables[:, idx] = np.full(len(gbl_analysed_variables),
                                               np.nan)
     else:
-        gbl_model_fluxes[idx, :] = np.array([sed.compute_fnu(filter_) for
+        gbl_model_fluxes[:, idx] = np.array([sed.compute_fnu(filter_) for
                                              filter_ in gbl_filters])
-        gbl_model_variables[idx, :] = np.array([sed.info[name]
+        gbl_model_variables[:, idx] = np.array([sed.info[name]
                                                 for name in
                                                 gbl_analysed_variables])
 
@@ -225,7 +225,7 @@ def analysis(idx, obs):
         wz = slice(0, None, 1)
         corr_dz = 1.
 
-    chi2, scaling = compute_chi2(gbl_model_fluxes[wz, :], obs_fluxes,
+    chi2, scaling = compute_chi2(gbl_model_fluxes[:, wz], obs_fluxes,
                                  obs_errors, gbl_lim_flag)
 
     ##################################################################
@@ -285,17 +285,17 @@ def analysis(idx, obs):
                 maxstd = lambda mean, std: max(0.05 * mean, std)
 
             if variable in sed.mass_proportional_info:
-                mean, std = weighted_param(_(gbl_model_variables[wz, i][wlikely]
+                mean, std = weighted_param(_(gbl_model_variables[i, wz][wlikely]
                                            * scaling[wlikely] * corr_dz),
                                            likelihood)
             else:
-                mean, std = weighted_param(_(gbl_model_variables[wz, i][wlikely]),
+                mean, std = weighted_param(_(gbl_model_variables[i, wz][wlikely]),
                                            likelihood)
 
             gbl_analysed_averages[idx, i] = mean
             gbl_analysed_std[idx, i] = maxstd(mean, std)
 
-        gbl_best_fluxes[idx, :] = gbl_model_fluxes[best_index, :] \
+        gbl_best_fluxes[idx, :] = gbl_model_fluxes[:, best_index] \
             * scaling[best_index_z]
 
         global gbl_keys
@@ -310,11 +310,11 @@ def analysis(idx, obs):
             save_best_sed(obs['id'], sed, scaling[best_index_z])
         if gbl_save['chi2']:
             save_chi2(obs['id'], gbl_analysed_variables,
-                      sed.mass_proportional_info, gbl_model_variables[wz, :],
+                      sed.mass_proportional_info, gbl_model_variables[:, wz],
                       scaling * corr_dz, chi2 / (nobs - 1))
         if gbl_save['pdf']:
             save_pdf(obs['id'], gbl_analysed_variables,
-                     sed.mass_proportional_info, gbl_model_variables[wz, :],
+                     sed.mass_proportional_info, gbl_model_variables[:, wz],
                      scaling * corr_dz, likelihood, wlikely)
 
     with gbl_n_computed.get_lock():

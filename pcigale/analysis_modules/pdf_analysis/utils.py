@@ -102,16 +102,16 @@ def save_pdf(obsid, names, mass_proportional, model_variables, scaling,
     for i, name in enumerate(names):
         if name.endswith('_log'):
             if name[:-4] in mass_proportional:
-                model_variable = np.log10(model_variables[:, i][wlikely] *
+                model_variable = np.log10(model_variables[i, :][wlikely] *
                                           scaling[wlikely])
             else:
-                model_variable = np.log10(model_variables[:, i][wlikely])
+                model_variable = np.log10(model_variables[i, :][wlikely])
         else:
             if name in mass_proportional:
-                model_variable = (model_variables[:, i][wlikely] *
+                model_variable = (model_variables[i, :][wlikely] *
                                   scaling[wlikely])
             else:
-                model_variable = model_variables[:, i][wlikely]
+                model_variable = model_variables[i, :][wlikely]
 
         _save_pdf(obsid, name, model_variable, likelihood)
 
@@ -155,14 +155,14 @@ def save_chi2(obsid, names, mass_proportional, model_variables, scaling, chi2):
     for i, name in enumerate(names):
         if name.endswith('_log'):
             if name[:-4] in mass_proportional:
-                model_variable = np.log10(model_variables[:, i] * scaling)
+                model_variable = np.log10(model_variables[i, :] * scaling)
             else:
-                model_variable = np.log10(model_variables[:, i])
+                model_variable = np.log10(model_variables[i, :])
         else:
             if name in mass_proportional:
-                model_variable = model_variables[:, i] * scaling
+                model_variable = model_variables[i, :] * scaling
             else:
-                model_variable = model_variables[:, i]
+                model_variable = model_variables[i, :]
 
         _save_chi2(obsid, name, model_variable, chi2)
 
@@ -344,13 +344,13 @@ def _compute_scaling(model_fluxes, obs_fluxes, obs_errors):
     scaling: array
         Scaling factors minimising the χ²
     """
-    num = np.zeros(model_fluxes.shape[0])
-    denom = np.zeros(model_fluxes.shape[0])
+    num = np.zeros(model_fluxes.shape[1])
+    denom = np.zeros(model_fluxes.shape[1])
     for i in range(obs_fluxes.size):
         if np.isfinite(obs_fluxes[i]):
-            num += model_fluxes[:, i] * (obs_fluxes[i] / (obs_errors[i] *
+            num += model_fluxes[i, :] * (obs_fluxes[i] / (obs_errors[i] *
                                                           obs_errors[i]))
-            denom += np.square(model_fluxes[:, i] / obs_errors[i])
+            denom += np.square(model_fluxes[i, :] * (1./obs_errors[i]))
 
     return num/denom
 
@@ -390,14 +390,14 @@ def compute_chi2(model_fluxes, obs_fluxes, obs_errors, lim_flag):
         for imod in range(len(model_fluxes)):
             scaling[imod] = optimize.root(dchi2_over_ds2, scaling[imod],
                                           args=(obs_fluxes, obs_errors,
-                                                model_fluxes[imod, :])).x
+                                                model_fluxes[:, imod])).x
 
     # χ² of the comparison of each model to each observation.
-    chi2 = np.zeros(model_fluxes.shape[0])
+    chi2 = np.zeros(model_fluxes.shape[1])
     for i in range(obs_fluxes.size):
         if np.isfinite(obs_fluxes[i]) and obs_errors[i] > 0.:
             chi2 += np.square(
-                (obs_fluxes[i] - model_fluxes[:, i] * scaling) / obs_errors[i])
+                (obs_fluxes[i] - model_fluxes[i, :] * scaling) * (1./obs_errors[i]))
 
     # Some observations may not have flux values in some filter(s), but
     # they can have upper limit(s).
@@ -407,7 +407,7 @@ def compute_chi2(model_fluxes, obs_fluxes, obs_errors, lim_flag):
             np.log(
                 np.sqrt(np.pi/2.)*(-obs_errors[mask_lim])*(
                     1.+erf(
-                        (obs_fluxes[mask_lim]-model_fluxes[:, mask_lim] *
+                        (obs_fluxes[mask_lim]-model_fluxes[mask_lim, :] *
                          scaling[:, np.newaxis]) /
                         (np.sqrt(2)*(-obs_errors[mask_lim]))))), axis=1)
 
