@@ -65,9 +65,7 @@ def luminosity_to_flux(luminosity, dist):
 
     """
 
-    flux = luminosity / (4. * pi * dist * dist)
-
-    return flux
+    return luminosity * (1. / (4. * pi * dist * dist))
 
 
 def lambda_flambda_to_fnu(wavelength, flambda):
