@@ -126,10 +126,10 @@ class M2005(SedModule):
                      old_masses[4] + young_masses[4], True)
 
         sed.add_contribution("stellar.old",
-                             ssp.wavelength_grid,
+                             self.ssp.wavelength_grid,
                              old_spectrum)
         sed.add_contribution("stellar.young",
-                             ssp.wavelength_grid,
+                             self.ssp.wavelength_grid,
                              young_spectrum)
 
 # SedModule to be returned by get_module
