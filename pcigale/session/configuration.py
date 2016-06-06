@@ -330,6 +330,8 @@ class Configuration(object):
             z_mod = self.config['sed_modules_params']['redshifting']['redshift']
         if 'z_formation' in self.config['sed_modules']:
             z_mod = self.config['sed_modules_params']['z_formation']['redshift']
+        if 'set_redshift' in self.config['sed_modules']:
+            z_mod = self.config['sed_modules_params']['set_redshift']['redshift']
 
         if type(z_mod) is str and not z_mod:
             if self.config['data_file']:

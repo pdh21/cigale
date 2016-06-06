@@ -38,6 +38,7 @@ import matplotlib as mpl
 import sys, os.path
 import os.path
 import pyfits
+import math
 
 from . import AnalysisModule
 from scipy.interpolate import interp1d
@@ -1177,6 +1178,7 @@ def simulation(idx):
 
             # Signal in ph
             Signal_0 = exptime * flux_c
+            Signal_0[Signal_0 < 0.] = 0.
 
             # Background in erg/s/cm2/A/arcsec2 -> ph
             Background_0 = Background_r * eta_tel * A * Omega_ima * pixel_ima**2 * \
@@ -1333,6 +1335,7 @@ def simulation(idx):
     RON, Dark, QE, ADU = Detector(Project, new_wavelength)
 
     Signal_1 = new_spec * exptime
+    Signal_1[Signal_1 < 0.] = 0.
     Background_1 = Background * eta_tel * eta_spec * A * Omega_spec * \
                      pixel_spec**2 * QE / 1e7 / (h*new_frequency) * \
                      10.*(new_wavelength/R_spec) * exptime
@@ -1389,6 +1392,7 @@ def simulation(idx):
     flux_c = S_line * EE2um * A * eta_tel * eta_spec * QE / 1e7 / (h*new_frequency) # ph/s
 
     Signal_2 = flux_c * exptime
+    Signal_2[Signal_2 < 0.] = 0.
     Background_2 = Background * A * eta_tel * eta_spec * Omega_spec * \
                    pixel_spec**2 * QE / 1e7 / (h*new_frequency) * \
                    10.*(new_wavelength/R_spec) * exptime

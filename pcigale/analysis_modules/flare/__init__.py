@@ -21,8 +21,12 @@ import time
 import pyfits
 import random
 from astropy.cosmology import WMAP5 # WMAP 5-year cosmology
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+
 from itertools import tee, islice, chain
 import numpy as np
 import numpy.ma as ma
@@ -568,7 +572,7 @@ class FLARE(AnalysisModule):
         FoV_axis1 = float(conf['analysis_params']['FoV_axis1'])
         FoV_axis2 = float(conf['analysis_params']['FoV_axis2'])
 
-        redshifts = conf['sed_modules_params']['z_formation']['redshift']
+        redshifts = conf['sed_modules_params']['set_redshift']['redshift']
         #RA_sample, Dec_sample, z_sample = density_z(FoV_axis1, FoV_axis2, redshifts)
         #print('Echantillon', len(RA_sample), len(Dec_sample), len(z_sample))
         RA_sample, Dec_sample, m_sample, z_sample = density_m(FoV_axis1, FoV_axis2, redshifts)
@@ -721,14 +725,32 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
     count_zma = 0
     for ind_z, z in enumerate(z_sample):
 
+        dm = 0.2
         m_mf = 10**m_sample[ind_z]
-        # From Pannella et al. (2015): AUV = 1.6×logM∗ − 13.5 mag for z = 1.2 − 4.
-        A_fuv_mf = max(0., 1.6 * np.log10(m_mf) - 13.5)
+        # New 2D formula: A_fuv_mf(m_mf, redshift)
+        if np.log10(m_mf) >= 7.0:
+            #A_fuv_mf_old = (0.05 + 0.25*np.exp(-pow((z-2.0)/1.5, 2))
+            #              + 0.03*np.exp(-((z-4.5)/2.0**2))) * (np.log10(m_mf)-7)**2
+
+            A_fuv_mf = (0.05 +
+                        0.25 * np.exp(-(((z-2.0)/1.5)**2)) +
+                        0.03 * np.exp(-(((z-4.5)/2.0)**2))  ) * (np.log10(m_mf)-7)**2
+            #print(A_fuv_mf_old-A_fuv_mf)
+
+        else:
+            A_fuv_mf = 0.025*np.log10(m_mf)
+
+        # Adapted from Pannella et al. (2015): AUV = 1.6×logM∗ − 13.5 mag for z = 1.2 − 4.
+        #if np.log10(m_mf) >= 7.0:
+        #    A_fuv_mf = -8.1e-3*(np.log10(m_mf))**3 + 0.38*(np.log10(m_mf))**2 - \
+        #             3.94*np.log10(m_mf) + 12.0
+        #else:
+        #    A_fuv_mf = 0.025*np.log10(m_mf)
         # We select the models with the requested stellar mass
         i_m_best, m_best = min(enumerate(out_mass), key=lambda x: abs(x[1]-m_mf))
         #print('i_m_best, m_best, m_mf, A_fuv_mf', i_m_best, m_best, m_mf, A_fuv_mf)
         # If the requested stellar mass is not in out_mass, we take the closest one
-        if ((m_best-m_mf)/m_mf < -0.5 or (m_best-m_mf)/m_mf > 1.0):
+        if (m_best < m_mf*(1.-dm) or m_best > m_mf*(1.+dm)):
             count_m += 1
             #print('count_m', count_m, m_best, m_mf)
         m = m_best
@@ -741,13 +763,21 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
         A_fuv = A_fuv_best
 
         # We create a mask for models with the good redshift and good stellar mass
-        mask_zma = (out_mass == m) & (out_redshift == z) & \
+        mask_zma = (out_redshift == z) & \
+                   (out_mass  >= m*(1.-dm))         & (out_mass  <= m*(1.+dm))        & \
                    (out_A_fuv >= A_fuv*(1.-dA_fuv)) & (out_A_fuv <= A_fuv*(1.+dA_fuv))
         masked_indx = np.where(mask_zma)
 
         if len(masked_indx[0])==0:
             #print('No model found, we skip it')
             count_zma += 1
+            params = str(m)+' '+str(A_fuv)+' '+' nan'*(model_parameters[1][1]-2)
+            simulation.write('%.5d %5d %.2f %.4f %.4f %s ' %(-1, -1, round(z, 2),
+                             round(RA_sample[ind_z], 4),
+                             round(Dec_sample[ind_z], 4),
+                             params
+                             ))
+            simulation.write('\n')
         else:
         #print('0.m>', out_mass == m)
         #print('0.z>', out_redshift == z)
