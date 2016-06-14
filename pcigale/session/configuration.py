@@ -84,7 +84,10 @@ class Configuration(object):
             "the modules will be called. The redshift column must be the last "
             "one. Finally, if this parameter is not empty, cigale will not "
             "interpret the configuration parameters given in pcigale.ini. "
-            "They will be given only for information.")
+            "They will be given only for information. Note that this module "
+            "should only be used in conjonction with the savefluxes module. "
+            "Using it with the pdf_analysis module will yield incorrect "
+            "results.")
         self.spec['parameters_file'] = "string()"
 
         self.config['sed_modules'] = []
