@@ -3,9 +3,12 @@
 # Unreleased
 ### Added
 ### Changed
+- Various descriptions have been improved and clarified. (Médéric Boquien)
+
 ### Fixed
 - With the new sanity check of the input parameters, cigale did not handle the fact that the redshift could be given in the parameters file. Now this is handled properly. (Médéric Boquien)
 - When giving the list of parameters through a file, cigale did not compute properly what parameter changed between to successive models. (Médéric Boquien)
+- Using the m2005 module led to a crash. This is now fixed. (Yannick Roehlly)
 
 ### Optimised
 - A significant fraction of the total run time is spent computing integrals (e.g. fluxes in passbands). We can make the integration faster by rewriting the trapezoidal rule in terms of np.dot(). This allows to offload the computation to optimised libraries. The end result is that the integration is twice as fast, with a gain of ~10-15% on the total run time. (Médéric Boquien)
