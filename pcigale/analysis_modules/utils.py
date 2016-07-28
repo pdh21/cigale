@@ -68,4 +68,4 @@ def save_fluxes(model_fluxes, model_parameters, filters, names,
 
     out_table.write("{}/computed_fluxes.fits".format(directory))
     out_table.write("{}/computed_fluxes.txt".format(directory),
-                    format='ascii.commented_header')
+                    format='ascii.fixed_width', delimiter=None)
