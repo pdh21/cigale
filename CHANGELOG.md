@@ -4,6 +4,7 @@
 ### Added
 ### Changed
 - Various descriptions have been improved and clarified. (Médéric Boquien)
+- The `output\_file` and `output\_format` parameters have been removed from the `savefluxes` module. They served little purpose and made the code more complex. The same strategy as for the `pdf\_analysis` modules is now adopted, saving the output both as FITS and ASCII tables. Old configuration file still work, with these two parameters simply ignored. (Médéric Boquien)
 
 ### Fixed
 - With the new sanity check of the input parameters, cigale did not handle the fact that the redshift could be given in the parameters file. Now this is handled properly. (Médéric Boquien)
