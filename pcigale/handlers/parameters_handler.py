@@ -68,7 +68,7 @@ class ParametersHandlerGrid(object):
 
         """
         # We make a copy of the dictionary as we are modifying it.
-        dictionary = dict(dictionary)
+        dictionary = collections.OrderedDict(dictionary)
 
         # First, we must ensure that all values are lists; when a value is a
         # single element, we put it in a list.

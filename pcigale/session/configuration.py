@@ -239,7 +239,7 @@ class Configuration(object):
 
             return None
 
-        return self.config.dict()
+        return self.config.copy()
 
     def check_modules(self):
         """Make a basic check to ensure that some required modules are present.
