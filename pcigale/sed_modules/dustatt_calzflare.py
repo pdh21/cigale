@@ -256,7 +256,7 @@ class CalzFlare(SedModule):
 
         # Adapted from Pannella et al. (2015, ApJ 807, 141) for 1.2 < z < 4.0
         #a_fuv = max(0., 1.6 * np.log10(m_star) - 13.5)
-<<<<<<< HEAD
+
         if np.log10(m_star) > 7.0:
 
             # v0 from Pannella et al. (2010) to keep it constant in redshift
@@ -324,32 +324,6 @@ class CalzFlare(SedModule):
             a_fuv = (a1 * np.exp(-(redshift-m1)**2/(2*sigma1**2)) + \
                      a2 * np.exp(-(redshift-m2)**2/(2*sigma2**2))) * \
                     (np.log10(m_star)-7)**2
-=======
-        if np.log10(m_star) >= 7.0:
-            #a_fuv = -8.1e-3*(np.log10(m_star))**3 + 0.38*(np.log10(m_star))**2 - \
-            #         3.94*np.log10(m_star) + 12.0
-            #a_fuv = 8e-3*(np.log10(m_star))**3) - 0.062*(np.log10(m_star))**2 + \
-            #         0.067*np.log10(m_star)
-            #a_fuv = 2e-3*(np.log10(m_star))**3) - 0.01*(np.log10(m_star))**2 + \
-            #         0.03*np.log10(m_star)
-
-            #(0.05 + 0.25*exp(-pow((6.-2.0)/1.5, 2)) + 0.03*exp(-pow((6.-4.5)/2.0, 2))) * pow(logMstar-7, 2)
-            #A_fuv_mf_old = (0.05 + 0.25*np.exp(-pow((z-2.0)/1.5, 2))
-            #              + 0.03*np.exp(-((z-4.5)/2.0**2))) * pow(np.log10(m_mf)-7, 2)
-
-            a_fuv = (0.05 +
-                     0.25 * np.exp(-(((redshift-2.0)/1.5)**2)) +
-                     0.03 * np.exp(-(((redshift-4.5)/2.0)**2))  ) * (np.log10(m_star)-7)**2
-        else:
-            a_fuv = 0.025*np.log10(m_star)
-
-        # From Buat et al. (2013, ApJ 807, 141) for 1.2 < z < 4.0
-        #a_fuv = 0.89 * np.log10(m_star) - 6.77
-        # From Reddy et al. (2016): E(B-V)_gas - E(B-V)_stars = -0.049 + 0.079 / xsi
-        # with xsi = 1./(log10(SFR/M_star) +10.)
-        # sSFRs = SFR(Halpha=over10Myrs) / Mstar with SFR(Halpha) corrected for dust attenuation
-        #self.ebvs_old_factor = -0.049 + 0.079 / (np.log10(sfr10Myrs/m_star) + 10.)
->>>>>>> d8e19873c6efaa3c50cf4774c8b1524644087a53
 
         else:
             a_fuv = 0.025*np.log10(m_star)
