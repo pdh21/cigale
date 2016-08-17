@@ -256,6 +256,75 @@ class CalzFlare(SedModule):
 
         # Adapted from Pannella et al. (2015, ApJ 807, 141) for 1.2 < z < 4.0
         #a_fuv = max(0., 1.6 * np.log10(m_star) - 13.5)
+<<<<<<< HEAD
+        if np.log10(m_star) > 7.0:
+
+            # v0 from Pannella et al. (2010) to keep it constant in redshift
+            #a_fuv = 1.6 * np.log10(m_star) - 13.5
+
+            # v1
+            #a_fuv = (0.05 +
+            #         0.25 * np.exp(-(((redshift-2.0)/1.5)**2)) +
+            #         0.03 * np.exp(-(((redshift-4.5)/2.0)**2))  ) * (np.log10(m_star)-7)**2
+
+            #v2
+            #a1 = 0.1
+            #m1 = 1.0
+            #sigma1 = 0.5
+            #a2 = 0.3
+            #m2 = 2.5
+            #sigma2 = 1.6
+            #a_fuv = (a1 * np.exp(-(redshift-m1)**2/(2*sigma1**2)) + \
+            #         a2 * np.exp(-(redshift-m2)**2/(2*sigma2**2))) * \
+            #        (np.log10(m_star)-7)**2
+
+            #v3
+            #a = 0.17
+            #b = 0.21
+            #c = 1.77
+            #d = 2.19
+
+            #v4
+            #a = 0.086139429
+            #b = 0.095825209
+            #c = 2.31819179
+            #d = 1.54701983
+
+            #v5
+            #a = 0.10078457 # 0.09554179
+            #b = 0.03006847 # 0.03775311
+            #c = 4.48576362 # 3.85981481
+            #d = 4.95338566 # 5.06978438
+            #a_fuv = ((a + b*redshift) / (1 + (redshift/c)**d)) * (np.log10(m_star)-7)**2
+
+            # v6: 2 gausians
+            #a1     = 0.171
+            #m1     = 1.132
+            #sigma1 = 1.066
+            #a2     = 0.166
+            #m2     = 3.648
+            #sigma2 = 1.032
+
+            #v7 2 gaussians
+            #a1     = 0.049
+            #m1     = 0.812
+            #sigma1 = 0.294
+            #a2     = 0.242
+            #m2     = 2.172
+            #sigma2 = 2.019
+
+            #v8 2 gaussians with Bouwens + evolving Td
+            a1     = 0.1249
+            m1     = 0.7690
+            sigma1 = 0.7466
+            a2     = 0.2375
+            m2     = 3.1601
+            sigma2 = 1.8710
+
+            a_fuv = (a1 * np.exp(-(redshift-m1)**2/(2*sigma1**2)) + \
+                     a2 * np.exp(-(redshift-m2)**2/(2*sigma2**2))) * \
+                    (np.log10(m_star)-7)**2
+=======
         if np.log10(m_star) >= 7.0:
             #a_fuv = -8.1e-3*(np.log10(m_star))**3 + 0.38*(np.log10(m_star))**2 - \
             #         3.94*np.log10(m_star) + 12.0
@@ -280,11 +349,10 @@ class CalzFlare(SedModule):
         # with xsi = 1./(log10(SFR/M_star) +10.)
         # sSFRs = SFR(Halpha=over10Myrs) / Mstar with SFR(Halpha) corrected for dust attenuation
         #self.ebvs_old_factor = -0.049 + 0.079 / (np.log10(sfr10Myrs/m_star) + 10.)
+>>>>>>> d8e19873c6efaa3c50cf4774c8b1524644087a53
 
-        # From de Barros et al. (2016): E(B-V)_gas - E(B-V)_stars = 0.31 * (log10(sSFR)+9.) - 0.16
-        #self.ebvs_old_factor = 0.31 * (np.log10(sfr10Myrs/m_star)+9.) - 0.16
-        # From CIGALE: E_BVs_stellar_young ~ A_FUV/k(lambda)*m_star/(m_star_old*ebvs_old_factor+m_star_young)
-        # k(lambda) = 10.2257 for lambda = 0.1528 micron
+        else:
+            a_fuv = 0.025*np.log10(m_star)
 
         ebvs['young'] = max(0., (a_fuv/10.2257-0.06)/1.05/self.ebvs_old_factor)
         ebvs['young'] = max(0., 0.13*a_fuv**1.25)
