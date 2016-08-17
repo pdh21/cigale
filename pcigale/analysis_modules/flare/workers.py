@@ -864,7 +864,8 @@ def SolveQuadratic(a, b, c):
 #----------------------------------------------------------------------
 #
 def init_simulation(params, filters, variables, save_sfh, create_table, flag_background,
-                    flag_phot, flag_spec, flag_line, flag_sim,lambda_norm, mag_norm,
+                    flag_phot, flag_spec, flag_line, flag_sim, create_simu,
+                    lambda_norm, mag_norm,
                     exptime, SNR, S_line, spectra, no_spectra, redshift, fluxes,
                     info, t_begin, n_computed):
     """Initializer of the pool of processes. It is mostly used to convert
@@ -893,7 +894,7 @@ def init_simulation(params, filters, variables, save_sfh, create_table, flag_bac
     global gbl_warehouse, gbl_variables, gbl_keys
     global gbl_lambda_norm, gbl_mag_norm, gbl_exptime, gbl_SNR, gbl_S_line
     global gbl_create_table, gbl_flag_background, gbl_flag_phot
-    global gbl_flag_spec, gbl_flag_line, gbl_flag_sim
+    global gbl_flag_spec, gbl_flag_line, gbl_flag_sim, gbl_create_simu
 
     gbl_model_redshift = np.ctypeslib.as_array(redshift[0])
     gbl_model_redshift = gbl_model_redshift.reshape(redshift[1])
@@ -935,6 +936,7 @@ def init_simulation(params, filters, variables, save_sfh, create_table, flag_bac
     gbl_flag_spec = flag_spec
     gbl_flag_line = flag_line
     gbl_flag_sim = flag_sim
+    gbl_create_simu = create_simu
 
     gbl_warehouse = SedWarehouse()
 
@@ -954,7 +956,7 @@ def simulation(idx):
     global gbl_previous_idx, gbl_keys
     global gbl_lambda_norm, gbl_mag_norm, gbl_exptime, gbl_SNR, gbl_S_line
     global gbl_create_table, gbl_flag_background, gbl_flag_phot
-    global gbl_flag_spec, gbl_flag_line, gbl_flag_sim, gbl_save_sfh
+    global gbl_flag_spec, gbl_flag_line, gbl_flag_sim, gbl_save_sfh, gbl_create_simu
 
     spectra = gbl_model_spectra
     no_spectra = gbl_model_no_spectra
@@ -972,6 +974,7 @@ def simulation(idx):
     flag_spec = gbl_flag_spec
     flag_line = gbl_flag_line
     flag_sim = gbl_flag_sim
+    create_simu = gbl_create_simu
 
     if gbl_previous_idx > -1:
         gbl_warehouse.partial_clear_cache(
@@ -1464,23 +1467,24 @@ def simulation(idx):
     data = np.zeros((N_rows, N_cols, len(T_tel)), dtype=float)
     nodata = np.zeros((N_rows, N_cols, len(T_tel)), dtype=float)
 
-    for i_T_tel, T_tel_i in enumerate(T_tel):
+    if create_simu == True:
+        for i_T_tel, T_tel_i in enumerate(T_tel):
 
-        # We fill out the array with background only
+            # We fill in the arrays
 
-        i_obj = randint(0, N_rows-1)
+            i_obj = randint(0, N_rows-1)
 
-        data[i_obj, :, i_T_tel] =  np.random.normal(
-                 new_f_lambda+new_bckd_lambda[i_T_tel,:],
-                (new_f_lambda+new_bckd_lambda[i_T_tel,:])* err_f_lambda[i_T_tel])
-        nodata[i_obj, :, i_T_tel] =  np.random.normal(
-                new_bckd_lambda[i_T_tel,:],
-                new_bckd_lambda[i_T_tel,:]*err_side_lambda[i_T_tel])
-        spectra[idx, :] = data[i_obj, :, i_T_tel]
-        no_spectra[i_obj, :] = nodata[i_obj, :, i_T_tel]
+            data[i_obj, :, i_T_tel] =  np.random.normal(
+                     new_f_lambda+new_bckd_lambda[i_T_tel,:],
+                    (new_f_lambda+new_bckd_lambda[i_T_tel,:])* err_f_lambda[i_T_tel])
+            nodata[i_obj, :, i_T_tel] =  np.random.normal(
+                    new_bckd_lambda[i_T_tel,:],
+                    new_bckd_lambda[i_T_tel,:]*err_side_lambda[i_T_tel])
+            spectra[idx, :] = data[i_obj, :, i_T_tel]
+            no_spectra[i_obj, :] = nodata[i_obj, :, i_T_tel]
 
-    if flag_sim == True:
-        PlotSimSpectrum(1e-9*new_wavelength, lambda_min, lambda_max,
+        if flag_sim == True:
+            PlotSimSpectrum(1e-9*new_wavelength, lambda_min, lambda_max,
                           new_f_lambda, data[i_obj, :, :],
                           S_line_SNR / (10.*(new_wavelength/R_spec)), T_tel, redshift,
                           np.log10(M_star), np.log10(sfr10Myrs), A_FUV, logL_dust,

@@ -41,6 +41,7 @@ from ...handlers.parameters_handler import ParametersHandler
 
 # Directory where the output files are stored
 OUT_DIR = "out/"
+create_simu = False
 
 def previous_and_next(some_iterable):
     prevs, items, nexts = tee(some_iterable, 3)
@@ -576,7 +577,6 @@ class FLARE(AnalysisModule):
         #RA_sample, Dec_sample, z_sample = density_z(FoV_axis1, FoV_axis2, redshifts)
         #print('Echantillon', len(RA_sample), len(Dec_sample), len(z_sample))
         RA_sample, Dec_sample, m_sample, z_sample = density_m(FoV_axis1, FoV_axis2, redshifts)
-        #print('m_sample 572', m_sample)
 
         # We create FLARE spectra over 2048 pixels with 0.4x0.366-arcsec2 pixels
         slice_length = 25 # arcsec
@@ -603,6 +603,12 @@ class FLARE(AnalysisModule):
         info = conf['analysis_params']['variables']
         n_info = len(info)
 
+        if create_simu == False:
+            # We do not bother to carry heavy/big arrays if we do not wish to save them.
+            naxis1 = 1
+            n_pixels = 2048
+            naxis2 = 1
+
         model_spectra = (RawArray(ctypes.c_double, n_params*n_pixels),
                         (n_params, n_pixels))
         model_background = (RawArray(ctypes.c_double, naxis1*naxis2),
@@ -617,7 +623,8 @@ class FLARE(AnalysisModule):
                             (n_params, n_info))
 
         initargs = (params, filters, info, save_sfh, create_tables, flag_background,
-                    flag_phot, flag_spec, flag_line, flag_sim, lambda_norm, mag_norm,
+                    flag_phot, flag_spec, flag_line, flag_sim, create_simu,
+                    lambda_norm, mag_norm,
                     exptime, SNR, S_line, model_spectra, model_background,
                     model_redshift, model_fluxes,
                     model_parameters, time.time(), mp.Value('i', 0))
@@ -637,13 +644,13 @@ class FLARE(AnalysisModule):
                     out_format=out_format_txt)
 
         out_file_fits = out_file+'.fits'
-        save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
+        save_spectra(RA_sample, Dec_sample, m_sample, z_sample, create_simu,
                      model_spectra, model_background, model_redshift,
                      naxis1, naxis2,
                      n_params, n_pixels, model_parameters, filters, info, out_file_fits,
                      FoV_axis1, FoV_axis2, pixel_spec1, pixel_spec2)
 
-def save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
+def save_spectra(RA_sample, Dec_sample, m_sample, z_sample, create_simu,
                  model_spectra, model_background, model_redshift,
                  naxis1, naxis2,
                  n_params, n_pixels, model_parameters, filters, names, out_file,
@@ -687,65 +694,162 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
     min_spectra = np.min(out_spectra)
     max_spectra = np.max(out_spectra)
 
+    #np.set_printoptions(threshold=np.inf)
+    #import ipdb; ipdb.set_trace()
+
     # array containing the parameters, if any, associated to each model
     out_params = np.ctypeslib.as_array(model_parameters[0])
     out_params = out_params.reshape(model_parameters[1])
-    out_mass = out_params[:, 0]
-    out_A_fuv = out_params[:, 1]
-    out_L_fuv = out_params[:, 2]
 
-    # We convert the spectra to integers [0 - 32768]
-    out_spectra = out_spectra/max_spectra
+    out_mass   = out_params[:, 0] # in Msun
+    mask = [np.isnan(out_mass)]
+    out_mass[mask] = 1.
 
-    hdu = pyfits.PrimaryHDU(out_spectra[:,:])
-    hdu.writeto(OUT_DIR+out_file)
+    out_A_fuv  = out_params[:, 1]
+    mask = [np.isnan(out_A_fuv)]
+    out_A_fuv[mask] = 0.
+
+    out_SFR  = out_params[:, 2]
+    mask = [np.isnan(out_SFR)]
+    out_SFR[mask] = 0.
+
+    out_sSFR = (1e9 * out_SFR) / out_mass # in Gyr-1
+    mask = [np.isnan(out_sSFR)]
+    out_sSFR[mask]=1e-10
+
+    out_Z  = out_params[:, 3]
+    mask = [np.isnan(out_Z)]
+    out_Z[mask] = 99.
 
     filename=OUT_DIR+'simobs.dat'
     param_names =  ' '.join(names)
     simulation = open(filename, 'w')
-    simulation.write('%s %s %s' %('# Row model# redshift RA Dec ', param_names, '\n'))
+    simulation.write('%s %s %s' %('# Row model# redshift RA Dec mass A_fuv sSFR', param_names, '\n'))
+    #simulation.write('%s %s %s' %('# Row model# redshift RA Dec ', param_names, '\n'))
     #simulation.write('# Row model# redshift RA Dec param_names \n')
 
-    naxis1 = int(round(FoV_axis1 * FoV_axis2 * 3600. / (pixel_spec1 * pixel_spec2), 0))
-    slice_length = 25 # arcsec
-    n_pixel2 = round(slice_length / pixel_spec2, 0)
-    naxis2 = n_pixels
-    spectral_image = np.zeros((naxis1, naxis2))
+    # Here, we create the simulated spectroscopic observations
+    if create_simu:
+        # We convert the spectra to integers [0 - 32768]
+        out_spectra = out_spectra/max_spectra
 
-    for i in range(naxis1):
-        l = randint(0, naxis2-1)
-        spectral_image[i, :] = out_background[l, :]/max_spectra
+        hdu = pyfits.PrimaryHDU(out_spectra[:,:])
+        hdu.writeto(OUT_DIR+out_file)
+
+        naxis1 = int(round(FoV_axis1 * FoV_axis2 * 3600. / (pixel_spec1 * pixel_spec2), 0))
+        slice_length = 25 # arcsec
+        n_pixel2 = round(slice_length / pixel_spec2, 0)
+        naxis2 = n_pixels
+        spectral_image = np.zeros((naxis1, naxis2))
+
+        for i in range(naxis1):
+            l = randint(0, naxis2-1)
+            spectral_image[i, :] = out_background[l, :]/max_spectra
 
     # Now, we need to build the observed spectral image by:
     # - using the information on the position (RA_sample, Dec_sample) for each object
     # - using the information on the stellar mass and redshift (m_sample) for each object
+    # - using the sSFT(M*, z) from Sargent et al. (2014) for each object
     # - randomly picking up a spectrum at the good mass+redshift among the ones built
-    count_m = 0
+    count_m    = 0
     count_afuv = 0
-    count_zma = 0
+    count_ssfr = 0
+    count_zsma = 0
     for ind_z, z in enumerate(z_sample):
 
         dm = 0.2
         m_mf = 10**m_sample[ind_z]
-        # New 2D formula: A_fuv_mf(m_mf, redshift)
-        if np.log10(m_mf) >= 7.0:
-            #A_fuv_mf_old = (0.05 + 0.25*np.exp(-pow((z-2.0)/1.5, 2))
-            #              + 0.03*np.exp(-((z-4.5)/2.0**2))) * (np.log10(m_mf)-7)**2
+        # New 2D formula: A_fuv_mf(m_mf, z)
+        #fprint('m_mf', m_mf)
+        if np.log10(m_mf) > 7.0:
 
-            A_fuv_mf = (0.05 +
-                        0.25 * np.exp(-(((z-2.0)/1.5)**2)) +
-                        0.03 * np.exp(-(((z-4.5)/2.0)**2))  ) * (np.log10(m_mf)-7)**2
-            #print(A_fuv_mf_old-A_fuv_mf)
+            #v1
+            #A_fuv_mf = (0.05 +
+            #            0.25 * np.exp(-(((z-2.0)/1.5)**2)) +
+            #            0.03 * np.exp(-(((z-4.5)/2.0)**2))  ) * (np.log10(m_mf)-7)**2
+
+            #v2
+            #a1 = 0.1
+            #m1 = 1.0
+            #sigma1 = 0.5
+            #a2 = 0.3
+            #m2 = 2.5
+            #sigma2 = 1.6
+            #A_fuv_mf = (a1 * np.exp(-(z-m1)**2/(2*sigma1**2)) + \
+            #            a2 * np.exp(-(z-m2)**2/(2*sigma2**2))) * \
+            #           (np.log10(m_mf)-7)**2
+
+            #v3
+            #a = 0.17
+            #b = 0.21
+            #c = 1.77
+            #d = 2.19
+
+            #v4
+            #a = 0.086139429
+            #b = 0.095825209
+            #c = 2.31819179
+            #d = 1.54701983
+
+            #v5
+            #a = 0.10078457 # 0.09554179
+            #b = 0.03006847 # 0.03775311
+            #c = 4.48576362 # 3.85981481
+            #d = 4.95338566 # 5.06978438
+
+            #A_fuv_mf = ((a + b*z) / (1 + (z/c)**d)) * (np.log10(m_mf)-7)**2
+
+            #v6: 2 gaussians
+            #a1     = 0.171
+            #m1     = 1.132
+            #sigma1 = 1.066
+            #a2     = 0.166
+            #m2     = 3.648
+            #sigma2 = 1.032
+
+            #v7 2 gaussians
+            #a1     = 0.049
+            #m1     = 0.812
+            #sigma1 = 0.294
+            #a2     = 0.242
+            #m2     = 2.172
+            #sigma2 = 2.019
+
+            #v8 2 gaussians with Bouwens + evolving Td
+            a1     = 0.1249
+            m1     = 0.7690
+            sigma1 = 0.7466
+            a2     = 0.2375
+            m2     = 3.1601
+            sigma2 = 1.8710
+
+            A_fuv_mf = (a1 * np.exp(-(z-m1)**2/(2*sigma1**2)) + \
+                        a2 * np.exp(-(z-m2)**2/(2*sigma2**2))) * \
+                       (np.log10(m_mf)-7)**2
 
         else:
             A_fuv_mf = 0.025*np.log10(m_mf)
 
-        # Adapted from Pannella et al. (2015): AUV = 1.6×logM∗ − 13.5 mag for z = 1.2 − 4.
-        #if np.log10(m_mf) >= 7.0:
-        #    A_fuv_mf = -8.1e-3*(np.log10(m_mf))**3 + 0.38*(np.log10(m_mf))**2 - \
-        #             3.94*np.log10(m_mf) + 12.0
-        #else:
-        #    A_fuv_mf = 0.025*np.log10(m_mf)
+        # We compute the sSFR from M* and CIGALE's SFR10Myrs
+        # sSFR(M, z) = N(M) exp (A·z / (1 + B·z^C) ) in Gyr-1
+        # where
+        # N(M, z) = N(5e10 Msun) 10^ν log(M*/[5e10 Msun])
+        # N(5e10 Msun) = 0.095 +0.002/−0.003 Gyr−1
+        # ν ~ −0.2
+        # A = 2.05 +0.33/−0.20
+        # B = 0.16 +0.15/−0.07
+        # C = 1.54 +0.32/-0.32
+
+        N = 0.095
+        nu = -0.2
+        A = 2.05
+        B = 0.16
+        C = 1.54
+
+        sSFR_mf = N * 10**(nu * np.log10(m_mf/5e10)) * np.exp(A*z / (1+B*z**C))
+        if np.log10(m_mf) <= 10.2:
+            sSFR_mf = 10**(np.log10(m_mf)-10.2)*sSFR_mf
+
         # We select the models with the requested stellar mass
         i_m_best, m_best = min(enumerate(out_mass), key=lambda x: abs(x[1]-m_mf))
         #print('i_m_best, m_best, m_mf, A_fuv_mf', i_m_best, m_best, m_mf, A_fuv_mf)
@@ -755,6 +859,7 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
             #print('count_m', count_m, m_best, m_mf)
         m = m_best
 
+        # We select the models with the requested dust attenuation
         dA_fuv = 0.2
         j_A_fuv_best, A_fuv_best = min(enumerate(out_A_fuv), key=lambda x: abs(x[1]-A_fuv_mf))
         if (A_fuv_best < A_fuv_mf*(1.-dA_fuv) or A_fuv_best > A_fuv_mf*(1.+dA_fuv)):
@@ -762,16 +867,38 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
             #print('count_afuv', count_afuv, A_fuv_best, A_fuv_mf, out_A_fuv)
         A_fuv = A_fuv_best
 
+        # We select the models with the requested specific star formation rate
+        dsSFR = 0.2
+        k_sSFR_best, sSFR_best = min(enumerate(out_sSFR), key=lambda x: abs(x[1]-sSFR_mf))
+        #print('sSFR', ind_z, z, k_sSFR_best, sSFR_best, sSFR_mf)
+        # If the requested sSFR is not in out_sSFR, we take the closest one
+        if (np.isnan(sSFR_best) or sSFR_best < sSFR_mf*(1.-dsSFR) or sSFR_best > sSFR_mf*(1.+dsSFR)):
+            count_ssfr += 1
+
+        sSFR = sSFR_best
+
         # We create a mask for models with the good redshift and good stellar mass
-        mask_zma = (out_redshift == z) & \
-                   (out_mass  >= m*(1.-dm))         & (out_mass  <= m*(1.+dm))        & \
-                   (out_A_fuv >= A_fuv*(1.-dA_fuv)) & (out_A_fuv <= A_fuv*(1.+dA_fuv))
-        masked_indx = np.where(mask_zma)
+        dz = 0.1*z
+        #mask_zsma = (out_redshift >= z*(1.-dz))      & (out_redshift <= z*(1.+dz))    & \
+        #            (out_mass  >= m*(1.-dm))         & (out_mass  <= m*(1.+dm))       & \
+        #            (out_sSFR >= sSFR*(1.-dsSFR))    & (out_sSFR <= sSFR*(1.+dsSFR))  & \
+        #            (out_A_fuv >= A_fuv*(1.-dA_fuv)) & (out_A_fuv <= A_fuv*(1.+dA_fuv))
+
+        #np.set_printoptions(threshold=np.inf)
+        #import ipdb; ipdb.set_trace()
+
+        mask_zsma = \
+          (np.abs(out_redshift-z)/z      <= dz)     & \
+          (np.abs(out_mass-m)/m          <= dm)     & \
+          (np.abs(out_sSFR-sSFR)/sSFR    <= dsSFR)  & \
+          (np.abs(out_A_fuv-A_fuv)/A_fuv <= dA_fuv)
+
+        masked_indx = np.where(mask_zsma)
 
         if len(masked_indx[0])==0:
             #print('No model found, we skip it')
-            count_zma += 1
-            params = str(m)+' '+str(A_fuv)+' '+' nan'*(model_parameters[1][1]-2)
+            count_zsma += 1
+            params = str(m)+' '+str(A_fuv)+' '+str(sSFR)+' '+' nan'*(model_parameters[1][1])
             simulation.write('%.5d %5d %.2f %.4f %.4f %s ' %(-1, -1, round(z, 2),
                              round(RA_sample[ind_z], 4),
                              round(Dec_sample[ind_z], 4),
@@ -788,15 +915,20 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
         #print('4>', out_redshift[masked_indx])
             indx = masked_indx[0][np.random.randint(0, len(masked_indx[0]), size=1)]
 
-            i = int(round((RA_sample[ind_z] - round(RA_sample[ind_z] / slice_length, 0)) / pixel_spec2, 0))
-            j = int(round(Dec_sample[ind_z] / pixel_spec1, 0))
-            k = min(67 * i + j, naxis1-1)
+            if create_simu:
 
-            spectral_image[k, :] = out_spectra[indx, :]
+                i = int(round((RA_sample[ind_z] - round(RA_sample[ind_z] / slice_length, 0)) / pixel_spec2, 0))
+                j = int(round(Dec_sample[ind_z] / pixel_spec1, 0))
+                k = min(67 * i + j, naxis1-1)
+
+                spectral_image[k, :] = out_spectra[indx, :]
+            else:
+                k = ind_z
             #print('At row:', k, 'we insert the modelled observation', indx, 'at z = ', round(z, 2),
             #                    'and (RA, Dec)=', round(RA_sample[ind_z], 4), round(Dec_sample[ind_z], 4))
 
-            params = ' '.join(str(par) for par in out_params[indx, :][0])
+            params = str(m)+' '+str(A_fuv)+' '+str(sSFR)+' '
+            params = params + ' '.join(str(par) for par in out_params[indx, :][0])
             simulation.write('%.5d %5d %.2f %.4f %.4f %s ' %(k, indx, round(z, 2),
                              round(RA_sample[ind_z], 4),
                              round(Dec_sample[ind_z], 4),
@@ -807,24 +939,28 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample,
     print('WARNING: for', round(100*count_m/len(z_sample), 1), '% of the sources', \
           'we found no modelled galaxy M* '\
           'within a factor of 2, and, we picked the closest one.')
+    print('WARNING: for', round(100*count_ssfr/len(z_sample), 1), '% of the sources', \
+          'we found no modelled galaxy sSFR '\
+          'within +/-', 100.*dsSFR, '%, and, we picked the closest one.')
     print('WARNING: for', round(100*count_afuv/len(z_sample), 1), '% of the sources', \
           'we found no modelled galaxy A_fuv '\
           'within +/-', 100.*dA_fuv, '%, and, we picked the closest one.')
-    print('WARNING: for', round(100*count_zma/len(z_sample), 1), '% of the sources', \
+    print('WARNING: for', round(100*count_zsma/len(z_sample), 1), '% of the sources', \
           'we found no model galaxy, and, we skipped them.')
 
-    hdu2 = pyfits.PrimaryHDU(spectral_image[:,:])
-    #hdu2.header['CTYPE1'] = 'RA--SIN'
-    #hdu2.header['CUNIT1'] = 'micron'
-    #hdu2.header['CRVAL1'] = 3.
-    #hdu2.header['CDELT1'] = (5. - 1.)/float(naxis2)
-    #hdu2.header['CRPIX1'] = 1024
-    #hdu2.header['CTYPE2'] = 'RA--DEC'
-    #hdu2.header['CUNIT2'] = 'arcsec'
-    #hdu2.header['CRVAL2'] = 0.0
-    #hdu2.header['CDELT2'] = 0.4
-    #hdu2.header['CRPIX2'] = 1
-    hdu2.writeto(OUT_DIR+'simobs.fits')
+    if create_simu:
+        hdu2 = pyfits.PrimaryHDU(spectral_image[:,:])
+        #hdu2.header['CTYPE1'] = 'RA--SIN'
+        #hdu2.header['CUNIT1'] = 'micron'
+        #hdu2.header['CRVAL1'] = 3.
+        #hdu2.header['CDELT1'] = (5. - 1.)/float(naxis2)
+        #hdu2.header['CRPIX1'] = 1024
+        #hdu2.header['CTYPE2'] = 'RA--DEC'
+        #hdu2.header['CUNIT2'] = 'arcsec'
+        #hdu2.header['CRVAL2'] = 0.0
+        #hdu2.header['CDELT2'] = 0.4
+        #hdu2.header['CRPIX2'] = 1
+        hdu2.writeto(OUT_DIR+'simobs.fits')
 
     simulation.close()
 
