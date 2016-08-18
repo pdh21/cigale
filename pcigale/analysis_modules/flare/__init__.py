@@ -840,15 +840,18 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample, create_simu,
         # B = 0.16 +0.15/−0.07
         # C = 1.54 +0.32/-0.32
 
-        N = 0.095
-        nu = -0.2
         A = 2.05
         B = 0.16
         C = 1.54
 
-        sSFR_mf = N * 10**(nu * np.log10(m_mf/5e10)) * np.exp(A*z / (1+B*z**C))
-        if np.log10(m_mf) <= 10.2:
-            sSFR_mf = 10**(np.log10(m_mf)-10.2)*sSFR_mf
+        if np.log10(m_mf) > 10.2:
+            N = 0.095
+            nu = -0.2
+            sSFR_mf = N * 10**(nu * np.log10(m_mf/5e10)) * np.exp(A*z / (1+B*z**C))
+        else:
+            N = 1.8e-9
+            nu = -3.27
+            sSFR_mf = N * 10**(nu * np.log10(m_mf/1.6e10)) * np.exp(A*z / (1+B*z**C))
 
         # We select the models with the requested stellar mass
         i_m_best, m_best = min(enumerate(out_mass), key=lambda x: abs(x[1]-m_mf))
