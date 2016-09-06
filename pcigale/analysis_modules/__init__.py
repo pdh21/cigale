@@ -127,9 +127,21 @@ def get_module(module_name):
 
 def adjust_data(fluxes, errors, tolerance, lim_flag, default_error=0.1,
                 systematic_deviation=0.1):
-    """Adjust the fluxes and errors replacing the invalid values by NaN, and
-    adding the systematic deviation. The systematic deviation changes the
-    errors to: sqrt(errors² + (fluxes*deviation)²)
+    """Adjust fluxes and errors
+
+    Adjust fluxes and errors provided by the user to fit CIGALE prescriptions:
+
+    - When the flux is around 0 (i.e. it's absolute value is lower than the
+      tolerance threshold) or when it's lower than -9990 (typically -9999) it
+      is considered as invalid and both flux and error are set to NaN.
+    - When the flux is negative (between -threshold and -9990) this indicates
+      a upper-limit. If the lim_flag is set to false, the flux is marked as
+      invalid.
+    - When the error is negative or below the tolerance threshold, it is
+      replace by the default error.
+
+    For valid fluxes, a systematic deviation is added that change the error to
+    sqrt(errors² + (fluxes*deviation)²).
 
     Parameters
     ----------
@@ -149,6 +161,8 @@ def adjust_data(fluxes, errors, tolerance, lim_flag, default_error=0.1,
 
     Returns
     -------
+    fluxes: array of floats
+        The corrected fluxes.
     error: array of floats
         The corrected errors.
 
@@ -162,25 +176,24 @@ def adjust_data(fluxes, errors, tolerance, lim_flag, default_error=0.1,
     fluxes = fluxes.copy()
     errors = errors.copy()
 
+    # Valid fluxes mask
+    valid_mask = np.isfinite(fluxes)
+    if lim_flag:
+        valid_mask &= ~(np.abs(fluxes) <= tolerance) | (fluxes < -9990.)
+    else:
+        valid_mask &= ~(fluxes <= tolerance)
+
     # We set invalid data to NaN
-    mask_invalid = np.where((fluxes <= tolerance) | (errors < -9990.))
-    fluxes[mask_invalid] = np.nan
-    errors[mask_invalid] = np.nan
+    fluxes[~valid_mask] = np.nan
+    errors[~valid_mask] = np.nan
 
     # Replace missing errors by the default ones.
-    mask_noerror = np.where((fluxes > tolerance) & ~np.isfinite(errors))
-    errors[mask_noerror] = (default_error * fluxes[mask_noerror])
-
-    # Replace upper limits by no data if lim_flag==False
-    if not lim_flag:
-        mask_limflag = np.where((fluxes > tolerance) & (errors < tolerance))
-        fluxes[mask_limflag] = np.nan
-        errors[mask_limflag] = np.nan
+    no_error_mask = valid_mask & (errors <= tolerance)
+    errors[no_error_mask] = default_error * np.abs(fluxes[no_error_mask])
 
     # Add the systematic error.
-    mask_ok = np.where((fluxes > tolerance) & (errors > tolerance))
-    errors[mask_ok] = np.sqrt(errors[mask_ok]**2 +
-                             (fluxes[mask_ok]*systematic_deviation)**2)
+    errors[valid_mask] = np.sqrt(
+        errors[valid_mask]**2 + (fluxes[valid_mask] * systematic_deviation)**2)
 
     return fluxes, errors
 
