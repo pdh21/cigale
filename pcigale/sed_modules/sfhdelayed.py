@@ -41,7 +41,7 @@ class SFHDelayed(SedModule):
             5000
         )),
         ("sfr_A", (
-            "float(min=0.)",
+            "cigale_list(minvalue=0.)",
             "Multiplicative factor controlling the amplitude of SFR.",
             1.
         )),

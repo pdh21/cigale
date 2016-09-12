@@ -55,7 +55,7 @@ class Sfh2Exp(SedModule):
             20
         )),
         ("sfr_0", (
-            "float(min=0)",
+            "cigale_list(minvalue=0.)",
             "Value of SFR at t = 0 in M_sun/yr.",
             1.
         )),

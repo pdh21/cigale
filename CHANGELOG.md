@@ -2,6 +2,8 @@
 
 # Unreleased
 ### Added
+- Enable the possibility of having different normalisation factors for the star formation history. (Médéric Boquien)
+
 ### Changed
 - The way to indicate the fluxes in the input table has changed because there
     was bugs in the way upper limits were handled. Here are the new rules:
