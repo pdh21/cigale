@@ -36,8 +36,8 @@ def backup_dir(directory=OUT_DIR):
     shutil.copyfile('pcigale.ini.spec', directory + 'pcigale.ini.spec')
 
 
-def save_fluxes(model_fluxes, model_parameters, filters, names, filename,
-                directory=OUT_DIR, out_format='ascii.commented_header'):
+def save_fluxes(model_fluxes, model_parameters, filters, names,
+                directory=OUT_DIR):
     """Save fluxes and associated parameters into a table.
 
     Parameters
@@ -50,12 +50,8 @@ def save_fluxes(model_fluxes, model_parameters, filters, names, filename,
         Contains the filter names.
     names: List
         Contains the parameters names.
-    filename: str
-        Name under which the file should be saved.
     directory: str
         Directory under which the file should be saved.
-    out_format: str
-        Format of the output file
 
     """
     out_fluxes = np.ctypeslib.as_array(model_fluxes[0])
@@ -70,4 +66,6 @@ def save_fluxes(model_fluxes, model_parameters, filters, names, filename,
     out_table.add_column(Column(np.arange(model_fluxes[1][0]), name='id'),
                          index=0)
 
-    out_table.write("{}/{}".format(directory, filename), format=out_format)
+    out_table.write("{}/computed_fluxes.fits".format(directory))
+    out_table.write("{}/computed_fluxes.txt".format(directory),
+                    format='ascii.fixed_width', delimiter=None)

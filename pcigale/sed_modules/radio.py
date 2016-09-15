@@ -9,11 +9,8 @@
 Radio module
 =============================
 
-This module implements the radio emission of galaxies, taking into account only
- the non-thermal emission. The thermal emission is handled by the nebular
- module. The parameters that this module takes as input are:
-- the value of the coefficient of the FIR/radio correlation
-- the value of the spectral index of the power law emission from synchrotron.
+This module implements the synchrotron emission of galaxies assuming the
+FIR/radio correlation and the power law of the synchrotron spectrum.
 
 """
 
@@ -28,9 +25,7 @@ from . import SedModule
 class Radio(SedModule):
     """Radio emission
 
-    Given the number of Lyman photons, the module computes the free-free
-    (thermal) emission of galaxies. Based on the SN collapse rate, the module
-    computes the synchrotron (non-thermal) emission of galaxies.
+    This module computes the synchrotron (non-thermal) emission of galaxies.
 
     """
 

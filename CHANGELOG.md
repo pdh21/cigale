@@ -1,5 +1,24 @@
 # Change Log
 
+# 0.10.0 (2016-09-15)
+### Added
+- Enable the possibility of having different normalisation factors for the star formation history. (Médéric Boquien)
+
+### Changed
+- Various descriptions have been improved and clarified. (Médéric Boquien)
+- The `output\_file` and `output\_format` parameters have been removed from the `savefluxes` module. They served little purpose and made the code more complex. The same strategy as for the `pdf\_analysis` modules is now adopted, saving the output both as FITS and ASCII tables. Old configuration file still work, with these two parameters simply ignored. (Médéric Boquien)
+
+### Fixed
+- With the new sanity check of the input parameters, cigale did not handle the fact that the redshift could be given in the parameters file. Now this is handled properly. (Médéric Boquien)
+- When giving the list of parameters through a file, cigale did not compute properly what parameter changed between to successive models. (Médéric Boquien)
+- Using the m2005 module led to a crash. This is now fixed. (Yannick Roehlly)
+- When computing models on a grid, the order could change from one run to the next, which is an issue when comparing the outputs of `savefluxes` for instance. Now models are always computed in the same order. The last parameter of the last module being in innermost loop and the first parameter of the first module being the outermost loop. (Médéric Boquien)
+
+### Optimised
+- A significant fraction of the total run time is spent computing integrals (e.g. fluxes in passbands). We can make the integration faster by rewriting the trapezoidal rule in terms of np.dot(). This allows to offload the computation to optimised libraries. The end result is that the integration is twice as fast, with a gain of ~10-15% on the total run time. (Médéric Boquien)
+- The conversion from luminosity to flux is now a bit faster. (Médéric Boquien)
+- The order the models are stored in memory has been changed to make the computation of the χ² faster. (Médéric Boquien)
+
 ## 0.9.0 (2016-04-04)
 ### Added
 - When using the `savefluxes` module, all the output parameters were saved. This is not efficient when the user is only interested in some of the output parameters but not all. We introduce the "variables" configuration parameter for `savefluxes` to list the output parameters the user wants to save. If the list is left empty, all parameters are saved, preserving the current behaviour. This should increase the speed substantially when saving memory. (Médéric Boquien)
@@ -14,7 +33,7 @@
 - To homogenize input and output files, the "observation\_id" has been changed to "id" in the output files. (Médéric Boquien)
 - The output files providing estimates of the physical properties are now generated both in the form of text and FITS files. (Médéric Boquien)
 - When using the `dustatt_calzleit module`, choosing ẟ≠0 leads to an effective E(B-V) different from the one set by the user. Now the E(B-V) will always correspond to the one specified by the user. This means that at fixed E(B-V), A(V) depends on ẟ. (Médéric Boquien)
-- The pcigale-mock tool has been merged into pcigale-plots; the mock plots can be obtained with the "mock" command.
+- The pcigale-mock tool has been merged into pcigale-plots; the mock plots can be obtained with the "mock" command. (Médéric Boquien)
 - The `sfhdelayed` module is now initialised with _init_code() to be consistent with the way things are done in other modules. This should give a slight speedup under some sircumstances too. (Médéric Boquien)
 - In `sfhfromfile`, the specification of the time grid was vague and therefore could lead to incorrect results if it was not properly formatted by the end user. The description has been clarified and we now check that the time starts from 0 and that the time step is always 1 Myr. If it is not the case we raise an exception. (Médéric Boquien)
 - When the redshift is not indicated in pcigale.ini, the analysis module fills the list of redshifts from the redshifts indicated in the input flux file. This is inefficient as analysis modules should not have to modify the configuration. Now this is done when interpreting pcigale.ini before calling the relevant analysis module. As a side effect, "pigale check" now returns the total number of models that cigale will compute rather than the number of models per redshift bin. (Médéric Boquien)

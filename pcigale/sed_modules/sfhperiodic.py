@@ -55,7 +55,7 @@ class SfhPeriodic(SedModule):
             1000
         )),
         ("sfr_A", (
-            "float(min=0.)",
+            "cigale_list(minvalue=0.)",
             "Multiplicative factor controlling the amplitude of SFR (valid "
             "for each event).",
             1.

@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2015 Laboratoire d'Astrophysique de Marseille
+# Copyright (C) 2015-2016 Laboratoire d'Astrophysique de Marseille
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Yannick Roehlly
 
 """
-Star Formation History quenching module
-=======================================
+Star Formation History quenching (smooth) module
+================================================
 
-This module performs a quenching on the Star Formation History. Below a given
-age, the Star Formation Rate in multiplied by 1 - quenching_factor and is set
-constant.
+This module performs a smooth quenching on the Star Formation History. Below a
+given age, the Star Formation Rate becomes linear to be multiplied by
+1- quenching_factor at the end of the history.
 
 """
 
@@ -21,7 +21,7 @@ import numpy as np
 from . import SedModule
 
 
-class SfhQuench(SedModule):
+class SfhQuenchSmooth(SedModule):
     """Star Formation History Quenching
 
     This module implements a quenching of the Star Formation History.
@@ -29,9 +29,9 @@ class SfhQuench(SedModule):
     """
 
     parameter_list = OrderedDict([
-        ("quenching_age", (
+        ("quenching_time", (
             "cigale_list(dtype=int, minvalue=0.)",
-            "Look-back time when the quenching happens in Myr.",
+            "Look-back time when the quenching starts in Myr.",
             0
         )),
         ("quenching_factor", (
@@ -50,7 +50,7 @@ class SfhQuench(SedModule):
     ])
 
     def _init_code(self):
-        self.quenching_age = int(self.parameters["quenching_age"])
+        self.quenching_age = int(self.parameters["quenching_time"])
         self.quenching_factor = float(self.parameters["quenching_factor"])
         self.normalise = bool(self.parameters["normalise"])
 
@@ -61,6 +61,7 @@ class SfhQuench(SedModule):
         sed : pcigale.sed.SED object
 
         """
+
         # Read the star formation history of the SED
         sfr = sed.sfh
 
@@ -74,8 +75,10 @@ class SfhQuench(SedModule):
         # We make the computation only if the quenching age and the quenching
         # factor are not 0.
         if self.quenching_age > 0 and self.quenching_factor > 0.:
-            sfr[-self.quenching_age:] = sfr[-quenching_idx] * (
-                1. - self.quenching_factor)
+            sfr0 = sfr[-self.quenching_age]
+            sfr1 = sfr[-self.quenching_age] * (1. - self.quenching_factor)
+            sfr[-self.quenching_age:] = sfr0 + (sfr1 - sfr0) * np.linspace(
+                0, 1, self.quenching_age)
 
             # Compute the galaxy mass and normalise the SFH to 1 solar mass
             # produced if asked to.
@@ -89,8 +92,8 @@ class SfhQuench(SedModule):
 
         sed.add_module(self.name, self.parameters)
 
-        sed.add_info("sfh.quenching_age", self.quenching_age)
+        sed.add_info("sfh.quenching_time", self.quenching_age)
         sed.add_info("sfh.quenching_factor", self.quenching_factor)
 
 # SedModule to be returned by get_module
-Module = SfhQuench
+Module = SfhQuenchSmooth

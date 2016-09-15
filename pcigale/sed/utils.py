@@ -65,9 +65,7 @@ def luminosity_to_flux(luminosity, dist):
 
     """
 
-    flux = luminosity / (4. * pi * dist * dist)
-
-    return flux
+    return luminosity * (1. / (4. * pi * dist * dist))
 
 
 def lambda_flambda_to_fnu(wavelength, flambda):
@@ -409,4 +407,4 @@ def flux_trapz(y, x, key):
     else:
         dx = np.diff(x)
         dx_cache[key] = dx
-    return (dx*(y[1:]+y[:-1])).sum()/2.
+    return np.dot(dx, y[1:]+y[:-1]) * .5

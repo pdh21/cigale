@@ -80,11 +80,14 @@ class Configuration(object):
         self.config.comments['parameters_file'] = [""] + wrap(
             "Optional file containing the list of physical parameters. Each "
             "column must be in the form module_name.parameter_name, with each "
-            "line behind a different model. The columns must be in the order "
+            "line being a different model. The columns must be in the order "
             "the modules will be called. The redshift column must be the last "
-            "one. Finally, if this parameters is not left empty, cigale will "
-            "not interpret the configuration parameters given in pcigale.ini. "
-            "They will be given only for information.")
+            "one. Finally, if this parameter is not empty, cigale will not "
+            "interpret the configuration parameters given in pcigale.ini. "
+            "They will be given only for information. Note that this module "
+            "should only be used in conjonction with the savefluxes module. "
+            "Using it with the pdf_analysis module will yield incorrect "
+            "results.")
         self.spec['parameters_file'] = "string()"
 
         self.config['sed_modules'] = []
@@ -236,7 +239,7 @@ class Configuration(object):
 
             return None
 
-        return self.config.dict()
+        return self.config.copy()
 
     def check_modules(self):
         """Make a basic check to ensure that some required modules are present.
@@ -287,13 +290,16 @@ class Configuration(object):
                 z = list(np.unique(np.around(obs_table['redshift'],
                                         decimals=REDSHIFT_DECIMALS)))
                 self.config['sed_modules_params']['redshifting']['redshift'] = z
+            elif self.config['parameters_file']:
+                # The entry will be ignored anyway. Just pass a dummy list
+                self.config['sed_modules_params']['redshifting']['redshift'] = []
             else:
                 raise Exception("No flux file and no redshift indicated. "
                                 "The spectra cannot be computed. Aborting.")
 
     def complete_analysed_parameters(self):
         """Complete the configuration when the variables are missing from the
-        configuration file and must be extract from a dummy run."""
+        configuration file and must be extracted from a dummy run."""
         if not self.config['analysis_params']['variables']:
             warehouse = SedWarehouse()
             params = ParametersHandler(self.config.dict())

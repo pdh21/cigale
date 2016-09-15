@@ -19,6 +19,9 @@ SFH and give the values of the a, b and c parameters for different values of
 the rotational velocity of the galaxy. We use this velocity as input parameter
 and interpolate the values of a, b and c.
 
+Compared to the paper, Samuel Boissier gave extended values for a velocity down
+to 40 km/s as well as some intermediate values.
+
 """
 
 from collections import OrderedDict
@@ -39,8 +42,8 @@ class SfhBuat08(SedModule):
 
     parameter_list = OrderedDict([
         ("velocity", (
-            "cigale_list(minvalue=80., maxvalue=360.)",
-            "Rotational velocity of the galaxy in km/s. Must be between 80 "
+            "cigale_list(minvalue=40., maxvalue=360.)",
+            "Rotational velocity of the galaxy in km/s. Must be between 40 "
             "and 360 (included).",
             200.
         )),
@@ -65,11 +68,16 @@ class SfhBuat08(SedModule):
         # Time grid and age. If needed, the age is rounded to the inferior Myr
         time_grid = np.arange(self.age)
 
-        # Values from Buat et al. (2008) table 2
-        paper_velocities = np.array([80., 150., 220., 290., 360.])
-        paper_as = np.array([6.62, 8.74, 10.01, 10.81, 11.35])
-        paper_bs = np.array([0.41, 0.98, 1.25, 1.35, 1.37])
-        paper_cs = np.array([0.36, -0.20, -0.55, -0.74, -0.85])
+        # Values from Buat et al. (2008) table 2 extended with data provided by
+        # Samuel Boissier.
+        paper_velocities = np.array([40., 50., 60., 70., 80., 90., 100., 150.,
+                                     220., 290., 360.])
+        paper_as = np.array([4.73, 5.28, 5.77, 6.21, 6.62, 6.99, 7.34, 8.74,
+                             10.01, 10.82, 11.35])
+        paper_bs = np.array([-0.11, 0.029, 0.16, 0.29, 0.41, 0.51, 0.61, 0.98,
+                             1.25, 1.36, 1.37])
+        paper_cs = np.array([0.79, 0.68, 0.57, 0.46, 0.36, 0.27, 0.18, -0.20,
+                             -0.55, -0.74, -0.85])
 
         # Interpolation of a, b, c corresponding to the velocity.
         a = np.interp(self.velocity, paper_velocities, paper_as)

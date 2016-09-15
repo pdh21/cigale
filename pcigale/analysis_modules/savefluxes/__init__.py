@@ -47,22 +47,10 @@ class SaveFluxes(AnalysisModule):
             "models).",
             None
         )),
-        ("output_file", (
-            "string()",
-            "Name of the output file that contains the parameters of the "
-            "model(s) and the flux densities in the bands",
-            "computed_fluxes.txt"
-        )),
         ("save_sed", (
             "boolean()",
             "If True, save the generated spectrum for each model.",
             False
-        )),
-        ("output_format", (
-            "string()",
-            "Format of the output file. Any format supported by astropy.table "
-            "e.g. votable or ascii.",
-            "ascii"
         ))
     ])
 
@@ -81,8 +69,6 @@ class SaveFluxes(AnalysisModule):
 
         # Rename the output directory if it exists
         backup_dir()
-        out_file = conf['analysis_params']['output_file']
-        out_format = conf['analysis_params']['output_format']
         save_sed = conf['analysis_params']['save_sed']
 
         filters = [name for name in conf['bands'] if not
@@ -116,8 +102,7 @@ class SaveFluxes(AnalysisModule):
                          initargs=initargs) as pool:
                 pool.map(worker_fluxes, range(n_params))
 
-        save_fluxes(model_fluxes, model_parameters, filters, info, out_file,
-                    out_format=out_format)
+        save_fluxes(model_fluxes, model_parameters, filters, info)
 
 # AnalysisModule to be returned by get_module
 Module = SaveFluxes
