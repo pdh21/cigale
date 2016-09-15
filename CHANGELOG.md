@@ -1,15 +1,10 @@
 # Change Log
 
-# Unreleased
+# 0.10.0 (2016-09-15)
 ### Added
 - Enable the possibility of having different normalisation factors for the star formation history. (Médéric Boquien)
 
 ### Changed
-- The way to indicate the fluxes in the input table has changed because there were issues in the way upper limits were handled. (Yannick Roehlly) Here are the new rules:
-    - When the flux is around 0 (i.e. it's absolute value is lower than the tolerance threshold) or when it's lower than -9990 (typically -9999) it is considered as invalid and the source is not analysed.
-    - When the flux is negative (between -threshold and -9990) this indicates a upper-limit: the value of the upper limit is given in the flux column and the value of the error on the upper limit is given in the error column.
-    - When the error is negative or below the tolerance threshold, it is replaced by the default error.
-    - The tolerance threshold is 1e-12.
 - Various descriptions have been improved and clarified. (Médéric Boquien)
 - The `output\_file` and `output\_format` parameters have been removed from the `savefluxes` module. They served little purpose and made the code more complex. The same strategy as for the `pdf\_analysis` modules is now adopted, saving the output both as FITS and ASCII tables. Old configuration file still work, with these two parameters simply ignored. (Médéric Boquien)
 
