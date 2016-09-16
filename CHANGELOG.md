@@ -1,6 +1,12 @@
 # Change Log
 
-# 0.10.0 (2016-09-15)
+## Unreleased
+### Added
+### Changed
+### Fixed
+### Optimised
+
+## 0.10.0 (2016-09-15)
 ### Added
 - Enable the possibility of having different normalisation factors for the star formation history. (Médéric Boquien)
 
