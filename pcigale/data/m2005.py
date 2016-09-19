@@ -62,7 +62,7 @@ class M2005(object):
         self.info_table = info_table
         self.spec_table = spec_table
 
-    def convolve(self, sfh):
+    def convolve(self, sfh, separation_age):
         """Convolve the SSP with a Star Formation History
 
         Convolves the SSP and the associated info with the SFH.
@@ -71,6 +71,8 @@ class M2005(object):
         ----------
         sfh: array of floats
             Star Formation History in Msun/yr.
+        separation_age: float
+            Age separating the young from the old stellar populations in Myr.
 
         Returns
         -------
@@ -85,15 +87,24 @@ class M2005(object):
             * info[5]: turn-off mass
 
         """
-        # As both the SFH and the SSP (limited to the age of the SFH) data now
-        # share the same time grid, the convolution is just a matter of
-        # reverting one and computing the sum of the one to one product; this
-        # is done using the dot product.
+        # We cut the SSP to the maximum age considered to simplify the
+        # computation.
         info_table = self.info_table[:, :sfh.size]
         spec_table = self.spec_table[:, :sfh.size]
 
-        # The 1e6 factor is because the SFH is in solar mass per year.
-        info = 1e6 * np.dot(info_table, sfh[::-1])
-        spec = 1e6 * np.dot(spec_table, sfh[::-1])
+        # As both the SFH and the SSP (limited to the age of the SFH) data now
+        # share the same time grid, the convolution is just a matter of
+        # reverting one and computing the sum of the one to one product; this
+        # is done using the dot product. The 1e6 factor is because the SFH is in
+        # solar mass per year.
+        info_young = 1e6 * np.dot(info_table[:, :separation_age],
+                                  sfh[-separation_age:][::-1])
+        spec_young = 1e6 * np.dot(spec_table[:, :separation_age],
+                                  sfh[-separation_age:][::-1])
 
-        return info, spec
+        info_old = 1e6 * np.dot(info_table[:, separation_age:],
+                                sfh[:-separation_age][::-1])
+        spec_old = 1e6 * np.dot(spec_table[:, separation_age:],
+                                sfh[:-separation_age][::-1])
+
+        return spec_young, spec_old, info_young, info_old

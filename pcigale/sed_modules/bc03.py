@@ -74,16 +74,8 @@ class BC03(SedModule):
             SED object.
 
         """
-        # First, we process the young population (age lower than the
-        # separation age.)
-        spec_young, info_young = self.ssp.convolve(
-            sed.sfh[-self.separation_age:])
-
-        # Then, we process the old population. If the SFH is shorter than the
-        # separation age then all the arrays will consist only of 0.
-        old_sfh = np.copy(sed.sfh)
-        old_sfh[-self.separation_age:] = 0.
-        spec_old, info_old = self.ssp.convolve(old_sfh)
+        spec_young, spec_old, info_young, info_old = self.ssp.convolve(sed.sfh,
+                                                         self.separation_age)
 
         # We compute the Lyman continuum luminosity as it is important to
         # compute the energy absorbed by the dust before ionising gas.
