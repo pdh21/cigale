@@ -26,19 +26,6 @@ class M2005(SedModule):
     a Maraston (2005) single stellar population to add a stellar component to
     the SED.
 
-    Information added to the SED:
-        - imf, metallicity, galaxy_age
-        - mass_total, mass_alive, mass_white_dwarf,mass_neutron,
-          mass_black_hole: stellar masses in solar mass.
-        - age: age of the oldest stars in the galaxy.
-        - old_young_separation_age: age (in Myr) separating the young and the
-              old star populations (if 0, there is only one population)
-        - mass_total_old, mass_alive_old, mass_white_dwarf_old,
-          mass_neutron_old, mass_black_hole_old, : old star population masses.
-        - mass_total_young, mass_alive_young, mass_white_dwarf_young,
-          mass_neutron_young, mass_black_hole_young: young star population
-              masses.
-
     """
 
     parameter_list = OrderedDict([
@@ -87,14 +74,14 @@ class M2005(SedModule):
         """
         # First, we process the young population (age lower than the
         # separation age.)
-        young_masses, young_spectrum = self.ssp.convolve(
+        info_young, spec_young = self.ssp.convolve(
             sed.sfh[-self.separation_age:])
 
         # Then, we process the old population. If the SFH is shorter than the
         # separation age then all the arrays will consist only of 0.
         old_sfh = np.copy(sed.sfh)
         old_sfh[-self.separation_age:] = 0.
-        old_masses, old_spectrum = self.ssp.convolve(old_sfh)
+        info_old, spec_old = self.ssp.convolve(old_sfh)
 
         sed.add_module(self.name, self.parameters)
 
@@ -102,35 +89,29 @@ class M2005(SedModule):
         sed.add_info('stellar.metallicity', self.metallicity)
         sed.add_info('stellar.old_young_separation_age', self.separation_age)
 
-        sed.add_info('stellar.mass_total_old', old_masses[0], True)
-        sed.add_info('stellar.mass_alive_old', old_masses[1], True)
-        sed.add_info('stellar.mass_white_dwarf_old', old_masses[2], True)
-        sed.add_info('stellar.mass_neutron_old', old_masses[3], True)
-        sed.add_info('stellar.mass_black_hole_old', old_masses[4], True)
+        sed.add_info('stellar.mass_total_old', info_old[0], True)
+        sed.add_info('stellar.mass_alive_old', info_old[1], True)
+        sed.add_info('stellar.mass_white_dwarf_old', info_old[2], True)
+        sed.add_info('stellar.mass_neutron_old', info_old[3], True)
+        sed.add_info('stellar.mass_black_hole_old', info_old[4], True)
 
-        sed.add_info('stellar.mass_total_young', young_masses[0], True)
-        sed.add_info('stellar.mass_alive_young', young_masses[1], True)
-        sed.add_info('stellar.mass_white_dwarf_young', young_masses[2], True)
-        sed.add_info('stellar.mass_neutron_young', young_masses[3], True)
-        sed.add_info('stellar.mass_black_hole_young', young_masses[4], True)
+        sed.add_info('stellar.mass_total_young', info_young[0], True)
+        sed.add_info('stellar.mass_alive_young', info_young[1], True)
+        sed.add_info('stellar.mass_white_dwarf_young', info_young[2], True)
+        sed.add_info('stellar.mass_neutron_young', info_young[3], True)
+        sed.add_info('stellar.mass_black_hole_young', info_young[4], True)
 
-        sed.add_info('stellar.mass_total',
-                     old_masses[0] + young_masses[0], True)
-        sed.add_info('stellar.mass_alive',
-                     old_masses[1] + young_masses[1], True)
-        sed.add_info('stellar.mass_white_dwarf',
-                     old_masses[2] + young_masses[2], True)
-        sed.add_info('stellar.mass_neutron',
-                     old_masses[3] + young_masses[3], True)
-        sed.add_info('stellar.mass_black_hole',
-                     old_masses[4] + young_masses[4], True)
+        sed.add_info('stellar.mass_total', info_old[0] + info_young[0], True)
+        sed.add_info('stellar.mass_alive', info_old[1] + info_young[1], True)
+        sed.add_info('stellar.mass_white_dwarf', info_old[2] + info_young[2],
+                     True)
+        sed.add_info('stellar.mass_neutron', info_old[3] + info_young[3], True)
+        sed.add_info('stellar.mass_black_hole', info_old[4] + info_young[4],
+                     True)
 
-        sed.add_contribution("stellar.old",
-                             self.ssp.wavelength_grid,
-                             old_spectrum)
-        sed.add_contribution("stellar.young",
-                             self.ssp.wavelength_grid,
-                             young_spectrum)
+        sed.add_contribution("stellar.old", self.ssp.wavelength_grid, spec_old)
+        sed.add_contribution("stellar.young", self.ssp.wavelength_grid,
+                             spec_young)
 
 # SedModule to be returned by get_module
 Module = M2005
