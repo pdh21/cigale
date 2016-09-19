@@ -107,4 +107,4 @@ class BC03(object):
             info
         ))
 
-        return self.wavelength_grid, spec, info
+        return spec, info

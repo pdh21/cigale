@@ -75,20 +75,21 @@ class BC03(SedModule):
         """
         # First, we process the young population (age lower than the
         # separation age.)
-        young_wave, young_lumin, young_info = self.ssp.convolve(
+        young_lumin, young_info = self.ssp.convolve(
             sed.sfh[-self.separation_age:])
 
         # Then, we process the old population. If the SFH is shorter than the
         # separation age then all the arrays will consist only of 0.
         old_sfh = np.copy(sed.sfh)
         old_sfh[-self.separation_age:] = 0.
-        old_wave, old_lumin, old_info = self.ssp.convolve(old_sfh)
+        old_lumin, old_info = self.ssp.convolve(old_sfh)
 
         # We compute the Lyman continuum luminosity as it is important to
         # compute the energy absorbed by the dust before ionising gas.
-        w = np.where(young_wave <= 91.1)
-        lum_ly_young = np.trapz(young_lumin[w], young_wave[w])
-        lum_ly_old = np.trapz(old_lumin[w], old_wave[w])
+        wave = self.ssp.wavelength_grid
+        w = np.where(wave <= 91.1)
+        lum_ly_young = np.trapz(young_lumin[w], wave[w])
+        lum_ly_old = np.trapz(old_lumin[w], wave[w])
 
         sed.add_module(self.name, self.parameters)
 
@@ -121,8 +122,8 @@ class BC03(SedModule):
                      young_info["m_gas"] + old_info["m_gas"],
                      True)
 
-        sed.add_contribution("stellar.old", old_wave, old_lumin)
-        sed.add_contribution("stellar.young", young_wave, young_lumin)
+        sed.add_contribution("stellar.old", wave, old_lumin)
+        sed.add_contribution("stellar.young", wave, young_lumin)
 
 # SedModule to be returned by get_module
 Module = BC03
