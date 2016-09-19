@@ -86,25 +86,20 @@ class BC03(object):
             * "m_star": Total mass in stars in Msun
             * "m_gas": Mass returned to the ISM by evolved stars in Msun
             * "n_ly": rate of H-ionizing photons (s-1)
-            * "b_4000": Amplitude of 4000 Å break (Bruzual 2003)
-            * "b4_vn": Amplitude of 4000 Å narrow break (Balogh et al. 1999)
-            * "b4_sdss": Amplitude of 4000 Å break (Stoughton et al. 2002)
-            * "b_912": Amplitude of Lyman break
 
         """
         # The convolution is just a matter of reverting the SFH and computing
         # the sum of the data from the SSP one to one product. This is done
-        # using the dot product.
-        info_table = self.info_table[:, :sfh.size]
+        # using the dot product. We take only the first three elements from the
+        # info_table as the others do not make sense when convolved with the
+        # SFH (break strength).
+        info_table = self.info_table[:3, :sfh.size]
         spec_table = self.spec_table[:, :sfh.size]
 
         # The 1e6 factor is because the SFH is in solar mass per year.
         info = 1e6 * np.dot(info_table, sfh[::-1])
         spec = 1e6 * np.dot(spec_table, sfh[::-1])
 
-        info = dict(zip(
-            ["m_star", "m_gas", "n_ly", "b_4000", "b4_vn", "b4_sdss", "b_912"],
-            info
-        ))
+        info = dict(zip(["m_star", "m_gas", "n_ly"], info))
 
         return spec, info

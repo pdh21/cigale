@@ -3,6 +3,8 @@
 ## Unreleased
 ### Added
 ### Changed
+- We do not output the break strength from the `bc03` module anymore as these were not computed properly. (Médéric Boquien)
+
 ### Fixed
 ### Optimised
 

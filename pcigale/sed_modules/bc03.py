@@ -102,19 +102,11 @@ class BC03(SedModule):
         sed.add_info("stellar.m_gas_young", info_young["m_gas"], True)
         sed.add_info("stellar.n_ly_young", info_young["n_ly"], True)
         sed.add_info("stellar.lum_ly_young", lum_lyc_young, True)
-        sed.add_info("stellar.b_400_young", info_young["b_4000"])
-        sed.add_info("stellar.b4_vn_young", info_young["b4_vn"])
-        sed.add_info("stellar.b4_sdss_young", info_young["b4_sdss"])
-        sed.add_info("stellar.b_912_young", info_young["b_912"])
 
         sed.add_info("stellar.m_star_old", info_old["m_star"], True)
         sed.add_info("stellar.m_gas_old", info_old["m_gas"], True)
         sed.add_info("stellar.n_ly_old", info_old["n_ly"], True)
         sed.add_info("stellar.lum_ly_old", lum_lyc_old, True)
-        sed.add_info("stellar.b_400_old", info_old["b_4000"])
-        sed.add_info("stellar.b4_vn_old", info_old["b4_vn"])
-        sed.add_info("stellar.b4_sdss_old", info_old["b4_sdss"])
-        sed.add_info("stellar.b_912_old", info_old["b_912"])
 
         sed.add_info("stellar.m_star",
                      info_young["m_star"] + info_old["m_star"], True)
