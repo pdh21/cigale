@@ -74,8 +74,8 @@ class BC03(SedModule):
             SED object.
 
         """
-        spec_young, spec_old, info_young, info_old = self.ssp.convolve(sed.sfh,
-                                                         self.separation_age)
+        out = self.ssp.convolve(sed.sfh, self.separation_age)
+        spec_young, spec_old, info_young, info_old, info_all = out
 
         # We compute the Lyman continuum luminosity as it is important to
         # compute the energy absorbed by the dust before ionising gas.
@@ -100,10 +100,11 @@ class BC03(SedModule):
         sed.add_info("stellar.n_ly_old", info_old["n_ly"], True)
         sed.add_info("stellar.lum_ly_old", lum_lyc_old, True)
 
-        sed.add_info("stellar.m_star",
-                     info_young["m_star"] + info_old["m_star"], True)
-        sed.add_info("stellar.m_gas",
-                     info_young["m_gas"] + info_old["m_gas"], True)
+        sed.add_info("stellar.m_star", info_all["m_star"], True)
+        sed.add_info("stellar.m_gas", info_all["m_gas"], True)
+        sed.add_info("stellar.n_ly", info_all["n_ly"], True)
+        sed.add_info("stellar.lum_ly", lum_lyc_young + lum_lyc_old, True)
+        sed.add_info("stellar.age_m_star", info_all["age_mass"])
 
         sed.add_contribution("stellar.old", wave, spec_old)
         sed.add_contribution("stellar.young", wave, spec_young)

@@ -93,6 +93,9 @@ class BC03(object):
             * "n_ly": rate of H-ionizing photons (s-1)
         info_old : dictionary
             Same as info_young but for the old stellar populations.
+        info_all: dictionary
+            Same as info_young but for the entire stellar population. Also
+            contains "age_mass", the stellar mass-weighted age
 
         """
         # We cut the SSP to the maximum age considered to simplify the
@@ -116,7 +119,13 @@ class BC03(object):
         spec_old = 1e6 * np.dot(spec_table[:, separation_age:],
                                 sfh[:-separation_age][::-1])
 
+        info_all = info_young + info_old
+
         info_young = dict(zip(["m_star", "m_gas", "n_ly"], info_young))
         info_old = dict(zip(["m_star", "m_gas", "n_ly"], info_old))
+        info_all = dict(zip(["m_star", "m_gas", "n_ly"], info_all))
 
-        return spec_young, spec_old, info_young, info_old
+        info_all['age_mass'] = np.average(self.time_grid[:sfh.size],
+                                          weights=info_table[0, :] * sfh[::-1])
+
+        return spec_young, spec_old, info_young, info_old, info_all

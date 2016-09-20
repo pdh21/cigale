@@ -89,11 +89,14 @@ class M2005(object):
             * 4: black holes mass
         info_old: array of floats
             Same as info_young but for the old stellar populations.
+        info_all: array of floats
+            Same as info_young but for the entire stellar population. Also
+            contains 5: stellar mass-weighted age
 
         """
         # We cut the SSP to the maximum age considered to simplify the
         # computation.
-        info_table = self.info_table[:, :sfh.size]
+        info_table = self.info_table[:5, :sfh.size]
         spec_table = self.spec_table[:, :sfh.size]
 
         # As both the SFH and the SSP (limited to the age of the SFH) data now
@@ -111,4 +114,9 @@ class M2005(object):
         spec_old = 1e6 * np.dot(spec_table[:, separation_age:],
                                 sfh[:-separation_age][::-1])
 
-        return spec_young, spec_old, info_young, info_old
+        info_all = info_young + info_old
+        info_all = np.append(info_all, np.average(self.time_grid[:sfh.size],
+                                                  weights=info_table[1, :] *
+                                                  sfh[::-1]))
+
+        return spec_young, spec_old, info_young, info_old, info_all

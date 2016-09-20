@@ -72,8 +72,8 @@ class M2005(SedModule):
             SED object.
 
         """
-        spec_young, spec_old, info_young, info_old = self.ssp.convolve(sed.sfh,
-                                                         self.separation_age)
+        out = self.ssp.convolve(sed.sfh, self.separation_age)
+        spec_young, spec_old, info_young, info_old, info_all = out
 
         sed.add_module(self.name, self.parameters)
 
@@ -93,13 +93,12 @@ class M2005(SedModule):
         sed.add_info('stellar.mass_neutron_old', info_old[3], True)
         sed.add_info('stellar.mass_black_hole_old', info_old[4], True)
 
-        sed.add_info('stellar.mass_total', info_young[0] + info_old[0], True)
-        sed.add_info('stellar.mass_alive', info_young[1] + info_old[1], True)
-        sed.add_info('stellar.mass_white_dwarf', info_young[2] + info_old[2],
-                     True)
-        sed.add_info('stellar.mass_neutron', info_young[3] + info_old[3], True)
-        sed.add_info('stellar.mass_black_hole', info_young[4] + info_old[4],
-                     True)
+        sed.add_info('stellar.mass_total', info_all[0], True)
+        sed.add_info('stellar.mass_alive', info_all[1], True)
+        sed.add_info('stellar.mass_white_dwarf', info_all[2], True)
+        sed.add_info('stellar.mass_neutron', info_all[3], True)
+        sed.add_info('stellar.mass_black_hole', info_all[4], True)
+        sed.add_info('stellar.age_mass', info_all[5])
 
         sed.add_contribution("stellar.old", self.ssp.wavelength_grid, spec_old)
         sed.add_contribution("stellar.young", self.ssp.wavelength_grid,
