@@ -81,13 +81,18 @@ class BC03(object):
 
         Returns
         -------
-        spec: array of floats
-            Spectrum in [W/nm].
-        info: dictionary
-            Dictionary containing various information from the *.?color tables:
+        spec_young: array of floats
+            Spectrum in W/nm of the young stellar populations.
+        spec_old: array of floats
+            Same as spec_young but for the old stellar populations.
+        info_young: dictionary
+            Dictionary containing various information from the *.?color tables
+            for the young stellar populations:
             * "m_star": Total mass in stars in Msun
             * "m_gas": Mass returned to the ISM by evolved stars in Msun
             * "n_ly": rate of H-ionizing photons (s-1)
+        info_old : dictionary
+            Same as info_young but for the old stellar populations.
 
         """
         # We cut the SSP to the maximum age considered to simplify the

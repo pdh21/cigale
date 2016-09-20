@@ -76,15 +76,19 @@ class M2005(object):
 
         Returns
         -------
-        spec: array of floats
-            Spectrum in [W/nm].
-        info: array of floats containing:
-            * info[0]: total stellar mass
-            * info[1]: alive stellar mass
-            * info[2]: white dwarf stars mass
-            * info[3]: neutron stars mass
-            * info[4]: black holes mass
-            * info[5]: turn-off mass
+        spec_young: array of floats
+            Spectrum in W/nm of the young stellar populations.
+        spec_old: array of floats
+            Same as spec_young but for the old stellar populations.
+        info_young: array of floats
+            Contains the info for the young stellar populations:
+            * 0: total stellar mass
+            * 1: alive stellar mass
+            * 2: white dwarf stars mass
+            * 3: neutron stars mass
+            * 4: black holes mass
+        info_old: array of floats
+            Same as info_young but for the old stellar populations.
 
         """
         # We cut the SSP to the maximum age considered to simplify the
