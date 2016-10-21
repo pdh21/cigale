@@ -83,7 +83,7 @@ class _M2005(BASE):
     metallicity = Column(Float, primary_key=True)
     time_grid = Column(PickleType)
     wavelength_grid = Column(PickleType)
-    mass_table = Column(PickleType)
+    info_table = Column(PickleType)
     spec_table = Column(PickleType)
 
     def __init__(self, ssp):
@@ -91,7 +91,7 @@ class _M2005(BASE):
         self.metallicity = ssp.metallicity
         self.time_grid = ssp.time_grid
         self.wavelength_grid = ssp.wavelength_grid
-        self.mass_table = ssp.mass_table
+        self.info_table = ssp.info_table
         self.spec_table = ssp.spec_table
 
 
@@ -105,16 +105,16 @@ class _BC03(BASE):
     metallicity = Column(Float, primary_key=True)
     time_grid = Column(PickleType)
     wavelength_grid = Column(PickleType)
-    color_table = Column(PickleType)
-    lumin_table = Column(PickleType)
+    info_table = Column(PickleType)
+    spec_table = Column(PickleType)
 
     def __init__(self, ssp):
         self.imf = ssp.imf
         self.metallicity = ssp.metallicity
         self.time_grid = ssp.time_grid
         self.wavelength_grid = ssp.wavelength_grid
-        self.color_table = ssp.color_table
-        self.lumin_table = ssp.lumin_table
+        self.info_table = ssp.info_table
+        self.spec_table = ssp.spec_table
 
 
 class _Dale2014(BASE):
@@ -339,7 +339,7 @@ class Database(object):
             .first()
         if result:
             return M2005(result.imf, result.metallicity, result.time_grid,
-                         result.wavelength_grid, result.mass_table,
+                         result.wavelength_grid, result.info_table,
                          result.spec_table)
         else:
             raise DatabaseLookupError(
@@ -403,8 +403,8 @@ class Database(object):
             .first()
         if result:
             return BC03(result.imf, result.metallicity, result.time_grid,
-                        result.wavelength_grid, result.color_table,
-                        result.lumin_table)
+                        result.wavelength_grid, result.info_table,
+                        result.spec_table)
         else:
             raise DatabaseLookupError(
                 "The BC03 SSP for imf <{0}> and metallicity <{1}> is not in "
@@ -996,4 +996,4 @@ class Database(object):
         """Generator to parse the Maraston 2005 SSP database."""
         for ssp in self.session.query(_M2005):
             yield M2005(ssp.imf, ssp.metallicity, ssp.time_grid,
-                        ssp.wavelength_grid, ssp.mass_table, ssp.spec_table)
+                        ssp.wavelength_grid, ssp.info_table, ssp.spec_table)
