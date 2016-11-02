@@ -53,6 +53,9 @@ def is_cigale_list(inobject, dtype='float', minvalue=None, maxvalue=None,
     elif dtype == 'int':
         dtype = int
         conv_type = lambda x: int(float(x))
+    elif dtype == 'str':
+        dtype = str
+        conv_type = lambda x: str(x)
     else:
         raise Exception("Unsupported data type. Only float and int are "
                         "supported.")
