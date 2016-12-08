@@ -6,6 +6,8 @@
 import pkgutil
 from collections import Iterable, OrderedDict
 import multiprocessing as mp
+import os.path
+import sys
 from textwrap import wrap
 
 import configobj
@@ -56,6 +58,8 @@ class Configuration(object):
         # the expected that. We do not handle errors at the point but only when
         # we actually return the configuration file from the property() method.
         self.config.validate(validate.Validator(validation.functions))
+
+        self.pcigaleini_exists = os.path.isfile(filename)
 
     def create_blank_conf(self):
         """Create the initial configuration file
@@ -127,6 +131,9 @@ class Configuration(object):
         selection based on the filters identified in the data table file.
 
         """
+        if self.pcigaleini_exists is False:
+            print("Error: pcigale.ini could not be found.")
+            sys.exit(1)
 
         # Getting the list of the filters available in pcigale database
         with Database() as base:
@@ -220,6 +227,10 @@ class Configuration(object):
         configuration: dictionary
             Dictionary containing the information provided in pcigale.ini.
         """
+        if self.pcigaleini_exists is False:
+            print("Error: pcigale.ini could not be found.")
+            sys.exit(1)
+
         self.complete_redshifts()
         self.complete_analysed_parameters()
 

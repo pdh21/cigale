@@ -8,6 +8,8 @@
 - We do not output the break strength from the `bc03` module anymore as these were not computed properly. (Médéric Boquien)
 
 ### Fixed
+- When the pcigale.ini file was missing, pcigale would crash and display a fairly cryptic backtrace. Now it explicitly states that the file could not be found. (Médéric Boquien)
+
 ### Optimised
 
 ## 0.10.0 (2016-09-15)
