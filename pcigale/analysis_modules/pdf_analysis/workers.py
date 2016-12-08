@@ -12,6 +12,7 @@ from astropy.cosmology import WMAP7 as cosmology
 import numpy as np
 import scipy.stats as st
 
+from ..utils import nothread
 from .utils import (save_best_sed, save_pdf, save_chi2, compute_chi2,
                     weighted_param)
 from ...warehouse import SedWarehouse
@@ -43,6 +44,10 @@ def init_sed(params, filters, analysed, fluxes, variables, t_begin, n_computed):
     global gbl_model_fluxes, gbl_model_variables, gbl_n_computed, gbl_t_begin
     global gbl_params, gbl_previous_idx, gbl_filters, gbl_analysed_variables
     global gbl_warehouse
+
+    # Limit the number of threads to 1 if we use MKL in order to limit the
+    # oversubscription of the CPU/RAM.
+    nothread()
 
     gbl_model_fluxes = np.ctypeslib.as_array(fluxes[0])
     gbl_model_fluxes = gbl_model_fluxes.reshape(fluxes[1])
