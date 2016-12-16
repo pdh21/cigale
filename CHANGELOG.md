@@ -3,12 +3,15 @@
 ## Unreleased
 ### Added
 - The stellar mass-weighted age is now provided. This is a much more usual measure of the age than the age of the oldest star. This is accessible with the `stellar.age_m_star` keyword in the `bc03` module with with the `stellar.age_mass` keyword in the `m2005` module. (Médéric Boquien)
+- The nebular models have been expanded from log U=-3 to log U=-4. (Médéric Boquien & Akio Inoue)
+- The nebular models are now sampled in steps of 0.1 dex in log U rather than 1.0 dex steps. (Médéric Boquien & Akio Inoue)
 
 ### Changed
 - We do not output the break strength from the `bc03` module anymore as these were not computed properly. (Médéric Boquien)
 
 ### Fixed
 - When the pcigale.ini file was missing, pcigale would crash and display a fairly cryptic backtrace. Now it explicitly states that the file could not be found. (Médéric Boquien)
+- The nebular emission now takes into account deviations from the 10000K case B assumption. In practice this yields fluxes about 10% fainter. (Médéric Boquien & Akio Inoue)
 
 ### Optimised
 - By default the MKL library created many threads for each for the parallel processes. Not only was this not necessary as a high-level parallelisation already exists, but it generated a strong oversubscription on the CPU and on the RAM. The slowdown was over a factor of ~2 in some cases. Now we mandate KML to use only 1 thread fo each process. (Médéric Boquien & Yannick Roehlly)

@@ -29,7 +29,10 @@ class NebularEmission(SedModule):
 
     parameter_list = OrderedDict([
         ('logU', (
-            'cigale_list(options=-3. & -2. & -1.)',
+            'cigale_list(options=-4.0 & -3.9 & -3.8 & -3.7 & -3.6 & -3.5 & '
+            '-3.4 & -3.3 & -3.2 & -3.1 & -3.0 & -2.9 & -2.8 & -2.7 & -2.6 & '
+            '-2.5 & -2.4 & -2.3 & -2.2 & -2.1 & -2.0 & -1.9 & -1.8 & -1.7 & '
+            '-1.6 & -1.5 & -1.4 & -1.3 & -1.2 & -1.1 & -1.0)',
             "Ionisation parameter",
             -2.
         )),
@@ -104,20 +107,15 @@ class NebularEmission(SedModule):
                 lines.wave = new_wave
                 lines.ratio = new_flux
 
-            # We compute the conversion coefficient to determine the fluxes using
-            # the formula of Inoue 2011: LHβ=Q(H)*γHβ(10000K)/αβ(10000K)
-            gamma_Hbeta = 1.23e-38  # Inoue 2011, W m³
-            alpha_B = 2.58e-19  # Ferland 1980, m³ s¯¹
-
             # To take into acount the escape fraction and the fraction of Lyman
             # continuum photons absorbed by dust we correct by a factor
             # k=(1-fesc-fdust)/(1+(α1/αβ)*(fesc+fdust))
+            alpha_B = 2.58e-19  # Ferland 1980, m³ s¯¹
             alpha_1 = 1.54e-19  # αA-αB, Ferland 1980, m³ s¯¹
             k = (1. - self.fesc - self.fdust) / (1. + alpha_1 / alpha_B * (
                 self.fesc + self.fdust))
 
-            self.conv_line = gamma_Hbeta / alpha_B * k
-            self.conv_cont = k
+            self.corr = k
         self.idx_Ly_break = None
         self.absorbed_old = None
         self.absorbed_young = None
@@ -164,14 +162,14 @@ class NebularEmission(SedModule):
             sed.add_info('nebular.logU', self.logU)
 
             sed.add_contribution('nebular.lines_old', lines.wave,
-                                 lines.ratio * NLy_old * self.conv_line)
+                                 lines.ratio * NLy_old * self.corr)
             sed.add_contribution('nebular.lines_young', lines.wave,
-                                 lines.ratio * NLy_young * self.conv_line)
+                                 lines.ratio * NLy_young * self.corr)
 
             sed.add_contribution('nebular.continuum_old', cont.wave,
-                                 cont.lumin * NLy_old * self.conv_cont)
+                                 cont.lumin * NLy_old * self.corr)
             sed.add_contribution('nebular.continuum_young', cont.wave,
-                                 cont.lumin * NLy_young * self.conv_cont)
+                                 cont.lumin * NLy_young * self.corr)
 
 # SedModule to be returned by get_module
 Module = NebularEmission
