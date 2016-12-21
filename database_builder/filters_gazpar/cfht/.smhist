@@ -1,4 +1,0 @@
-macro read plot.sm
-plot_megacam
-macro read plot.sm
-plot_wircam

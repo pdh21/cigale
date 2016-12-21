@@ -1,8 +1,0 @@
-macro read plot.sm
-plot_irac
-macro read plot.sm
-plot_irac
-!ls -alrt
-macro read plot.sm
-plot_irac
-plot_mips
