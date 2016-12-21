@@ -37,6 +37,10 @@ class Filter(object):
         self.trans_table = trans_table
         self.effective_wavelength = effective_wavelength
 
+        if self.trans_type == 'photon':
+            self.trans_table[1] *= self.trans_table[0]
+            self.trans_type = 'energy'
+
     # Check that the trans_type is correct
     @property
     def trans_type(self):
