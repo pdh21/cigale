@@ -1,0 +1,12 @@
+macro read plot.sm
+plot
+!more /home/ilbert/GAZPAR/FILTERS_CIGALE/filters/wfi_r.dat
+macro read plot.sm
+plot
+macro read plot.sm
+plot
+macro read plot.sm
+plot
+!pwd
+macro read plot.sm
+plot

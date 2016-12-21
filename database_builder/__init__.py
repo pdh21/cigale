@@ -171,6 +171,44 @@ def build_filters(base):
 
     base.add_filters(filters)
 
+def build_filters_gazpar(base):
+    filters = []
+    filters_dir = os.path.join(os.path.dirname(__file__), 'filters_gazpar/')
+    for filter_file in glob.glob(filters_dir + '**/*.pb', recursive=True):
+        with open(filter_file, 'r') as filter_file_read:
+            _ = filter_file_read.readline() # We use the filename for the name
+            filter_type = filter_file_read.readline().strip('# \n\t')
+            _ = filter_file_read.readline() # We do not yet use the calib type
+            filter_desc = filter_file_read.readline().strip('# \n\t')
+
+        filter_name = filter_file.replace(filters_dir, '')[:-3]
+        filter_name = filter_name.replace('/', '.')
+
+        filter_table = np.genfromtxt(filter_file)
+        # The table is transposed to have table[0] containing the wavelength
+        # and table[1] containing the transmission.
+        filter_table = filter_table.transpose()
+        # We convert the wavelength from Å to nm.
+        filter_table[0] *= 0.1
+
+        print("Importing %s... (%s points)" % (filter_name,
+                                               filter_table.shape[1]))
+
+        new_filter = Filter(filter_name, filter_desc, filter_type,
+                            filter_table)
+
+        # We normalise the filter and compute the effective wavelength.
+        # If the filter is a pseudo-filter used to compute line fluxes, it
+        # should not be normalised.
+        if not filter_name.startswith('PSEUDO'):
+            new_filter.normalise()
+        else:
+            new_filter.effective_wavelength = np.mean(
+                filter_table[0][filter_table[1] > 0]
+            )
+        filters.append(new_filter)
+
+    base.add_filters(filters)
 
 def build_m2005(base):
     m2005_dir = os.path.join(os.path.dirname(__file__), 'maraston2005/')
@@ -697,6 +735,7 @@ def build_base():
     print('#' * 78)
     print("1- Importing filters...\n")
     build_filters(base)
+    build_filters_gazpar(base)
     print("\nDONE\n")
     print('#' * 78)
 

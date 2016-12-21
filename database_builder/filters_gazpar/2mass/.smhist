@@ -1,0 +1,8 @@
+macro read plot.sm
+plot
+macro read plot.sm
+plot
+!ls -alrt
+!more J.pb
+macro read plot.sm
+plot

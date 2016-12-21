@@ -5,6 +5,7 @@
 - The stellar mass-weighted age is now provided. This is a much more usual measure of the age than the age of the oldest star. This is accessible with the `stellar.age_m_star` keyword in the `bc03` module with with the `stellar.age_mass` keyword in the `m2005` module. (Médéric Boquien)
 - The nebular models have been expanded from log U=-3 to log U=-4. (Médéric Boquien & Akio Inoue)
 - The nebular models are now sampled in steps of 0.1 dex in log U rather than 1.0 dex steps. (Médéric Boquien & Akio Inoue)
+- A new set of filters from GAZPAR has been added. The pattern of the filter name is "telescope.instrument.filter", e.g. "hst.wfc3.F160W". If the telescope has one instrument, it is skipped, e.g. "galex.FUV". For now the original set of filters is still provided. (Médéric Boquien & Olivier Ilbert)
 
 ### Changed
 - We do not output the break strength from the `bc03` module anymore as these were not computed properly. (Médéric Boquien)
