@@ -14,6 +14,7 @@
 - When the pcigale.ini file was missing, pcigale would crash and display a fairly cryptic backtrace. Now it explicitly states that the file could not be found. (Médéric Boquien)
 - The nebular emission now takes into account deviations from the 10000K case B assumption. In practice this yields fluxes about 10% fainter. (Médéric Boquien & Akio Inoue)
 - Some filters were incorrectly assumed to be defined in units of energy when they were actually defined in units of photons, yielding slightly incorrect fluxes. Now all the filters are converted into units of energy when imported. (Médéric Boquien)
+- Remove the PSEUDO_D4000 filter which was incorrect. (Médéric Boquien)
 
 ### Optimised
 - By default the MKL library created many threads for each for the parallel processes. Not only was this not necessary as a high-level parallelisation already exists, but it generated a strong oversubscription on the CPU and on the RAM. The slowdown was over a factor of ~2 in some cases. Now we mandate KML to use only 1 thread fo each process. (Médéric Boquien & Yannick Roehlly)
