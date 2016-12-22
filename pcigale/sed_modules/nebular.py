@@ -171,5 +171,6 @@ class NebularEmission(SedModule):
             sed.add_contribution('nebular.continuum_young', cont.wave,
                                  cont.lumin * NLy_young * self.corr)
 
+
 # SedModule to be returned by get_module
 Module = NebularEmission

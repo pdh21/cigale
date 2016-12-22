@@ -80,5 +80,6 @@ class Radio(SedModule):
         sed.add_contribution('radio_nonthermal', self.wave,
                              self.lumin_nonthermal * luminosity)
 
+
 # SedModule to be returned by get_module
 Module = Radio

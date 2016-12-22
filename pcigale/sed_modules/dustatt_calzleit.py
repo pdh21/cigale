@@ -314,5 +314,6 @@ class CalzLeit(SedModule):
         sed.add_info('attenuation.uv_bump_amplitude', self.uv_bump_amplitude)
         sed.add_info('attenuation.powerlaw_slope', self.powerlaw_slope)
 
+
 # SedModule to be returned by get_module
 Module = CalzLeit

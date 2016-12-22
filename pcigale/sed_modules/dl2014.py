@@ -128,5 +128,6 @@ class DL2014(SedModule):
         sed.add_contribution('dust.Umin_Umax', self.model_minmax.wave,
                              luminosity * self.model_minmax.lumin)
 
+
 # SedModule to be returned by get_module
 Module = DL2014

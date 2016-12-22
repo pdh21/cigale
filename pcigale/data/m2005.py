@@ -54,8 +54,8 @@ class M2005(object):
         if imf in ['salp', 'krou']:
             self.imf = imf
         else:
-            raise ValueError("IMF must be either salp for Salpeter or krou for "
-                             "Kroupa.")
+            raise ValueError("IMF must be either salp for Salpeter or krou "
+                             "for Kroupa.")
         self.metallicity = metallicity
         self.time_grid = time_grid
         self.wavelength_grid = wavelength_grid
@@ -102,8 +102,8 @@ class M2005(object):
         # As both the SFH and the SSP (limited to the age of the SFH) data now
         # share the same time grid, the convolution is just a matter of
         # reverting one and computing the sum of the one to one product; this
-        # is done using the dot product. The 1e6 factor is because the SFH is in
-        # solar mass per year.
+        # is done using the dot product. The 1e6 factor is because the SFH is
+        # in solar mass per year.
         info_young = 1e6 * np.dot(info_table[:, :separation_age],
                                   sfh[-separation_age:][::-1])
         spec_young = 1e6 * np.dot(spec_table[:, :separation_age],

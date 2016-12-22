@@ -216,5 +216,6 @@ class Redshifting(SedModule):
                              self.igm_attenuation[key] * sed.luminosity)
         sed.add_module(self.name, self.parameters)
 
+
 # SedModule to be returned by get_module
 Module = Redshifting

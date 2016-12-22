@@ -229,5 +229,6 @@ class PowerLawAtt(SedModule):
             sed.add_info("attenuation." + filt,
                          -2.5 * np.log10(flux_att[filt] / flux_noatt[filt]))
 
+
 # SedModule to be returned by get_module
 Module = PowerLawAtt

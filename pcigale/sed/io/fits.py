@@ -8,6 +8,7 @@ from collections import OrderedDict
 from astropy.table import Table, Column
 import numpy as np
 
+
 def save_sed_to_fits(sed, prefix, norm=1.):
     """
     Save a SED object to fits files
@@ -35,7 +36,7 @@ def save_sed_to_fits(sed, prefix, norm=1.):
     table['L_lambda_total'] = Column(norm * sed.luminosity, unit="W/nm")
     for name in sed.contribution_names:
         table[name] = Column(norm * sed.get_lumin_contribution(name),
-        unit="W/nm")
+                             unit="W/nm")
     table.write("{}_best_model.fits".format(prefix))
 
     if sed.sfh is not None:

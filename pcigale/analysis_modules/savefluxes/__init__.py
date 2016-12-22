@@ -21,11 +21,8 @@ import multiprocessing as mp
 from multiprocessing.sharedctypes import RawArray
 import time
 
-import numpy as np
-
 from .. import AnalysisModule
 from ..utils import backup_dir, save_fluxes
-from ...utils import read_table
 from .workers import init_fluxes as init_worker_fluxes
 from .workers import fluxes as worker_fluxes
 from ...handlers.parameters_handler import ParametersHandler
@@ -103,6 +100,7 @@ class SaveFluxes(AnalysisModule):
                 pool.map(worker_fluxes, range(n_params))
 
         save_fluxes(model_fluxes, model_parameters, filters, info)
+
 
 # AnalysisModule to be returned by get_module
 Module = SaveFluxes

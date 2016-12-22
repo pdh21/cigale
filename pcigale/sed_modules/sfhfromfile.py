@@ -98,5 +98,6 @@ class SfhFromFile(SedModule):
         sed.add_info("sfh.integrated", self.sfr_integrated, True)
         sed.add_info("sfh.index", self.sfr_column_number)
 
+
 # SedModule to be returned by get_module
 Module = SfhFromFile

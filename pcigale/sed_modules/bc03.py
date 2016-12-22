@@ -109,5 +109,6 @@ class BC03(SedModule):
         sed.add_contribution("stellar.old", wave, spec_old)
         sed.add_contribution("stellar.young", wave, spec_young)
 
+
 # SedModule to be returned by get_module
 Module = BC03

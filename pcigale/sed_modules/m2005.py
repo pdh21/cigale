@@ -13,8 +13,6 @@ This module implements the Maraston (2005) Single Stellar Populations.
 
 from collections import OrderedDict
 
-import numpy as np
-
 from . import SedModule
 from ..data import Database
 
@@ -103,6 +101,7 @@ class M2005(SedModule):
         sed.add_contribution("stellar.old", self.ssp.wavelength_grid, spec_old)
         sed.add_contribution("stellar.young", self.ssp.wavelength_grid,
                              spec_young)
+
 
 # SedModule to be returned by get_module
 Module = M2005

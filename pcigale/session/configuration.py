@@ -3,8 +3,7 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Yannick Roehlly
 
-import pkgutil
-from collections import Iterable, OrderedDict
+from collections import OrderedDict
 import multiprocessing as mp
 import os.path
 import sys
@@ -12,7 +11,6 @@ from textwrap import wrap
 
 import configobj
 from glob import glob  # To allow the use of glob() in "eval..."
-import pkg_resources
 import numpy as np
 import validate
 

@@ -6,6 +6,7 @@
 from astropy.io.votable.tree import VOTableFile, Resource, Table, Field, Info
 import numpy as np
 
+
 def save_sed_to_vo(sed, filename, norm=1.):
     """
     Save a SED object to a VO-Table file

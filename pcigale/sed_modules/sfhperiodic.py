@@ -122,5 +122,6 @@ class SfhPeriodic(SedModule):
         sed.add_info("sfh.delta_bursts", self.delta_bursts)
         sed.add_info("sfh.tau_bursts", self.tau_bursts)
 
+
 # SedModule to be returned by get_module
 Module = SfhPeriodic

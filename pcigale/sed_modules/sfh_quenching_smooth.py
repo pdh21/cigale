@@ -95,5 +95,6 @@ class SfhQuenchSmooth(SedModule):
         sed.add_info("sfh.quenching_time", self.quenching_age)
         sed.add_info("sfh.quenching_factor", self.quenching_factor)
 
+
 # SedModule to be returned by get_module
 Module = SfhQuenchSmooth

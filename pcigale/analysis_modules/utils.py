@@ -8,8 +8,6 @@ Various utility functions for pcigale analysis modules
 """
 
 from datetime import datetime
-import collections
-import itertools
 import os
 import shutil
 
@@ -72,10 +70,10 @@ def save_fluxes(model_fluxes, model_parameters, filters, names,
 
 
 def nothread():
-    """Some libraries such as Intel's MKL have automatic threading. This is good
-    when having only one process. However we already do our own parallelisation.
-    The additional threads created by the MKL increase in excess the pressure on
-    the CPU and on the RAM slowing everything down.
+    """Some libraries such as Intel's MKL have automatic threading. This is
+    good when having only one process. However we already do our own
+    parallelisation. The additional threads created by the MKL increase in
+    excess the pressure on the CPU and on the RAM slowing everything down.
 
     Parameters
     ----------

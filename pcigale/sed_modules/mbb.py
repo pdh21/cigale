@@ -129,6 +129,7 @@ class MBB(SedModule):
         # We add the contribution of the MBB to L_dust.
         sed.add_contribution('dust.mbb', self.wave,
                              luminosity * self.epsilon * self.lumin_mbb)
-#
+
+
 # SedModule to be returned by get_module
 Module = MBB

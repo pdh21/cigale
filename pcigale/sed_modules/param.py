@@ -104,8 +104,8 @@ class Param(SedModule):
 
         w_D4000blue = np.where((wavelength >= 385.0 * (1. + redshift)) &
                                (wavelength <= 395.0 * (1. + redshift)))
-        w_D4000red  = np.where((wavelength >= 400.0 * (1. + redshift)) &
-                               (wavelength <= 410.0 * (1. + redshift)))
+        w_D4000red = np.where((wavelength >= 400.0 * (1. + redshift)) &
+                              (wavelength <= 410.0 * (1. + redshift)))
 
         regression_calz94 = np.polyfit(np.log10(10.*wavelength[w_calz94]),
                                        np.log10(1e7/10.*luminosity[w_calz94]),
@@ -132,6 +132,7 @@ class Param(SedModule):
                 sed.compute_fnu(filter_),
                 True
             )
+
 
 # SedModule to be returned by get_module
 Module = Param
