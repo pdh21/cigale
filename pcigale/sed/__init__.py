@@ -30,6 +30,7 @@ Such SED is characterised by:
 """
 
 import numpy as np
+from numpy.core.multiarray import interp # Compiled version
 from scipy.constants import c, parsec
 
 from . import utils
@@ -308,13 +309,13 @@ class SED(object):
             w = np.where((wavelength >= lambda_min) &
                          (wavelength <= lambda_max))
             wavelength_r = utils.best_grid(wavelength[w], trans_table[0], key)
-            transmission_r = np.interp(wavelength_r, trans_table[0],
-                                       trans_table[1])
+            transmission_r = interp(wavelength_r, trans_table[0],
+                                    trans_table[1])
 
             self.cache_filters[key] = (wavelength_r, transmission_r,
                                        lambda_eff)
 
-        l_lambda_r = np.interp(wavelength_r, wavelength, self.luminosity)
+        l_lambda_r = interp(wavelength_r, wavelength, self.luminosity)
 
         f_lambda = utils.luminosity_to_flux(
             utils.flux_trapz(transmission_r * l_lambda_r, wavelength_r, key),

@@ -18,6 +18,7 @@
 
 ### Optimised
 - By default the MKL library created many threads for each for the parallel processes. Not only was this not necessary as a high-level parallelisation already exists, but it generated a strong oversubscription on the CPU and on the RAM. The slowdown was over a factor of ~2 in some cases. Now we mandate KML to use only 1 thread fo each process. (Médéric Boquien & Yannick Roehlly)
+- The generic numpy interpolation function was used. As we are in a well-controlled environment, this generated unnecessary verifications on the type and shape of the arrays. The compiled numpy interpolation function is now used, bypassing those checks. This generates a gain of 5-10% in computing speed for the generation of the models. (Médéric Boquien)
 
 ## 0.10.0 (2016-09-15)
 ### Added

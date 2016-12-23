@@ -4,6 +4,7 @@
 # Authors: Yannick Roehlly, Médéric Boquien
 
 import numpy as np
+from numpy.core.multiarray import interp # Compiled version
 from scipy.constants import c, pi
 
 # Cache of dx for integrate(y,dx) done by flux_trapz
@@ -357,8 +358,8 @@ def interpolate_lumin(wl, lumin, wl_new, lumin_new):
         # already defined.
         w = np.where((wl_unique > wl[0]) & (wl_unique < wl[-1]))
         for i in range(lumin.shape[0]):
-            lumin_out[i, lumin.shape[1]+w[0]] = np.interp(wl_unique[w], wl,
-                                                          lumin[i, :])
+            lumin_out[i, lumin.shape[1]+w[0]] = interp(wl_unique[w], wl,
+                                                       lumin[i, :])
         wl_best = np.concatenate((wl, wl_unique))
         s = argsort_wl(wl_best)
         wl_best = wl_best[s]
@@ -368,7 +369,7 @@ def interpolate_lumin(wl, lumin, wl_new, lumin_new):
         lumin_out[:-1, :] = lumin
 
     # We interpolate the new component on the new merged wavelength grid.
-    lumin_out[-1, :] = np.interp(wl_best, wl_new, lumin_new, left=0., right=0.)
+    lumin_out[-1, :] = interp(wl_best, wl_new, lumin_new, left=0., right=0.)
 
     return (wl_best, lumin_out)
 
