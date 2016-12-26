@@ -364,7 +364,7 @@ def interpolate_lumin(wl, lumin, wl_new, lumin_new):
         wl_best = np.concatenate((wl, wl_unique))
         s = argsort_wl(wl_best)
         wl_best = wl_best[s]
-        lumin_out = lumin_out[:, s]
+        lumin_out = np.take(lumin_out, s, axis=-1)
     else:
         wl_best = wl
         lumin_out[:-1, :] = lumin
