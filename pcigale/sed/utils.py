@@ -4,10 +4,10 @@
 # Authors: Yannick Roehlly, Médéric Boquien
 
 import numpy as np
-from numpy.core.multiarray import interp # Compiled version
+from numpy.core.multiarray import interp  # Compiled version
 from scipy.constants import c, pi
 
-# Cache of dx for integrate(y,dx) done by flux_trapz
+# Cache dictionaries
 dx_cache = {}
 best_grid_cache = {}
 
