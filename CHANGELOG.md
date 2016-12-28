@@ -16,6 +16,7 @@
 - Some filters were incorrectly assumed to be defined in units of energy when they were actually defined in units of photons, yielding slightly incorrect fluxes. Now all the filters are converted into units of energy when imported. (Médéric Boquien)
 - Remove the PSEUDO_D4000 filter which was incorrect. (Médéric Boquien)
 - Indicate the correct transmission type for the PACS green and red filters. (Médéric Boquien)
+- IRAS filters are defined in energy rather than photons. (Médéric Boquien)
 
 ### Optimised
 - By default the MKL library created many threads for each for the parallel processes. Not only was this not necessary as a high-level parallelisation already exists, but it generated a strong oversubscription on the CPU and on the RAM. The slowdown was over a factor of ~2 in some cases. Now we mandate KML to use only 1 thread fo each process. (Médéric Boquien & Yannick Roehlly)
