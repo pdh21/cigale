@@ -76,7 +76,7 @@ class Configuration(object):
             "'_err' suffix for the uncertainties. The fluxes and the "
             "uncertainties must be in mJy. This file is optional to generate "
             "the configuration file, in particular for the savefluxes module.")
-        self.spec['data_file'] = "string"
+        self.spec['data_file'] = "string()"
 
         self.config['parameters_file'] = ""
         self.config.comments['parameters_file'] = [""] + wrap(
