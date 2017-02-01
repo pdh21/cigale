@@ -102,8 +102,9 @@ class Lofaro2016Att(SedModule):
             "-0.7 & -1.4 for Calzetti, -1.2 & -1.7 for SMC, and assuming the "
             "same attenuation for young and old stars -0.7 & -0.7 for Charlot "
             "and Fall, and -0.48 & -0.48 for Lo Faro (2016). Several slope "
-            "tuples may be given separated with comma.",
-            "-0.7 & -1.4"
+            "tuples may be given separated with comma, if you have only one "
+            "slope tuple, put a comma at the end.",
+            "-0.7 & -1.4,"
         )),
         ("filters", (
             "string()",
