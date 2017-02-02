@@ -20,6 +20,7 @@
 - Indicate the correct transmission type for the PACS green and red filters. (Médéric Boquien)
 - IRAS filters are defined in energy rather than photons. (Médéric Boquien)
 - Remove a Numpy warning in the computation of the IGM absorption (Médéric Boquien)
+- The Herschel passbands only included the filter. Now they include the full throughput of the instrument. Flux differences are expected to be no more than 1%. (Médéric Boquien)
 
 ### Optimised
 - By default the MKL library created many threads for each for the parallel processes. Not only was this not necessary as a high-level parallelisation already exists, but it generated a strong oversubscription on the CPU and on the RAM. The slowdown was over a factor of ~2 in some cases. Now we mandate KML to use only 1 thread fo each process. (Médéric Boquien & Yannick Roehlly)
