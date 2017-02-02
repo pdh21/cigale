@@ -268,6 +268,7 @@ class Configuration(object):
                                                   'dl2007', 'dl2014']),
                                ('AGN', ['dale2014', 'fritz2006']),
                                ('radio', ['radio']),
+                               ('restframe parameters', ['restframe_params']),
                                ('redshift', ['redshifting'])))
 
         comments = {'SFH': "ERROR! Choosing one SFH module is mandatory.",
@@ -279,6 +280,8 @@ class Configuration(object):
                     'dust emission': "No dust emission module found.",
                     'AGN': "No AGN module found.",
                     'radio': "No radio module found.",
+                    'restframe parameters': "No restframe parameters module "
+                                            "found",
                     'redshift': "ERROR! No redshifting module found."}
 
         for module in modules:
