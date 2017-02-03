@@ -29,13 +29,11 @@ def list_filters():
                          name='Description')
     wl = Column(data=[filters[f].effective_wavelength for f in filters],
                 name='Effective Wavelength', unit=u.nm, format='%d')
-    filter_type = Column(data=[filters[f].trans_type for f in filters],
-                         name='Type')
     samples = Column(data=[filters[f].trans_table[0].size for f in filters],
                      name="Points")
 
     t = Table()
-    t.add_columns([name, description, wl, filter_type, samples])
+    t.add_columns([name, description, wl, samples])
     t.sort(['Effective Wavelength'])
     t.pprint(max_lines=-1, max_width=-1)
 
@@ -53,14 +51,21 @@ def add_filters(fnames):
             # The table is transposed to have table[0] containing the
             # wavelength and table[1] containing the transmission.
             filter_table = filter_table.transpose()
+
             # We convert the wavelength from Å to nm.
             filter_table[0] *= 0.1
+
+            # We convert to energy if needed
+            if filter_type == 'photon':
+                filter_table[1] *= filter_table[0]
+            elif filter_type != 'energy':
+                raise ValueError("Filter transmission type can only be "
+                                 "'energy' or 'photon'.")
 
             print("Importing {}... ({} points)".format(filter_name,
                                                        filter_table.shape[1]))
 
-            new_filter = Filter(filter_name, filter_description, filter_type,
-                                filter_table)
+            new_filter = Filter(filter_name, filter_description, filter_table)
 
             # We normalise the filter and compute the effective wavelength.
             # If the filter is a pseudo-filter used to compute line fluxes, it

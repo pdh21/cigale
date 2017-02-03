@@ -10,8 +10,8 @@ class Filter(object):
     """A photometric filter with associated transmission data.
     """
 
-    def __init__(self, name, description=None, trans_type=None,
-                 trans_table=None, effective_wavelength=None):
+    def __init__(self, name, description=None, trans_table=None,
+                 effective_wavelength=None):
         """Create a new filter. If the transmission type, the description
         the transmission table or the effective wavelength are not specified,
         their value is set to None.
@@ -22,8 +22,6 @@ class Filter(object):
             Name of the filter
         description: string
             Description of the filter
-        trans_type: string
-            Type of transmission table ('energy' or 'photon')
         trans_table: array
             trans_table[0] is the wavelength in nm,
             trans_table[1] is the transmission)
@@ -33,26 +31,8 @@ class Filter(object):
 
         self.name = name
         self.description = description
-        self.trans_type = trans_type
         self.trans_table = trans_table
         self.effective_wavelength = effective_wavelength
-
-        if self.trans_type == 'photon':
-            self.trans_table[1] *= self.trans_table[0]
-            self.trans_type = 'energy'
-
-    # Check that the trans_type is correct
-    @property
-    def trans_type(self):
-        return self._trans_type
-
-    @trans_type.setter
-    def trans_type(self, value):
-        if value in ['energy', 'photon']:
-            self._trans_type = value
-        else:
-            raise ValueError("Filter transmission type can only be "
-                             "'energy' or 'photon'.")
 
     def __str__(self):
         """Pretty print the filter information
@@ -60,7 +40,6 @@ class Filter(object):
         result = ""
         result += ("Filter name: %s\n" % self.name)
         result += ("Description: %s\n" % self.description)
-        result += ("Transmission type: %s\n" % self.trans_type)
         result += ("Effective wavelength: %s nm\n" %
                    self.effective_wavelength)
         return result
