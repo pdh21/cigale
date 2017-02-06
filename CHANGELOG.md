@@ -23,6 +23,7 @@
 - The Herschel passbands only included the filter. Now they include the full throughput of the instrument. Flux differences are expected to be no more than 1%. (Médéric Boquien)
 - The `dustatt_powerlaw` module indicated that the Milky Way bump has an amplitude of 3. This is only valid for the `dustatt_calzleit` module. As `dustatt_powerlaw` is normalised to A(V) rather than E(B-V) for `dustatt_calzleit`, the bump is a factor Rv larger. A more reasonable value is now given. (Médéric Boquien)
 - The correction of the χ² for the upper limits now properly takes into account earlier changes intended to reduce memory usage and speed up the analysis. This prevents a crash. (Médéric Boquien)
+- Fix a crash in the computation of the rectangular periodic SFH with Numpy 1.12. (Médéric Boquien)
 
 ### Optimised
 - By default the MKL library created many threads for each for the parallel processes. Not only was this not necessary as a high-level parallelisation already exists, but it generated a strong oversubscription on the CPU and on the RAM. The slowdown was over a factor of ~2 in some cases. Now we mandate KML to use only 1 thread fo each process. (Médéric Boquien & Yannick Roehlly)
