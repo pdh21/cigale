@@ -54,16 +54,18 @@ def run(config):
 
 
 def main():
+    if sys.version_info[:2] < (3, 5):
+        raise Exception("Python {}.{} is unsupported. Please upgrade to "
+                        "Python 3.5 or later.".format(*sys.version_info[:2]))
+    if sys.version_info[:2] < (3,6):
+        print("Python {}.{} detected. For better performance we recommend "
+              "Python 3.6 or later.".format(*sys.version_info[:2]))
+
     # We set the sub processes start method to spawn because it solves
     # deadlocks when a library cannot handle being used on two sides of a
     # forked process. This happens on modern Macs with the Accelerate library
-    # for instance. Unfortunately this only comes with python≥3.4. People using
-    # older versions should upgrade if they encounter deadlocks.
-    if sys.version_info[:2] >= (3, 4):
-        mp.set_start_method('spawn')
-    else:
-        print("Could not set the multiprocessing start method to spawn. If "
-              "you encounter a deadlock, please upgrade to Python≥3.4.")
+    # for instance.
+    mp.set_start_method('spawn')
 
     parser = argparse.ArgumentParser()
 

@@ -11,6 +11,7 @@
 ### Changed
 - We do not output the break strength from the `bc03` module anymore as these were not computed properly. (Médéric Boquien)
 - The new `restframe\_param` module replaces the unofficial `param` module, which has now been trimmed to only compute fluxes in the observed frame as the rest of its functionalities have been transferred to the much more efficient `restframe\_param` module. To reflect this, it has been renamed `fluxes`. (Médéric Boquien)
+- We now make use of new features available in Python 3.5. Previous versions are henceforth unsupported. However Python 3.6 or later is recommended for better performance. (Médéric Boquien)
 
 ### Fixed
 - When the pcigale.ini file was missing, pcigale would crash and display a fairly cryptic backtrace. Now it explicitly states that the file could not be found. (Médéric Boquien)
