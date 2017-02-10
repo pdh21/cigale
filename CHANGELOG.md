@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 0.11.0 (2017-02-10)
 ### Added
 - The stellar mass-weighted age is now provided. This is a much more usual measure of the age than the age of the oldest star. This is accessible with the `stellar.age_m_star` keyword in the `bc03` module with with the `stellar.age_mass` keyword in the `m2005` module. (Médéric Boquien)
 - The nebular models have been expanded from log U=-3 to log U=-4. (Médéric Boquien & Akio Inoue)
