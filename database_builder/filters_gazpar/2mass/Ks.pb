@@ -1,5 +1,5 @@
 # Ks_2mass
-# photon
+# energy
 # calib 0
 # 2MASS K-BAND TOTAL RESPONSE 
   19000    0.0000

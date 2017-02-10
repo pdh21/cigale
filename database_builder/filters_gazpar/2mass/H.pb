@@ -1,5 +1,5 @@
 # H_2mass
-# photon
+# energy
 # calib 0
 # 2MASS H-BAND TOTAL RESPONSE 
    14180    0.0000

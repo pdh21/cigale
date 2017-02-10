@@ -1,5 +1,5 @@
 # J_2mass
-# photon
+# energy
 # calib 0
 # 2MASS J-BAND TOTAL RESPONSE 
    10620    0.0000
