@@ -61,14 +61,12 @@ class _Filter(BASE):
 
     name = Column(String, primary_key=True)
     description = Column(String)
-    trans_type = Column(String)
     trans_table = Column(PickleType)
     effective_wavelength = Column(Float)
 
     def __init__(self, f):
         self.name = f.name
         self.description = f.description
-        self.trans_type = f.trans_type
         self.trans_table = f.trans_table
         self.effective_wavelength = f.effective_wavelength
 
@@ -83,7 +81,7 @@ class _M2005(BASE):
     metallicity = Column(Float, primary_key=True)
     time_grid = Column(PickleType)
     wavelength_grid = Column(PickleType)
-    mass_table = Column(PickleType)
+    info_table = Column(PickleType)
     spec_table = Column(PickleType)
 
     def __init__(self, ssp):
@@ -91,7 +89,7 @@ class _M2005(BASE):
         self.metallicity = ssp.metallicity
         self.time_grid = ssp.time_grid
         self.wavelength_grid = ssp.wavelength_grid
-        self.mass_table = ssp.mass_table
+        self.info_table = ssp.info_table
         self.spec_table = ssp.spec_table
 
 
@@ -105,16 +103,16 @@ class _BC03(BASE):
     metallicity = Column(Float, primary_key=True)
     time_grid = Column(PickleType)
     wavelength_grid = Column(PickleType)
-    color_table = Column(PickleType)
-    lumin_table = Column(PickleType)
+    info_table = Column(PickleType)
+    spec_table = Column(PickleType)
 
     def __init__(self, ssp):
         self.imf = ssp.imf
         self.metallicity = ssp.metallicity
         self.time_grid = ssp.time_grid
         self.wavelength_grid = ssp.wavelength_grid
-        self.color_table = ssp.color_table
-        self.lumin_table = ssp.lumin_table
+        self.info_table = ssp.info_table
+        self.spec_table = ssp.spec_table
 
 
 class _Dale2014(BASE):
@@ -236,21 +234,23 @@ class _NebularContinuum(BASE):
         self.wave = nebular_continuum.wave
         self.lumin = nebular_continuum.lumin
 
+
 class _Schreiber2016(BASE):
     """Storage for Schreiber et al (2016) infra-red templates
         """
-    
+
     __tablename__ = 'schreiber2016_templates'
     type = Column(Float, primary_key=True)
     tdust = Column(String, primary_key=True)
     wave = Column(PickleType)
     lumin = Column(PickleType)
-    
+
     def __init__(self, ir):
         self.type = ir.type
         self.tdust = ir.tdust
         self.wave = ir.wave
         self.lumin = ir.lumin
+
 
 class Database(object):
     """Object giving access to pcigale database."""
@@ -339,7 +339,7 @@ class Database(object):
             .first()
         if result:
             return M2005(result.imf, result.metallicity, result.time_grid,
-                         result.wavelength_grid, result.mass_table,
+                         result.wavelength_grid, result.info_table,
                          result.spec_table)
         else:
             raise DatabaseLookupError(
@@ -403,8 +403,8 @@ class Database(object):
             .first()
         if result:
             return BC03(result.imf, result.metallicity, result.time_grid,
-                        result.wavelength_grid, result.color_table,
-                        result.lumin_table)
+                        result.wavelength_grid, result.info_table,
+                        result.spec_table)
         else:
             raise DatabaseLookupError(
                 "The BC03 SSP for imf <{0}> and metallicity <{1}> is not in "
@@ -440,7 +440,6 @@ class Database(object):
                     'The DL07 model is already in the base.')
         else:
             raise Exception('The database is not writable.')
-
 
     def get_dl2007(self, qpah, umin, umax):
         """
@@ -627,8 +626,6 @@ class Database(object):
             dictionary of parameters and their values
         """
         return self._get_parameters(_Dale2014)
-    
-
 
     def add_fritz2006(self, models):
         """
@@ -813,13 +810,13 @@ class Database(object):
     def add_schreiber2016(self, models):
         """
         Add Schreiber et al (2016) templates the collection.
-        
+
         Parameters
         ----------
         models: list of pcigale.data.Schreiber2016 objects
-        
+
         """
-    
+
         if self.is_writable:
             for model in models:
                 self.session.add(_Schreiber2016(model))
@@ -834,33 +831,33 @@ class Database(object):
 
     def get_schreiber2016(self, type, tdust):
         """
-        Get the Schreiber et al (2016) template corresponding to the given set of
-        parameters.
-        
+        Get the Schreiber et al (2016) template corresponding to the given set
+        of parameters.
+
         Parameters
         ----------
         type: float
         Dust template or PAH template
         tdust: float
         Dust temperature
-        
+
         Returns
         -------
         template: pcigale.data.Schreiber2016
         The Schreiber et al. (2016) IR template.
-        
+
         Raises
         ------
         DatabaseLookupError: if the requested template is not in the database.
-        
+
         """
         result = (self.session.query(_Schreiber2016).
-              filter(_Schreiber2016.type == type).
-              filter(_Schreiber2016.tdust == tdust).
-              first())
+                  filter(_Schreiber2016.type == type).
+                  filter(_Schreiber2016.tdust == tdust).
+                  first())
         if result:
             return Schreiber2016(result.type, result.tdust, result.wave,
-                                  result.lumin)
+                                 result.lumin)
         else:
             raise DatabaseLookupError(
                 "The Schreiber2016 template for type <{0}> and tdust <{1}> "
@@ -868,7 +865,7 @@ class Database(object):
 
     def get_schreiber2016_parameters(self):
         """Get parameters for the Scnreiber 2016 models.
-        
+
         Returns
         -------
         paramaters: dictionary
@@ -969,8 +966,7 @@ class Database(object):
                   filter(_Filter.name == name).
                   first())
         if result:
-            return Filter(result.name, result.description,
-                          result.trans_type, result.trans_table,
+            return Filter(result.name, result.description, result.trans_table,
                           result.effective_wavelength)
         else:
             raise DatabaseLookupError(
@@ -989,11 +985,11 @@ class Database(object):
     def parse_filters(self):
         """Generator to parse the filter database."""
         for filt in self.session.query(_Filter):
-            yield Filter(filt.name, filt.description, filt.trans_type,
-                         filt.trans_table, filt.effective_wavelength)
+            yield Filter(filt.name, filt.description, filt.trans_table,
+                         filt.effective_wavelength)
 
     def parse_m2005(self):
         """Generator to parse the Maraston 2005 SSP database."""
         for ssp in self.session.query(_M2005):
             yield M2005(ssp.imf, ssp.metallicity, ssp.time_grid,
-                        ssp.wavelength_grid, ssp.mass_table, ssp.spec_table)
+                        ssp.wavelength_grid, ssp.info_table, ssp.spec_table)

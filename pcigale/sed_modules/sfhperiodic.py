@@ -85,7 +85,7 @@ class SfhPeriodic(SedModule):
                     time_grid/self.tau_bursts**2
         elif self.type_bursts == 2:
             burst = np.zeros_like(time_grid)
-            burst[:self.tau_bursts+1] = 1.
+            burst[:int(self.tau_bursts)+1] = 1.
         else:
             raise Exception("Burst type {} unknown.".format(self.type_bursts))
 
@@ -121,6 +121,7 @@ class SfhPeriodic(SedModule):
         sed.add_info("sfh.type_bursts", self.type_bursts)
         sed.add_info("sfh.delta_bursts", self.delta_bursts)
         sed.add_info("sfh.tau_bursts", self.tau_bursts)
+
 
 # SedModule to be returned by get_module
 Module = SfhPeriodic

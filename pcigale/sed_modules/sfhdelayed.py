@@ -60,8 +60,8 @@ class SFHDelayed(SedModule):
 
         # Time grid and SFR
         time_grid = np.arange(age)
-        self.sfr = time_grid * np.exp(-time_grid / self.tau_main) / \
-                   self.tau_main**2
+        self.sfr = (time_grid * np.exp(-time_grid / self.tau_main) /
+                    self.tau_main**2)
 
         # Compute the galaxy mass and normalise the SFH to 1 solar mass
         # produced if asked to.
@@ -86,6 +86,7 @@ class SFHDelayed(SedModule):
         sed.sfh = self.sfr
         sed.add_info("sfh.integrated", self.sfr_integrated, True)
         sed.add_info("sfh.tau_main", self.tau_main)
+
 
 # SedModule to be returned by get_module
 Module = SFHDelayed

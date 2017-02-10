@@ -109,5 +109,6 @@ class SfhBuat08(SedModule):
         sed.add_info("sfh.integrated", self.sfr_integrated, True)
         sed.add_info("sfh.velocity", self.velocity)
 
+
 # SedModule to be returned by get_module
 Module = SfhBuat08

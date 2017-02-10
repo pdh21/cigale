@@ -260,5 +260,6 @@ class PdfAnalysis(AnalysisModule):
 
         print("Run completed!")
 
+
 # AnalysisModule to be returned by get_module
 Module = PdfAnalysis

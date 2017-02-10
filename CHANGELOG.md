@@ -1,6 +1,38 @@
 # Change Log
 
-# 0.10.0 (2016-09-15)
+## 0.11.0 (2017-02-10)
+### Added
+- The stellar mass-weighted age is now provided. This is a much more usual measure of the age than the age of the oldest star. This is accessible with the `stellar.age_m_star` keyword in the `bc03` module with with the `stellar.age_mass` keyword in the `m2005` module. (Médéric Boquien)
+- The nebular models have been expanded from log U=-3 to log U=-4. (Médéric Boquien & Akio Inoue)
+- The nebular models are now sampled in steps of 0.1 dex in log U rather than 1.0 dex steps. (Médéric Boquien & Akio Inoue)
+- A new set of filters from GAZPAR has been added. The pattern of the filter name is "telescope.instrument.filter", e.g. "hst.wfc3.F160W". If the telescope has one instrument, it is skipped, e.g. "galex.FUV". For now the original set of filters is still provided. (Médéric Boquien & Olivier Ilbert)
+- A brand new module `restframe\_param` has been added to compute rest frame parameters: UV slope β (Calzetti et al. 1994), Dn4000 (Balogh et al. 1999), IRX, emission lines equivalent widths at any wavelength, luminosity in any filter, colour in any pair of filters. This module has to be inserted right before the redshifting module. (Médéric Boquien)
+
+### Changed
+- We do not output the break strength from the `bc03` module anymore as these were not computed properly. (Médéric Boquien)
+- The new `restframe\_param` module replaces the unofficial `param` module, which has now been trimmed to only compute fluxes in the observed frame as the rest of its functionalities have been transferred to the much more efficient `restframe\_param` module. To reflect this, it has been renamed `fluxes`. (Médéric Boquien)
+- We now make use of new features available in Python 3.5. Previous versions are henceforth unsupported. However Python 3.6 or later is recommended for better performance. (Médéric Boquien)
+
+### Fixed
+- When the pcigale.ini file was missing, pcigale would crash and display a fairly cryptic backtrace. Now it explicitly states that the file could not be found. (Médéric Boquien)
+- The nebular emission now takes into account deviations from the 10000K case B assumption. In practice this yields fluxes about 10% fainter. (Médéric Boquien & Akio Inoue)
+- Some filters were incorrectly assumed to be defined in units of energy when they were actually defined in units of photons, yielding slightly incorrect fluxes. Now all the filters are converted into units of energy when imported. (Médéric Boquien)
+- Remove the PSEUDO_D4000 filter which was incorrect. (Médéric Boquien)
+- Indicate the correct transmission type for the PACS green and red filters. (Médéric Boquien)
+- IRAS filters are defined in energy rather than photons. (Médéric Boquien)
+- Remove a Numpy warning in the computation of the IGM absorption (Médéric Boquien)
+- The Herschel passbands only included the filter. Now they include the full throughput of the instrument. Flux differences are expected to be no more than 1%. (Médéric Boquien)
+- The `dustatt_powerlaw` module indicated that the Milky Way bump has an amplitude of 3. This is only valid for the `dustatt_calzleit` module. As `dustatt_powerlaw` is normalised to A(V) rather than E(B-V) for `dustatt_calzleit`, the bump is a factor Rv larger. A more reasonable value is now given. (Médéric Boquien)
+- The correction of the χ² for the upper limits now properly takes into account earlier changes intended to reduce memory usage and speed up the analysis. This prevents a crash. (Médéric Boquien)
+- Fix a crash in the computation of the rectangular periodic SFH with Numpy 1.12. (Médéric Boquien)
+
+### Optimised
+- By default the MKL library created many threads for each for the parallel processes. Not only was this not necessary as a high-level parallelisation already exists, but it generated a strong oversubscription on the CPU and on the RAM. The slowdown was over a factor of ~2 in some cases. Now we mandate KML to use only 1 thread fo each process. (Médéric Boquien & Yannick Roehlly)
+- The generic numpy interpolation function was used. As we are in a well-controlled environment, this generated unnecessary verifications on the type and shape of the arrays. The compiled numpy interpolation function is now used, bypassing those checks. This generates a gain of 5-10% in computing speed for the generation of the models. (Médéric Boquien)
+- The interpolation of the spectra of the different physical components on a new wavelength grid was not optimal as the interpolation was done separately for each component. Now a specific function has been implemented caching repetitive computations and vectorising the interpolation to compute it for all the components in a single step. This generates a gain of 10% in computing speed for the generation of the models. (Médéric Boquien)
+- An optimisation in the sorting of a 2D array led to a gain of 10% in computing speed for the generation of the models. (Médéric Boquien)
+
+## 0.10.0 (2016-09-15)
 ### Added
 - Enable the possibility of having different normalisation factors for the star formation history. (Médéric Boquien)
 

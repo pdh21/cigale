@@ -3,14 +3,14 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Yannick Roehlly
 
-import pkgutil
-from collections import Iterable, OrderedDict
+from collections import OrderedDict
 import multiprocessing as mp
+import os.path
+import sys
 from textwrap import wrap
 
 import configobj
 from glob import glob  # To allow the use of glob() in "eval..."
-import pkg_resources
 import numpy as np
 import validate
 
@@ -57,6 +57,8 @@ class Configuration(object):
         # we actually return the configuration file from the property() method.
         self.config.validate(validate.Validator(validation.functions))
 
+        self.pcigaleini_exists = os.path.isfile(filename)
+
     def create_blank_conf(self):
         """Create the initial configuration file
 
@@ -74,7 +76,7 @@ class Configuration(object):
             "'_err' suffix for the uncertainties. The fluxes and the "
             "uncertainties must be in mJy. This file is optional to generate "
             "the configuration file, in particular for the savefluxes module.")
-        self.spec['data_file'] = "string"
+        self.spec['data_file'] = "string()"
 
         self.config['parameters_file'] = ""
         self.config.comments['parameters_file'] = [""] + wrap(
@@ -127,6 +129,9 @@ class Configuration(object):
         selection based on the filters identified in the data table file.
 
         """
+        if self.pcigaleini_exists is False:
+            print("Error: pcigale.ini could not be found.")
+            sys.exit(1)
 
         # Getting the list of the filters available in pcigale database
         with Database() as base:
@@ -220,6 +225,10 @@ class Configuration(object):
         configuration: dictionary
             Dictionary containing the information provided in pcigale.ini.
         """
+        if self.pcigaleini_exists is False:
+            print("Error: pcigale.ini could not be found.")
+            sys.exit(1)
+
         self.complete_redshifts()
         self.complete_analysed_parameters()
 
@@ -259,6 +268,7 @@ class Configuration(object):
                                                   'dl2007', 'dl2014']),
                                ('AGN', ['dale2014', 'fritz2006']),
                                ('radio', ['radio']),
+                               ('restframe parameters', ['restframe_params']),
                                ('redshift', ['redshifting'])))
 
         comments = {'SFH': "ERROR! Choosing one SFH module is mandatory.",
@@ -270,6 +280,8 @@ class Configuration(object):
                     'dust emission': "No dust emission module found.",
                     'AGN': "No AGN module found.",
                     'radio': "No radio module found.",
+                    'restframe parameters': "No restframe parameters module "
+                                            "found",
                     'redshift': "ERROR! No redshifting module found."}
 
         for module in modules:

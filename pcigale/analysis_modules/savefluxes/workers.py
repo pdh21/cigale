@@ -11,6 +11,7 @@ import numpy as np
 
 from ...warehouse import SedWarehouse
 from ..utils import OUT_DIR
+from ..utils import nothread
 
 
 def init_fluxes(params, filters, save_sed, variables, fluxes, info, t_begin,
@@ -40,6 +41,10 @@ def init_fluxes(params, filters, save_sed, variables, fluxes, info, t_begin,
     global gbl_model_fluxes, gbl_model_info, gbl_n_computed, gbl_t_begin
     global gbl_params, gbl_previous_idx, gbl_filters, gbl_save_sed
     global gbl_warehouse, gbl_variables
+
+    # Limit the number of threads to 1 if we use MKL in order to limit the
+    # oversubscription of the CPU/RAM.
+    nothread()
 
     gbl_model_fluxes = np.ctypeslib.as_array(fluxes[0])
     gbl_model_fluxes = gbl_model_fluxes.reshape(fluxes[1])

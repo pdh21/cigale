@@ -105,11 +105,11 @@ class Casey2012(SedModule):
         sed.add_info("dust.beta", self.beta)
         sed.add_info("dust.alpha", self.alpha)
 
-
         sed.add_contribution('dust.powerlaw', self.wave,
                              luminosity * self.lumin_powerlaw)
         sed.add_contribution('dust.blackbody', self.wave,
                              luminosity * self.lumin_blackbody)
+
 
 # SedModule to be returned by get_module
 Module = Casey2012

@@ -119,7 +119,7 @@ def igm_transmission(wavelength, redshift):
     tau_l_lls = np.zeros_like(wavelength)
     tau_l_lls[w] = n0 * ((term1 - term2) * term3 - term4)
 
-    tau_taun = np.sum(tau_n[2:n_transitions_max, :], axis=0.)
+    tau_taun = np.sum(tau_n[2:n_transitions_max, :], axis=0)
 
     lambda_min_igm = (1+redshift)*70.
     w = np.where(wavelength < lambda_min_igm)
@@ -215,6 +215,7 @@ class Redshifting(SedModule):
         sed.add_contribution('igm', sed.wavelength_grid,
                              self.igm_attenuation[key] * sed.luminosity)
         sed.add_module(self.name, self.parameters)
+
 
 # SedModule to be returned by get_module
 Module = Redshifting

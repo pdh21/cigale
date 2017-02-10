@@ -402,14 +402,11 @@ def compute_chi2(model_fluxes, obs_fluxes, obs_errors, lim_flag):
     # Some observations may not have flux values in some filter(s), but
     # they can have upper limit(s).
     if limits == True:
-        mask_lim = (obs_errors <= 0.)
-        chi2 += -2. * np.sum(
-            np.log(
-                np.sqrt(np.pi/2.)*(-obs_errors[mask_lim])*(
-                    1.+erf(
-                        (obs_fluxes[mask_lim]-model_fluxes[mask_lim, :] *
-                         scaling[:, np.newaxis]) /
-                        (np.sqrt(2)*(-obs_errors[mask_lim]))))), axis=1)
+        for i, obs_error in enumerate(obs_errors):
+            if obs_error < 0.:
+                chi2 += -2. * np.log(np.sqrt(np.pi/2.) * (-obs_errors[i]) * (
+                        1.+erf((obs_fluxes[i] - model_fluxes[i, :]*scaling) /
+                            (np.sqrt(2)*(-obs_errors[i])))))
 
     return chi2, scaling
 

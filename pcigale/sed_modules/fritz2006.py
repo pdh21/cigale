@@ -115,8 +115,6 @@ class Fritz2006(SedModule):
             sed.add_info('dust.luminosity', 1., True)
         luminosity = sed.info['dust.luminosity']
 
-
-
         sed.add_module(self.name, self.parameters)
         sed.add_info('agn.r_ratio', self.r_ratio)
         sed.add_info('agn.tau', self.tau)
@@ -151,6 +149,7 @@ class Fritz2006(SedModule):
                              agn_power * self.fritz2006.lumin_scatt)
         sed.add_contribution('agn.fritz2006_agn', self.fritz2006.wave,
                              agn_power * self.fritz2006.lumin_agn)
+
 
 # SedModule to be returned by get_module
 Module = Fritz2006

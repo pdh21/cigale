@@ -84,7 +84,8 @@ class Sfh2Exp(SedModule):
         sfr_burst = np.exp(-time_grid_burst / self.tau_burst)
 
         # Height of the late burst to have the desired produced mass fraction
-        sfr_burst *= self.f_burst / (1.-self.f_burst) * np.sum(self.sfr) / np.sum(sfr_burst)
+        sfr_burst *= (self.f_burst / (1.-self.f_burst) * np.sum(self.sfr) /
+                      np.sum(sfr_burst))
 
         # We add the age burst exponential for ages superior to age -
         # burst_age
@@ -118,6 +119,7 @@ class Sfh2Exp(SedModule):
         sed.add_info("sfh.tau_burst", self.tau_burst)
         sed.add_info("sfh.f_burst", self.f_burst)
         sed.add_info("sfh.burst_age", self.burst_age)
+
 
 # SedModule to be returned by get_module
 Module = Sfh2Exp

@@ -60,5 +60,6 @@ class LoadSpecFile(SedModule):
             table[self.parameters['l_lambda_column']]
         )
 
+
 # SedModule to be returned by get_module
 Module = LoadSpecFile

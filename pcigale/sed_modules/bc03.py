@@ -26,6 +26,7 @@ class BC03(SedModule):
     This SED creation module convolves the SED star formation history with a
     Bruzual and Charlot (2003) single stellar population to add a stellar
     component to the SED.
+
     """
 
     parameter_list = OrderedDict([
@@ -73,22 +74,15 @@ class BC03(SedModule):
             SED object.
 
         """
-        # First, we process the young population (age lower than the
-        # separation age.)
-        young_wave, young_lumin, young_info = self.ssp.convolve(
-            sed.sfh[-self.separation_age:])
-
-        # Then, we process the old population. If the SFH is shorter than the
-        # separation age then all the arrays will consist only of 0.
-        old_sfh = np.copy(sed.sfh)
-        old_sfh[-self.separation_age:] = 0.
-        old_wave, old_lumin, old_info = self.ssp.convolve(old_sfh)
+        out = self.ssp.convolve(sed.sfh, self.separation_age)
+        spec_young, spec_old, info_young, info_old, info_all = out
 
         # We compute the Lyman continuum luminosity as it is important to
         # compute the energy absorbed by the dust before ionising gas.
-        w = np.where(young_wave <= 91.1)
-        lum_ly_young = np.trapz(young_lumin[w], young_wave[w])
-        lum_ly_old = np.trapz(old_lumin[w], old_wave[w])
+        wave = self.ssp.wavelength_grid
+        w = np.where(wave <= 91.1)
+        lum_lyc_young = np.trapz(spec_young[w], wave[w])
+        lum_lyc_old = np.trapz(spec_old[w], wave[w])
 
         sed.add_module(self.name, self.parameters)
 
@@ -96,33 +90,25 @@ class BC03(SedModule):
         sed.add_info("stellar.metallicity", self.metallicity)
         sed.add_info("stellar.old_young_separation_age", self.separation_age)
 
-        sed.add_info("stellar.m_star_young", young_info["m_star"], True)
-        sed.add_info("stellar.m_gas_young", young_info["m_gas"], True)
-        sed.add_info("stellar.n_ly_young", young_info["n_ly"], True)
-        sed.add_info("stellar.lum_ly_young", lum_ly_young, True)
-        sed.add_info("stellar.b_400_young", young_info["b_4000"])
-        sed.add_info("stellar.b4_vn_young", young_info["b4_vn"])
-        sed.add_info("stellar.b4_sdss_young", young_info["b4_sdss"])
-        sed.add_info("stellar.b_912_young", young_info["b_912"])
+        sed.add_info("stellar.m_star_young", info_young["m_star"], True)
+        sed.add_info("stellar.m_gas_young", info_young["m_gas"], True)
+        sed.add_info("stellar.n_ly_young", info_young["n_ly"], True)
+        sed.add_info("stellar.lum_ly_young", lum_lyc_young, True)
 
-        sed.add_info("stellar.m_star_old", old_info["m_star"], True)
-        sed.add_info("stellar.m_gas_old", old_info["m_gas"], True)
-        sed.add_info("stellar.n_ly_old", old_info["n_ly"], True)
-        sed.add_info("stellar.lum_ly_old", lum_ly_old, True)
-        sed.add_info("stellar.b_400_old", old_info["b_4000"])
-        sed.add_info("stellar.b4_vn_old", old_info["b4_vn"])
-        sed.add_info("stellar.b4_sdss_old", old_info["b4_sdss"])
-        sed.add_info("stellar.b_912_old", old_info["b_912"])
+        sed.add_info("stellar.m_star_old", info_old["m_star"], True)
+        sed.add_info("stellar.m_gas_old", info_old["m_gas"], True)
+        sed.add_info("stellar.n_ly_old", info_old["n_ly"], True)
+        sed.add_info("stellar.lum_ly_old", lum_lyc_old, True)
 
-        sed.add_info("stellar.m_star",
-                     young_info["m_star"] + old_info["m_star"],
-                     True)
-        sed.add_info("stellar.m_gas",
-                     young_info["m_gas"] + old_info["m_gas"],
-                     True)
+        sed.add_info("stellar.m_star", info_all["m_star"], True)
+        sed.add_info("stellar.m_gas", info_all["m_gas"], True)
+        sed.add_info("stellar.n_ly", info_all["n_ly"], True)
+        sed.add_info("stellar.lum_ly", lum_lyc_young + lum_lyc_old, True)
+        sed.add_info("stellar.age_m_star", info_all["age_mass"])
 
-        sed.add_contribution("stellar.old", old_wave, old_lumin)
-        sed.add_contribution("stellar.young", young_wave, young_lumin)
+        sed.add_contribution("stellar.old", wave, spec_old)
+        sed.add_contribution("stellar.young", wave, spec_young)
+
 
 # SedModule to be returned by get_module
 Module = BC03

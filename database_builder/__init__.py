@@ -149,14 +149,21 @@ def build_filters(base):
         # The table is transposed to have table[0] containing the wavelength
         # and table[1] containing the transmission.
         filter_table = filter_table.transpose()
+
         # We convert the wavelength from Å to nm.
         filter_table[0] *= 0.1
+
+        # We convert to energy if needed
+        if filter_type == 'photon':
+            filter_table[1] *= filter_table[0]
+        elif filter_type != 'energy':
+            raise ValueError("Filter transmission type can only be "
+                             "'energy' or 'photon'.")
 
         print("Importing %s... (%s points)" % (filter_name,
                                                filter_table.shape[1]))
 
-        new_filter = Filter(filter_name, filter_description,
-                            filter_type, filter_table)
+        new_filter = Filter(filter_name, filter_description, filter_table)
 
         # We normalise the filter and compute the effective wavelength.
         # If the filter is a pseudo-filter used to compute line fluxes, it
@@ -171,6 +178,51 @@ def build_filters(base):
 
     base.add_filters(filters)
 
+def build_filters_gazpar(base):
+    filters = []
+    filters_dir = os.path.join(os.path.dirname(__file__), 'filters_gazpar/')
+    for filter_file in glob.glob(filters_dir + '**/*.pb', recursive=True):
+        with open(filter_file, 'r') as filter_file_read:
+            _ = filter_file_read.readline() # We use the filename for the name
+            filter_type = filter_file_read.readline().strip('# \n\t')
+            _ = filter_file_read.readline() # We do not yet use the calib type
+            filter_desc = filter_file_read.readline().strip('# \n\t')
+
+        filter_name = filter_file.replace(filters_dir, '')[:-3]
+        filter_name = filter_name.replace('/', '.')
+
+        filter_table = np.genfromtxt(filter_file)
+        # The table is transposed to have table[0] containing the wavelength
+        # and table[1] containing the transmission.
+        filter_table = filter_table.transpose()
+
+        # We convert the wavelength from Å to nm.
+        filter_table[0] *= 0.1
+
+        # We convert to energy if needed
+        if filter_type == 'photon':
+            filter_table[1] *= filter_table[0]
+        elif filter_type != 'energy':
+            raise ValueError("Filter transmission type can only be "
+                             "'energy' or 'photon'.")
+
+        print("Importing %s... (%s points)" % (filter_name,
+                                               filter_table.shape[1]))
+
+        new_filter = Filter(filter_name, filter_desc, filter_table)
+
+        # We normalise the filter and compute the effective wavelength.
+        # If the filter is a pseudo-filter used to compute line fluxes, it
+        # should not be normalised.
+        if not filter_name.startswith('PSEUDO'):
+            new_filter.normalise()
+        else:
+            new_filter.effective_wavelength = np.mean(
+                filter_table[0][filter_table[1] > 0]
+            )
+        filters.append(new_filter)
+
+    base.add_filters(filters)
 
 def build_m2005(base):
     m2005_dir = os.path.join(os.path.dirname(__file__), 'maraston2005/')
@@ -612,58 +664,55 @@ def build_fritz2006(base):
 def build_nebular(base):
     models_lines = []
     models_cont = []
-    lines_dir = os.path.join(os.path.dirname(__file__), 'nebular/')
 
-    # Number of Lyman continuum photon to normalize the nebular continuum
-    # templates
-    nlyc_continuum = {'0.0001': 2.68786E+53, '0.0004': 2.00964E+53,
-                      '0.004': 1.79593E+53, '0.008': 1.58843E+53,
-                      '0.02': 1.24713E+53, '0.05': 8.46718E+52}
+    nebular_dir = os.path.join(os.path.dirname(__file__), 'nebular/')
+    print("Importing {}...".format(nebular_dir + 'lines.dat'))
+    lines = np.genfromtxt(nebular_dir + 'lines.dat')
 
-    for Z in ['0.0001', '0.0004', '0.004', '0.008', '0.02', '0.05']:
-        filename = "{}lines_{}.dat".format(lines_dir, Z)
-        print("Importing {}...".format(filename))
-        wave, ratio1, ratio2, ratio3 = np.genfromtxt(filename, unpack=True,
-                                                     usecols=(0, 3, 7, 11))
+    wave_lines = np.genfromtxt(nebular_dir + 'line_wavelengths.dat')
+    print("Importing {}...".format(nebular_dir + 'continuum.dat'))
+    cont = np.genfromtxt(nebular_dir + 'continuum.dat')
 
-        # Convert wavelength from Å to nm
-        wave *= 0.1
+    # Convert wavelength from Å to nm
+    wave_lines *= 0.1
+    wave_cont = cont[:1600, 0] * 0.1
 
-        # Convert log(flux) into flux (arbitrary units)
-        ratio1 = 10**(ratio1-38.)
-        ratio2 = 10**(ratio2-38.)
-        ratio3 = 10**(ratio3-38.)
+    # Get the list of metallicities
+    metallicities = np.unique(lines[:, 1])
 
-        # Normalize all lines to Hβ
-        w = np.where(wave == 486.1)
-        ratio1 = ratio1/ratio1[w]
-        ratio2 = ratio2/ratio2[w]
-        ratio3 = ratio3/ratio3[w]
+    # Keep only the fluxes
+    lines = lines[:, 2:]
+    cont = cont[:, 1:]
 
-        models_lines.append(NebularLines(np.float(Z), -3., wave, ratio1))
-        models_lines.append(NebularLines(np.float(Z), -2., wave, ratio2))
-        models_lines.append(NebularLines(np.float(Z), -1., wave, ratio3))
+    # We select only models with ne=100. Other values could be included later
+    lines = lines[:, 1::3]
+    cont = cont[:, 1::3]
 
-        filename = "{}continuum_{}.dat".format(lines_dir, Z)
-        print("Importing {}...".format(filename))
-        wave, cont1, cont2, cont3 = np.genfromtxt(filename, unpack=True,
-                                                  usecols=(0, 3, 7, 11))
+    # Convert lines to W and to a linear scale
+    lines = 10**(lines-7)
 
-        # Convert wavelength from Å to nm
-        wave *= 0.1
+    # Convert continuum to W/nm
+    cont *= np.tile(1e-7 * cst.c * 1e9 / wave_cont**2,
+                    metallicities.size)[:, np.newaxis]
 
-        # Normalize flux from erg s¯¹ Hz¯¹ (Msun/yr)¯¹ to W nm¯¹ photon¯¹ s¯¹
-        conv = 1e-7 * cst.c * 1e9 / (wave * wave) / nlyc_continuum[Z]
-        cont1 *= conv
-        cont2 *= conv
-        cont3 *= conv
+    # Import lines
+    for idx, metallicity in enumerate(metallicities):
+        spectra = lines[idx::6, :]
+        for logU, spectrum in zip(np.around(np.arange(-4., -.9, .1), 1),
+                                  spectra.T):
+            models_lines.append(NebularLines(metallicity, logU, wave_lines,
+                                             spectrum))
 
-        models_cont.append(NebularContinuum(np.float(Z), -3., wave, cont1))
-        models_cont.append(NebularContinuum(np.float(Z), -2., wave, cont2))
-        models_cont.append(NebularContinuum(np.float(Z), -1., wave, cont3))
+    # Import continuum
+    for idx, metallicity in enumerate(metallicities):
+        spectra = cont[1600 * idx: 1600 * (idx+1), :]
+        for logU, spectrum in zip(np.around(np.arange(-4., -.9, .1), 1),
+                                  spectra.T):
+            models_cont.append(NebularContinuum(metallicity, logU, wave_cont,
+                                                spectrum))
 
-    base.add_nebular_continuum(models_cont)
     base.add_nebular_lines(models_lines)
+    base.add_nebular_continuum(models_cont)
 
 
 def build_schreiber2016(base):
@@ -700,6 +749,7 @@ def build_base():
     print('#' * 78)
     print("1- Importing filters...\n")
     build_filters(base)
+    build_filters_gazpar(base)
     print("\nDONE\n")
     print('#' * 78)
 

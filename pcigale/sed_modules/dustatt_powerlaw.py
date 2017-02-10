@@ -134,7 +134,7 @@ class PowerLawAtt(SedModule):
         )),
         ("uv_bump_amplitude", (
             "cigale_list(minvalue=0.)",
-            "Amplitude of the UV bump. For the Milky Way: 3.",
+            "Amplitude of the UV bump. For the Milky Way: 0.75",
             0.
         )),
         ("powerlaw_slope", (
@@ -228,6 +228,7 @@ class PowerLawAtt(SedModule):
         for filt in self.filter_list:
             sed.add_info("attenuation." + filt,
                          -2.5 * np.log10(flux_att[filt] / flux_noatt[filt]))
+
 
 # SedModule to be returned by get_module
 Module = PowerLawAtt

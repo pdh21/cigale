@@ -4,11 +4,13 @@
 # Authors: Yannick Roehlly, Médéric Boquien
 
 import numpy as np
+from numpy.core.multiarray import interp  # Compiled version
 from scipy.constants import c, pi
 
-# Cache of dx for integrate(y,dx) done by flux_trapz
+# Cache dictionaries
 dx_cache = {}
 best_grid_cache = {}
+x_cache = {}
 
 
 def lambda_to_nu(wavelength):
@@ -356,19 +358,19 @@ def interpolate_lumin(wl, lumin, wl_new, lumin_new):
         # We interpolate only on the wavelengths where the components are
         # already defined.
         w = np.where((wl_unique > wl[0]) & (wl_unique < wl[-1]))
-        for i in range(lumin.shape[0]):
-            lumin_out[i, lumin.shape[1]+w[0]] = np.interp(wl_unique[w], wl,
-                                                          lumin[i, :])
+        lumin_out[:-1, lumin.shape[1]+w[0]] = quick_interp_lum(wl_unique[w],
+                                                               wl, lumin)
+
         wl_best = np.concatenate((wl, wl_unique))
         s = argsort_wl(wl_best)
         wl_best = wl_best[s]
-        lumin_out = lumin_out[:, s]
+        lumin_out = np.take(lumin_out, s, axis=-1)
     else:
         wl_best = wl
         lumin_out[:-1, :] = lumin
 
     # We interpolate the new component on the new merged wavelength grid.
-    lumin_out[-1, :] = np.interp(wl_best, wl_new, lumin_new, left=0., right=0.)
+    lumin_out[-1, :] = interp(wl_best, wl_new, lumin_new, left=0., right=0.)
 
     return (wl_best, lumin_out)
 
@@ -408,3 +410,45 @@ def flux_trapz(y, x, key):
         dx = np.diff(x)
         dx_cache[key] = dx
     return np.dot(dx, y[1:]+y[:-1]) * .5
+
+
+def quick_interp_lum(x_new, x, y):
+    """
+    Light weight interpolation function to interpolate luminosities on a new
+    wavelength grid. It assumes that all vallues are within the range of
+    definition. Also a number of quantities are cached in a dictionary in
+    order to avoid recomputing them at each call. The key is a tuple of the
+    size of the interpolation point, the size of the original x array and the
+    shape of the original y array. It should not be called for any other
+    purpose at it relies on strong assumptions that may be wrong interwise.
+
+    Parameters
+    ----------
+    x_new : 1D array
+        Wavelengths where the luminosities array must be interpolated
+    x: 1D array
+        Wavelengths of the luminosities array
+    y: 2D array
+        Luminosities array
+
+    Returns
+    -------
+    y_new: 2D array
+        Interpolated luminosities array
+    """
+    key = (x_new.size, x.size, y.shape)
+    if key in x_cache:
+        lo, hi, frac_x = x_cache[key]
+    else:
+        hi = np.searchsorted(x, x_new)
+        # Clip them so that they are at least 1.
+        # Removes mis-interpolation of x_new[n] = x[0]
+        hi = hi.clip(1, len(x)-1).astype(int)
+        lo = hi - 1
+        frac_x = (x_new - x[lo]) / (x[hi] - x[lo])
+        x_cache[key] = (lo, hi, frac_x)
+
+    y_lo = np.take(y, lo, axis=-1)
+    y_hi = np.take(y, hi, axis=-1)
+
+    return y_lo + (y_hi - y_lo) * frac_x

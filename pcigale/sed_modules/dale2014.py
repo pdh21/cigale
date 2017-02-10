@@ -104,5 +104,6 @@ class Dale2014(SedModule):
             sed.add_contribution('agn', self.model_quasar.wave,
                                  L_AGN * self.model_quasar.lumin)
 
+
 # SedModule to be returned by get_module
 Module = Dale2014

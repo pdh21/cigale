@@ -8,8 +8,6 @@ import collections
 import itertools
 import numpy as np
 
-from astropy.table import Table
-
 from ..utils import read_table
 
 
@@ -175,7 +173,7 @@ class ParametersHandlerFile(object):
                     parname = colname.split('.', 1)[1]
                     if type(table[colname][0]) is np.str_:
                         dict_params[parname] = [str(val) for val in
-                                                 table[colname]]
+                                                table[colname]]
                     else:
                         dict_params[parname] = list(table[colname])
             self.parameters.append(dict_params)

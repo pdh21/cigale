@@ -104,5 +104,6 @@ class Schreiber2016(SedModule):
         sed.add_contribution('dust.pah', self.model_pah.wave,
                              luminosity * self.model_pah.lumin)
 
+
 # SedModule to be returned by get_module
 Module = Schreiber2016
