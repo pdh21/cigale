@@ -25,7 +25,7 @@ entry_points = {
 
 setup(
     name="pcigale",
-    version="0.10.0",
+    version="0.11.0",
     packages=find_packages(exclude=["database_builder"]),
 
     install_requires=['numpy', 'scipy', 'sqlalchemy', 'matplotlib',
