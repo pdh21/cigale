@@ -103,6 +103,7 @@ class Configuration(object):
             ["Dust emission: casey2012, dale2014, dl2007, dl2014"] +
             ["AGN: dale2014, fritz2006"] +
             ["Radio: radio"] +
+            ["Restframe parameters: restframe_parameters"] +
             ["Redshift: redshifting (mandatory!)"])
         self.spec['sed_modules'] = "cigale_string_list()"
 
@@ -280,7 +281,7 @@ class Configuration(object):
                     'dust emission': "No dust emission module found.",
                     'AGN': "No AGN module found.",
                     'radio': "No radio module found.",
-                    'restframe parameters': "No restframe parameters module "
+                    'restframe_parameters': "No restframe parameters module "
                                             "found",
                     'redshift': "ERROR! No redshifting module found."}
 

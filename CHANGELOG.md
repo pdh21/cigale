@@ -4,6 +4,8 @@
 ### Added
 ### Changed
 ### Fixed
+- Corrected a typo that prevented `restframe\_parameters` from being listed among the available modules. (Médéric Boquien)
+
 ### Optimised
 
 ## 0.11.0 (2017-02-10)
@@ -12,11 +14,11 @@
 - The nebular models have been expanded from log U=-3 to log U=-4. (Médéric Boquien & Akio Inoue)
 - The nebular models are now sampled in steps of 0.1 dex in log U rather than 1.0 dex steps. (Médéric Boquien & Akio Inoue)
 - A new set of filters from GAZPAR has been added. The pattern of the filter name is "telescope.instrument.filter", e.g. "hst.wfc3.F160W". If the telescope has one instrument, it is skipped, e.g. "galex.FUV". For now the original set of filters is still provided. (Médéric Boquien & Olivier Ilbert)
-- A brand new module `restframe\_param` has been added to compute rest frame parameters: UV slope β (Calzetti et al. 1994), Dn4000 (Balogh et al. 1999), IRX, emission lines equivalent widths at any wavelength, luminosity in any filter, colour in any pair of filters. This module has to be inserted right before the redshifting module. (Médéric Boquien)
+- A brand new module `restframe\_parameters` has been added to compute rest frame parameters: UV slope β (Calzetti et al. 1994), Dn4000 (Balogh et al. 1999), IRX, emission lines equivalent widths at any wavelength, luminosity in any filter, colour in any pair of filters. This module has to be inserted right before the redshifting module. (Médéric Boquien)
 
 ### Changed
 - We do not output the break strength from the `bc03` module anymore as these were not computed properly. (Médéric Boquien)
-- The new `restframe\_param` module replaces the unofficial `param` module, which has now been trimmed to only compute fluxes in the observed frame as the rest of its functionalities have been transferred to the much more efficient `restframe\_param` module. To reflect this, it has been renamed `fluxes`. (Médéric Boquien)
+- The new `restframe\_parameters` module replaces the unofficial `param` module, which has now been trimmed to only compute fluxes in the observed frame as the rest of its functionalities have been transferred to the much more efficient `restframe\_parameters` module. To reflect this, it has been renamed `fluxes`. (Médéric Boquien)
 - We now make use of new features available in Python 3.5. Previous versions are henceforth unsupported. However Python 3.6 or later is recommended for better performance. (Médéric Boquien)
 
 ### Fixed
