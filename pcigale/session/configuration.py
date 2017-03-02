@@ -269,7 +269,7 @@ class Configuration(object):
                                                   'dl2007', 'dl2014']),
                                ('AGN', ['dale2014', 'fritz2006']),
                                ('radio', ['radio']),
-                               ('restframe parameters', ['restframe_params']),
+                               ('restframe_parameters', ['restframe_params']),
                                ('redshift', ['redshifting'])))
 
         comments = {'SFH': "ERROR! Choosing one SFH module is mandatory.",
