@@ -17,7 +17,7 @@ class SedWarehouse(object):
     """
 
     def __init__(self, cache_type="memory", nocache=None):
-        """Instantiate a SED warehouse
+        """Instantiate an SED warehouse
 
         Parameters
         ----------
@@ -85,12 +85,12 @@ class SedWarehouse(object):
     def partial_clear_cache(self, n_modules_max):
         """Clear the cache of SEDs that are not relevant anymore
 
-        To do partial clearing of the cache, we go through the entire cache and
-        delete the SEDs that have more than a given number of modules. This is
-        done by computing the index of the module that has a changed parameter.
-        This means that SEDs with this number of modules or more are not needed
-        anymore to compute new models and we can discard them. Passing 0 as an
-        argument empties the cache completely.
+        To do partial clearing of the cache, we go through the entire cache
+        and delete the SEDs that have more than a given number of modules.
+        This is done by computing the index of the module that has a changed
+        parameter. This means that SEDs with this number of modules or more
+        are not needed anymore to compute new models and we can discard them.
+        Passing 0 as an argument empties the cache completely.
 
         Parameters
         ----------
@@ -130,8 +130,8 @@ class SedWarehouse(object):
         module_list = list(module_list)
         parameter_list = list(parameter_list)
 
-        # Marshal a tuple (module_list, parameter_list) to be used as a key for
-        # storing the SED in the cache.
+        # Marshal a tuple (module_list, parameter_list) to be used as a key
+        # for storing the SED in the cache.
         sed_key = marshal.dumps((module_list, parameter_list))
 
         sed = self.storage.get(sed_key)
