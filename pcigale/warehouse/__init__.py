@@ -16,18 +16,30 @@ class SedWarehouse(object):
     cache or a database.
     """
 
-    def __init__(self, cache_type="memory"):
+    def __init__(self, cache_type="memory", nocache=None):
         """Instantiate a SED warehouse
 
         Parameters
         ----------
         cache_type: string
             Type of cache used. For now, only in memory caching.
+        nocache: list
+            SED module or list of the SED modules that are not to be cached,
+        trading CPU for memory.
         """
         if cache_type == "memory":
             from .store.memory import SedStore
         elif cache_type == "shelf":
             from .store.shelf import SedStore
+
+        if nocache is None:
+            self.nocache = []
+        elif isinstance(nocache, list) is True:
+            self.nocache = nocache
+        elif isinstance(nocache, str) is True:
+            self.nocache = [nocache]
+        else:
+            raise TypeError("The nocache argument must be a list or an str.")
 
         self.storage = SedStore()
 
@@ -55,15 +67,18 @@ class SedWarehouse(object):
         a pcigale.sed_modules.Module instance
 
         """
-        # Marshal a tuple (name, parameters) to be used as a key for storing
-        # the module in the cache.
-        module_key = marshal.dumps((name, kwargs))
 
-        if module_key in self.module_cache:
-            module = self.module_cache[module_key]
-        else:
+        if name in self.nocache:
             module = sed_modules.get_module(name, **kwargs)
-            self.module_cache[module_key] = module
+        else:
+            # Marshal a tuple (name, parameters) to be used as a key for
+            # storing the module in the cache.
+            module_key = marshal.dumps((name, kwargs))
+            if module_key in self.module_cache:
+                module = self.module_cache[module_key]
+            else:
+                module = sed_modules.get_module(name, **kwargs)
+                self.module_cache[module_key] = module
 
         return module
 

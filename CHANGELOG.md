@@ -2,6 +2,8 @@
 
 ## Unreleased
 ### Added
+- Provide the possibility not to store a given module in cache. This can be useful on computers with a limited amount of memory. The downside is that when not caching the model generation will be slower. (Médéric Boquien)
+
 ### Changed
 ### Fixed
 - Corrected a typo that prevented `restframe\_parameters` from being listed among the available modules. (Médéric Boquien)
