@@ -9,6 +9,7 @@
 - Corrected a typo that prevented `restframe\_parameters` from being listed among the available modules. (Médéric Boquien)
 
 ### Optimised
+- The cache architecture has been simplified, making it somewhat faster. It speeds up the model generation by ~1%. (Médéric Boquien)
 
 ## 0.11.0 (2017-02-10)
 ### Added
