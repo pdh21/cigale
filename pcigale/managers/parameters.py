@@ -23,28 +23,28 @@ class ParametersManager(object):
     to keep the cache of partially computed models in SedWarehouse as small as
     possible by weeding out partial models that will not be used anymore."""
 
-    def __new__(object, configuration):
-        if configuration['parameters_file']:
-            return ParametersManagerFile(configuration)
+    def __new__(object, conf):
+        if conf['parameters_file']:
+            return ParametersManagerFile(conf)
         else:
-            return ParametersManagerGrid(configuration)
+            return ParametersManagerGrid(conf)
 
 
 class ParametersManagerGrid(object):
     """Class to generate a parameters manager for a systematic grid using the
     parameters given in the pcigale.ini file."""
 
-    def __init__(self, configuration):
+    def __init__(self, conf):
         """Instantiate the class.
 
         Parameters
         ----------
-        configuration: dictionary
+        conf: dictionary
             Contains the modules in the order they are called
 
         """
-        self.modules = configuration['sed_modules']
-        self.parameters = [self._param_dict_combine(configuration['sed_modules_params'][module])
+        self.modules = conf['sed_modules']
+        self.parameters = [self._param_dict_combine(conf['sed_modules_params'][module])
                            for module in self.modules]
         self.shape = tuple(len(parameter) for parameter in self.parameters)
         self.size = int(np.product(self.shape))
@@ -138,16 +138,16 @@ class ParametersManagerFile(object):
     """Class to generate a parameters manager for list of parameters given in an
     input file."""
 
-    def __init__(self, configuration):
+    def __init__(self, conf):
         """Instantiate the class.
 
         Parameters
         ----------
-        configuration: dictionary
+        conf: dictionary
             Contains the name of the file containing the parameters
 
         """
-        table = read_table(configuration['parameters_file'])
+        table = read_table(conf['parameters_file'])
         table.sort(table.colnames)
 
         self.size = len(table)
