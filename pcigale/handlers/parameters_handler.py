@@ -9,14 +9,14 @@ import itertools
 import numpy as np
 
 from ..utils import read_table
+from ..warehouse import SedWarehouse
 
-
-class ParametersHandler(object):
-    """Class to abstract the call to the relevant parameters handler depending
+class ParametersManager(object):
+    """Class to abstract the call to the relevant parameters manager depending
     how the physical parameters of the models are provided (directly in the
     pcigale.ini file ).
 
-    A ParametersHandler allows to generate a list containing the parameters for
+    A ParametersManager allows to generate a list containing the parameters for
     a modules whose index is passed as an argument. It also allows to know what
     modules have changed their parameters given their indices. Because the
     order of the modules is optimised to minimise the computations, this allows
@@ -25,13 +25,13 @@ class ParametersHandler(object):
 
     def __new__(object, configuration):
         if configuration['parameters_file']:
-            return ParametersHandlerFile(configuration)
+            return ParametersManagerFile(configuration)
         else:
-            return ParametersHandlerGrid(configuration)
+            return ParametersManagerGrid(configuration)
 
 
-class ParametersHandlerGrid(object):
-    """Class to generate a parameters handler for a systematic grid using the
+class ParametersManagerGrid(object):
+    """Class to generate a parameters manager for a systematic grid using the
     parameters given in the pcigale.ini file."""
 
     def __init__(self, configuration):
@@ -134,8 +134,8 @@ class ParametersHandlerGrid(object):
         return len(self.shape)
 
 
-class ParametersHandlerFile(object):
-    """Class to generate a parameters handler for list of parameters given in an
+class ParametersManagerFile(object):
+    """Class to generate a parameters manager for list of parameters given in an
     input file."""
 
     def __init__(self, configuration):

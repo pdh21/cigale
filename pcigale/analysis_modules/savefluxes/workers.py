@@ -21,8 +21,8 @@ def init_fluxes(params, filters, save_sed, variables, fluxes, info, t_begin,
 
     Parameters
     ----------
-    params: ParametersHandler
-        Handles the parameters from a 1D index.
+    params: ParametersManager
+        Manages the parameters from a 1D index.
     filters: List
         Contains the names of the filters to compute the fluxes.
     save_sed: boolean
@@ -75,7 +75,7 @@ def fluxes(idx):
     ----------
     idx: int
         Index of the model to retrieve its parameters from the parameters
-        handler.
+        manager.
 
     """
     global gbl_previous_idx, gbl_keys

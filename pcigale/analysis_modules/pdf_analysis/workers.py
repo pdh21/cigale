@@ -25,8 +25,8 @@ def init_sed(params, filters, analysed, fluxes, variables, t_begin, n_computed):
 
     Parameters
     ----------
-    params: ParametersHandler
-        Handles the parameters from a 1D index.
+    params: ParametersManager
+        Manages the parameters from a 1D index.
     filters: List
         Contains the names of the filters to compute the fluxes.
     analysed: list
@@ -78,8 +78,8 @@ def init_analysis(params, filters, analysed, z, fluxes, variables,
 
     Parameters
     ----------
-    params: ParametersHandler
-        Handles the parameters from a 1D index.
+    params: ParametersManager
+        Manages the parameters from a 1D index.
     filters: list
         Contains filters to compute the fluxes.
     analysed: list

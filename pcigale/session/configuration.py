@@ -14,7 +14,7 @@ from glob import glob  # To allow the use of glob() in "eval..."
 import numpy as np
 import validate
 
-from ..handlers.parameters_handler import ParametersHandler
+from ..handlers.parameters_handler import ParametersManager
 from ..data import Database
 from ..utils import read_table
 from .. import sed_modules
@@ -315,7 +315,7 @@ class Configuration(object):
         configuration file and must be extracted from a dummy run."""
         if not self.config['analysis_params']['variables']:
             warehouse = SedWarehouse()
-            params = ParametersHandler(self.config.dict())
+            params = ParametersManager(self.config.dict())
             sed = warehouse.get_sed(params.modules, params.from_index(0))
             info = list(sed.info.keys())
             info.sort()

@@ -25,7 +25,7 @@ from .. import AnalysisModule
 from ..utils import save_fluxes
 from .workers import init_fluxes as init_worker_fluxes
 from .workers import fluxes as worker_fluxes
-from ...handlers.parameters_handler import ParametersHandler
+from ...handlers.parameters_handler import ParametersManager
 
 
 class SaveFluxes(AnalysisModule):
@@ -72,12 +72,12 @@ class SaveFluxes(AnalysisModule):
                    name.endswith('_err')]
         n_filters = len(filters)
 
-        # The parameters handler allows us to retrieve the models parameters
+        # The parameters manager allows us to retrieve the models parameters
         # from a 1D index. This is useful in that we do not have to create
         # a list of parameters as they are computed on-the-fly. It also has
         # nice goodies such as finding the index of the first parameter to
         # have changed between two indices or the number of models.
-        params = ParametersHandler(conf)
+        params = ParametersManager(conf)
         n_params = params.size
 
         info = conf['analysis_params']['variables']

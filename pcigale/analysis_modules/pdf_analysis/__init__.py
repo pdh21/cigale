@@ -41,7 +41,7 @@ from .workers import sed as worker_sed
 from .workers import init_sed as init_worker_sed
 from .workers import init_analysis as init_worker_analysis
 from .workers import analysis as worker_analysis
-from ...handlers.parameters_handler import ParametersHandler
+from ...handlers.parameters_handler import ParametersManager
 
 
 # Tolerance threshold under which any flux or error is considered as 0.
@@ -134,12 +134,12 @@ class PdfAnalysis(AnalysisModule):
 
         z = np.array(conf['sed_modules_params']['redshifting']['redshift'])
 
-        # The parameters handler allows us to retrieve the models parameters
+        # The parameters manager allows us to retrieve the models parameters
         # from a 1D index. This is useful in that we do not have to create
         # a list of parameters as they are computed on-the-fly. It also has
         # nice goodies such as finding the index of the first parameter to
         # have changed between two indices or the number of models.
-        params = ParametersHandler(conf)
+        params = ParametersManager(conf)
         n_params = params.size
 
         # Retrieve an arbitrary SED to obtain the list of output parameters

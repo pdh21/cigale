@@ -9,7 +9,7 @@ import sys
 
 from .session.configuration import Configuration
 from .analysis_modules import get_module
-from .handlers.parameters_handler import ParametersHandler
+from .handlers.parameters_handler import ParametersManager
 
 __version__ = "0.10.0"
 
@@ -40,7 +40,7 @@ def check(config):
 
     if configuration:
         print("With this configuration cigale will compute {} "
-              "models.".format(ParametersHandler(configuration).size))
+              "models.".format(ParametersManager(configuration).size))
 
 
 def run(config):
