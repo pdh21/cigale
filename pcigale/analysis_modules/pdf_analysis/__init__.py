@@ -41,7 +41,6 @@ from .workers import sed as worker_sed
 from .workers import init_sed as init_worker_sed
 from .workers import init_analysis as init_worker_analysis
 from .workers import analysis as worker_analysis
-from ..utils import backup_dir
 from ...handlers.parameters_handler import ParametersHandler
 
 
@@ -111,7 +110,7 @@ class PdfAnalysis(AnalysisModule):
         print("Initialising the analysis module... ")
 
         # Rename the output directory if it exists
-        backup_dir()
+        self.prepare_dirs()
 
         # Initalise variables from input arguments.
         variables = conf['analysis_params']["variables"]

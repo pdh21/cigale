@@ -22,7 +22,7 @@ from multiprocessing.sharedctypes import RawArray
 import time
 
 from .. import AnalysisModule
-from ..utils import backup_dir, save_fluxes
+from ..utils import save_fluxes
 from .workers import init_fluxes as init_worker_fluxes
 from .workers import fluxes as worker_fluxes
 from ...handlers.parameters_handler import ParametersHandler
@@ -65,7 +65,7 @@ class SaveFluxes(AnalysisModule):
         """
 
         # Rename the output directory if it exists
-        backup_dir()
+        self.prepare_dirs()
         save_sed = conf['analysis_params']['save_sed']
 
         filters = [name for name in conf['bands'] if not

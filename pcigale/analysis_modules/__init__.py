@@ -4,11 +4,15 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Yannick Roehlly & Denis Burgarella
 
+from datetime import datetime
 from importlib import import_module
+import os
+import shutil
 
 import numpy as np
 from astropy.table import Column
 
+OUT_DIR = 'out/'
 
 class AnalysisModule(object):
     """Abstract class, the pCigale analysis modules are based on.
@@ -48,6 +52,17 @@ class AnalysisModule(object):
 
         """
         raise NotImplementedError()
+
+    def prepare_dirs(self, directory=OUT_DIR):
+        # Create a new out/ directory and move existing one if needed
+        if os.path.exists(directory):
+            name = datetime.now().strftime("%Y%m%d%H%M") + '_' + directory
+            os.rename(directory, name)
+            print("The {} directory was renamed to {}".format(directory, name))
+
+        os.mkdir(directory)
+        shutil.copy('pcigale.ini', directory)
+        shutil.copy('pcigale.ini.spec', directory)
 
     def process(self, configuration):
         """Process with the analysis

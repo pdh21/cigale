@@ -7,10 +7,6 @@
 Various utility functions for pcigale analysis modules
 """
 
-from datetime import datetime
-import os
-import shutil
-
 import numpy as np
 from astropy import log
 from astropy.table import Table, Column
@@ -19,20 +15,6 @@ log.setLevel('ERROR')
 
 # Directory where the output files are stored
 OUT_DIR = "out/"
-
-
-def backup_dir(directory=OUT_DIR):
-    if os.path.exists(directory):
-        new_name = datetime.now().strftime("%Y%m%d%H%M") + "_" + directory
-        os.rename(directory, new_name)
-        print("The existing {} directory was renamed to {}".format(
-            directory,
-            new_name
-        ))
-    os.mkdir(directory)
-    shutil.copyfile('pcigale.ini', directory + 'pcigale.ini')
-    shutil.copyfile('pcigale.ini.spec', directory + 'pcigale.ini.spec')
-
 
 def save_fluxes(model_fluxes, model_parameters, filters, names,
                 directory=OUT_DIR):
