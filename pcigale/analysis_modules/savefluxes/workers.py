@@ -10,7 +10,6 @@ import time
 import numpy as np
 
 from ...warehouse import SedWarehouse
-from ..utils import OUT_DIR
 from ..utils import nothread
 
 
@@ -98,7 +97,7 @@ def fluxes(idx):
                                            gbl_variables])
 
     if gbl_save_sed is True:
-        sed.to_fits(OUT_DIR + "{}".format(idx))
+        sed.to_fits("out/{}".format(idx))
     with gbl_n_computed.get_lock():
         gbl_n_computed.value += 1
         n_computed = gbl_n_computed.value

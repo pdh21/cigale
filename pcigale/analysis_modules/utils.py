@@ -13,11 +13,7 @@ from astropy.table import Table, Column
 
 log.setLevel('ERROR')
 
-# Directory where the output files are stored
-OUT_DIR = "out/"
-
-def save_fluxes(model_fluxes, model_parameters, filters, names,
-                directory=OUT_DIR):
+def save_fluxes(model_fluxes, model_parameters, filters, names):
     """Save fluxes and associated parameters into a table.
 
     Parameters
@@ -30,8 +26,6 @@ def save_fluxes(model_fluxes, model_parameters, filters, names,
         Contains the filter names.
     names: List
         Contains the parameters names.
-    directory: str
-        Directory under which the file should be saved.
 
     """
     out_fluxes = np.ctypeslib.as_array(model_fluxes[0])
@@ -46,9 +40,9 @@ def save_fluxes(model_fluxes, model_parameters, filters, names,
     out_table.add_column(Column(np.arange(model_fluxes[1][0]), name='id'),
                          index=0)
 
-    out_table.write("{}/computed_fluxes.fits".format(directory))
-    out_table.write("{}/computed_fluxes.txt".format(directory),
-                    format='ascii.fixed_width', delimiter=None)
+    out_table.write("out/computed_fluxes.fits")
+    out_table.write("out/computed_fluxes.txt", format='ascii.fixed_width',
+                    delimiter=None)
 
 
 def nothread():

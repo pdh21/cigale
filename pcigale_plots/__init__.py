@@ -33,8 +33,6 @@ __version__ = "0.1-alpha"
 # Name of the file containing the best models information
 BEST_RESULTS = "results.fits"
 MOCK_RESULTS = "results_mock.fits"
-# Directory where the output files are stored
-OUT_DIR = "out/"
 # Wavelength limits (restframe) when plotting the best SED.
 PLOT_L_MIN = 0.1
 PLOT_L_MAX = 5e5
@@ -51,9 +49,8 @@ def _chi2_worker(obj_name, var_name):
         Name of the analysed variable..
 
     """
-    if os.path.isfile(OUT_DIR + "{}_{}_chi2.fits".format(obj_name, var_name)):
-        chi2 = Table.read(OUT_DIR + "{}_{}_chi2.fits".format(obj_name,
-                                                             var_name))
+    if os.path.isfile("out/{}_{}_chi2.fits".format(obj_name, var_name)):
+        chi2 = Table.read("out/{}_{}_chi2.fits".format(obj_name, var_name))
         figure = plt.figure()
         ax = figure.add_subplot(111)
         ax.scatter(chi2[var_name], chi2['chi2'], color='k', s=.1)
@@ -63,7 +60,7 @@ def _chi2_worker(obj_name, var_name):
         ax.minorticks_on()
         figure.suptitle("Reduced $\chi^2$ distribution of {} for {}."
                         .format(var_name, obj_name))
-        figure.savefig(OUT_DIR + "{}_{}_chi2.pdf".format(obj_name, var_name))
+        figure.savefig("out/{}_{}_chi2.pdf".format(obj_name, var_name))
         plt.close(figure)
     else:
         print("No chi² found for {}. No plot created.".format(obj_name))
@@ -80,8 +77,8 @@ def _pdf_worker(obj_name, var_name):
         Name of the analysed variable..
 
     """
-    if os.path.isfile(OUT_DIR + "{}_{}_pdf.fits".format(obj_name, var_name)):
-        pdf = Table.read(OUT_DIR + "{}_{}_pdf.fits".format(obj_name, var_name))
+    if os.path.isfile("out/{}_{}_pdf.fits".format(obj_name, var_name)):
+        pdf = Table.read("out/{}_{}_pdf.fits".format(obj_name, var_name))
         figure = plt.figure()
         ax = figure.add_subplot(111)
         ax.plot(pdf[var_name], pdf['probability density'], color='k')
@@ -90,7 +87,7 @@ def _pdf_worker(obj_name, var_name):
         ax.minorticks_on()
         figure.suptitle("Probability distribution function of {} for {}"
                         .format(var_name, obj_name))
-        figure.savefig(OUT_DIR + "{}_{}_pdf.pdf".format(obj_name, var_name))
+        figure.savefig("out/{}_{}_pdf.pdf".format(obj_name, var_name))
         plt.close(figure)
     else:
         print("No PDF found for {}. No plot created.".format(obj_name))
@@ -115,9 +112,9 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
 
     """
 
-    if os.path.isfile(OUT_DIR + "{}_best_model.fits".format(obs['id'])):
+    if os.path.isfile("out/{}_best_model.fits".format(obs['id'])):
 
-        sed = Table.read(OUT_DIR + "{}_best_model.fits".format(obs['id']))
+        sed = Table.read("out/{}_best_model.fits".format(obs['id']))
 
         filters_wl = np.array([filt.effective_wavelength
                                for filt in filters.values()])
@@ -308,7 +305,7 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
                                    "data/CIGALE.png"))
                 figure.figimage(image, 75, 330, origin='upper', zorder=10,
                                 alpha=1)
-            figure.savefig(OUT_DIR + "{}_best_model.pdf".format(obs['id']))
+            figure.savefig("out/{}_best_model.pdf".format(obs['id']))
             plt.close(figure)
         else:
             print("No valid best SED found for {}. No plot created.".
@@ -360,7 +357,7 @@ def _mock_worker(exact, estimated, param, nologo):
         plt.figimage(image, 510, 55, origin='upper', zorder=10, alpha=1)
 
     plt.tight_layout()
-    plt.savefig(OUT_DIR + 'mock_{}.pdf'.format(param))
+    plt.savefig('out/mock_{}.pdf'.format(param))
 
     plt.close()
 
@@ -395,7 +392,7 @@ def sed(config, sed_type, nologo):
     """Plot the best SED with associated observed and modelled fluxes.
     """
     obs = read_table(config.configuration['data_file'])
-    mod = Table.read(OUT_DIR + BEST_RESULTS)
+    mod = Table.read('out/' + BEST_RESULTS)
 
     with Database() as base:
         filters = OrderedDict([(name, base.get_filter(name))
@@ -414,15 +411,15 @@ def mock(config, nologo):
     """
 
     try:
-        exact = Table.read(OUT_DIR + BEST_RESULTS)
+        exact = Table.read('out/' + BEST_RESULTS)
     except FileNotFoundError:
-        print("Best models file {} not found.".format(OUT_DIR + BEST_RESULTS))
+        print("Best models file {} not found.".format('out/' + BEST_RESULTS))
         sys.exit(1)
 
     try:
-        estimated = Table.read(OUT_DIR + MOCK_RESULTS)
+        estimated = Table.read('out/' + MOCK_RESULTS)
     except FileNotFoundError:
-        print("Mock models file {} not found.".format(OUT_DIR + MOCK_RESULTS))
+        print("Mock models file {} not found.".format('out/' + MOCK_RESULTS))
         sys.exit(1)
 
     params = config.configuration['analysis_params']['variables']

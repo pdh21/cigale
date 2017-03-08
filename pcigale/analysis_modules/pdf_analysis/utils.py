@@ -11,8 +11,6 @@ import numpy as np
 from scipy import optimize
 from scipy.special import erf
 
-from ..utils import OUT_DIR
-
 log.setLevel('ERROR')
 
 
@@ -29,7 +27,7 @@ def save_best_sed(obsid, sed, norm):
         Normalisation factor to scale the scale to the observations
 
     """
-    sed.to_fits(OUT_DIR + "{}".format(obsid), mass=norm)
+    sed.to_fits("out/{}".format(obsid), mass=norm)
 
 
 def _save_pdf(obsid, name, model_variable, likelihood):
@@ -80,7 +78,7 @@ def _save_pdf(obsid, name, model_variable, likelihood):
             Column(pdf_grid, name=name),
             Column(pdf_prob, name="probability density")
         ))
-        table.write(OUT_DIR + "{}_{}_pdf.fits".format(obsid, name))
+        table.write("out/{}_{}_pdf.fits".format(obsid, name))
 
 
 def save_pdf(obsid, names, mass_proportional, model_variables, scaling,
@@ -133,7 +131,7 @@ def _save_chi2(obsid, name, model_variable, chi2):
     """
     table = Table((Column(model_variable, name=name),
                    Column(chi2, name="chi2")))
-    table.write(OUT_DIR + "{}_{}_chi2.fits".format(obsid, name))
+    table.write("out/{}_{}_chi2.fits".format(obsid, name))
 
 
 def save_chi2(obsid, names, mass_proportional, model_variables, scaling, chi2):
@@ -234,9 +232,9 @@ def save_results(filename, obsid, bayes_variables, bayes_mean, bayes_std, chi2,
         table.add_column(Column(np_fluxes[:, idx], name="best."+name,
                                 unit='mJy'))
 
-    table.write(OUT_DIR+filename+".txt", format='ascii.fixed_width',
+    table.write('out/'+filename+".txt", format='ascii.fixed_width',
                 delimiter=None)
-    table.write(OUT_DIR+filename+".fits", format='fits')
+    table.write('out/'+filename+".fits", format='fits')
 
 
 def dchi2_over_ds2(s, obs_fluxes, obs_errors, mod_fluxes):

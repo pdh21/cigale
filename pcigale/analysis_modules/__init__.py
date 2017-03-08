@@ -12,8 +12,6 @@ import shutil
 import numpy as np
 from astropy.table import Column
 
-OUT_DIR = 'out/'
-
 class AnalysisModule(object):
     """Abstract class, the pCigale analysis modules are based on.
     """
@@ -53,16 +51,16 @@ class AnalysisModule(object):
         """
         raise NotImplementedError()
 
-    def prepare_dirs(self, directory=OUT_DIR):
+    def prepare_dirs(self):
         # Create a new out/ directory and move existing one if needed
-        if os.path.exists(directory):
-            name = datetime.now().strftime("%Y%m%d%H%M") + '_' + directory
-            os.rename(directory, name)
-            print("The {} directory was renamed to {}".format(directory, name))
+        if os.path.exists('out/'):
+            name = datetime.now().strftime("%Y%m%d%H%M") + '_out/'
+            os.rename('out/', name)
+            print("The out/ directory was renamed to {}".format(name))
 
-        os.mkdir(directory)
-        shutil.copy('pcigale.ini', directory)
-        shutil.copy('pcigale.ini.spec', directory)
+        os.mkdir('out/')
+        shutil.copy('pcigale.ini', 'out/')
+        shutil.copy('pcigale.ini.spec', 'out/')
 
     def process(self, configuration):
         """Process with the analysis
