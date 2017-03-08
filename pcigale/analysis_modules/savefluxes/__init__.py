@@ -25,7 +25,7 @@ from .. import AnalysisModule
 from ..utils import save_fluxes
 from .workers import init_fluxes as init_worker_fluxes
 from .workers import fluxes as worker_fluxes
-from ...handlers.parameters_handler import ParametersManager
+from ...managers.parameters import ParametersManager
 
 
 class SaveFluxes(AnalysisModule):

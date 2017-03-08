@@ -9,7 +9,7 @@ import sys
 
 from .session.configuration import Configuration
 from .analysis_modules import get_module
-from .handlers.parameters_handler import ParametersManager
+from .managers.parameters import ParametersManager
 
 __version__ = "0.10.0"
 

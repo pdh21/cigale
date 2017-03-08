@@ -14,7 +14,7 @@ from glob import glob  # To allow the use of glob() in "eval..."
 import numpy as np
 import validate
 
-from ..handlers.parameters_handler import ParametersManager
+from ..managers.parameters import ParametersManager
 from ..data import Database
 from ..utils import read_table
 from .. import sed_modules

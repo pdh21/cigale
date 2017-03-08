@@ -41,7 +41,7 @@ from .workers import sed as worker_sed
 from .workers import init_sed as init_worker_sed
 from .workers import init_analysis as init_worker_analysis
 from .workers import analysis as worker_analysis
-from ...handlers.parameters_handler import ParametersManager
+from ...managers.parameters import ParametersManager
 
 
 # Tolerance threshold under which any flux or error is considered as 0.
