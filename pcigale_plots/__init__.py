@@ -234,6 +234,11 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
                        linestyle='-', linewidth=1.5)
 
             ax1.set_autoscale_on(False)
+            s = np.argsort(filters_wl)
+            filters_wl = filters_wl[s]
+            mod_fluxes = mod_fluxes[s]
+            obs_fluxes = obs_fluxes[s]
+            obs_fluxes_err = obs_fluxes_err[s]
             ax1.scatter(filters_wl, mod_fluxes, marker='o', color='r', s=8,
                         zorder=3, label="Model fluxes")
             mask_ok = np.logical_and(obs_fluxes > 0., obs_fluxes_err > 0.)
