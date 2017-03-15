@@ -206,8 +206,9 @@ class RestframeParam(SedModule):
             sed.add_info("param.IRX", np.log10(sed.info['dust.luminosity'] /
                          (fluxes['FUV'] * self.to_lumin * c / 154e-9)))
 
-        for line, EW in self.EW(sed).items():
-            sed.add_info("param.EW({}/{})".format(*line), EW)
+        if 'nebular.lines_young' in sed.contribution_names:
+            for line, EW in self.EW(sed).items():
+                sed.add_info("param.EW({}/{})".format(*line), EW)
 
         for filt in self.lumin_filters:
             sed.add_info("param.restframe_Lnu({})".format(filt),

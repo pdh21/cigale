@@ -10,6 +10,7 @@
 ### Fixed
 - Corrected a typo that prevented `restframe\_parameters` from being listed among the available modules. (Médéric Boquien)
 - The filters in the residual plot of `pcigale-plots sed` are now drawn in order of increasing wavelength so that the line joining all the filters does not make loops. (Médéric Boquien)
+- In the absence of a nebular component `restframe\_parameters` would crash when attempting to compute the equivalent widths of the lines listed in `EW_lines`. Now they are simply ignored. (Médéric Boquien)
 
 ### Optimised
 - The cache architecture has been simplified, making it somewhat faster. It speeds up the model generation by ~1%. (Médéric Boquien)
