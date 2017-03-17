@@ -57,7 +57,8 @@ class ParametersManagerGrid(object):
     def __len__(self):
         return self.size
 
-    def _split(self, l, nb, nz):
+    @staticmethod
+    def _split(l, nb, nz):
         """Split a list l into nb blocks with blocks of such size that all the
         redshifts of a given model as in the same block.
 
