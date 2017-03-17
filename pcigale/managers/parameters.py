@@ -48,6 +48,33 @@ class ParametersManagerGrid(object):
                            for module in self.modules]
         self.shape = tuple(len(parameter) for parameter in self.parameters)
         self.size = int(np.product(self.shape))
+        if 'blocks' not in conf['analysis_params']:
+            conf['analysis_params']['blocks'] = 1
+        self.blocks = self._split(range(self.size),
+                                  conf['analysis_params']['blocks'],
+                                  len(conf['sed_modules_params']['redshifting']['redshift']))
+
+    def __len__(self):
+        return self.size
+
+    def _split(self, l, nb, nz):
+        """Split a list l into nb blocks with blocks of such size that all the
+        redshifts of a given model as in the same block.
+
+        Parameters
+        ----------
+        l: list
+            List to split.
+        nb: int
+            Number of blocks.
+        nz: int
+            Number of redshifts.
+
+        """
+        k, m = divmod(len(l), nb)
+        step = k + nz - m
+
+        return [l[i * step: (i+1) * step] for i in range(nb)]
 
     def _param_dict_combine(self, dictionary):
         """Given a dictionary associating to each key an array, returns all the
