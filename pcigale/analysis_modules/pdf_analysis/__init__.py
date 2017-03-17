@@ -87,6 +87,14 @@ class PdfAnalysis(AnalysisModule):
             "If true, for each object we create a mock object "
             "and analyse them.",
             False
+        )),
+        ("redshift_decimals", (
+            "integer()",
+            "When redshifts are not given explicitly in the redshifting "
+            "module, number of decimals to round the observed redshifts to "
+            "compute the grid of models. To disable rounding give a negative "
+            "value. Do not round if you use narrow-band filters.",
+            2
         ))
     ])
 

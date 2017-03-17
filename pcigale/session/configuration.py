@@ -23,10 +23,6 @@ from ..warehouse import SedWarehouse
 from . import validation
 
 
-# Limit the redshift to this number of decimals
-REDSHIFT_DECIMALS = 2
-
-
 class Configuration(object):
     """This class manages the configuration of pcigale.
     """
@@ -300,8 +296,15 @@ class Configuration(object):
         if type(z_mod) is str and not z_mod:
             if self.config['data_file']:
                 obs_table = read_table(self.config['data_file'])
-                z = list(np.unique(np.around(obs_table['redshift'],
-                                        decimals=REDSHIFT_DECIMALS)))
+                if 'redshift_decimals' in self.config['analysis_params']:
+                    decimals = self.config['analysis_params']['redshift_decimals']
+                    if decimals < 0:
+                        z = list(np.unique(obs_table['redshift']))
+                    else:
+                        z = list(np.unique(np.around(obs_table['redshift'],
+                                                     decimals=decimals)))
+                else:
+                    z = list(np.unique(obs_table['redshift']))
                 self.config['sed_modules_params']['redshifting']['redshift'] = z
             elif self.config['parameters_file']:
                 # The entry will be ignored anyway. Just pass a dummy list
