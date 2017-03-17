@@ -48,25 +48,42 @@ class SaveFluxes(AnalysisModule):
             "boolean()",
             "If True, save the generated spectrum for each model.",
             False
+        )),
+        ("blocks", (
+            "integer(min=1)",
+            "Number of blocks to compute the models. Having a number of blocks"
+            " larger than 1 can be useful when computing a very large number "
+            "of models or to split the result file into smaller files.",
+            1
         ))
     ])
 
     @staticmethod
-    def _compute_models(conf, observations, params):
-        models = ModelsManager(conf, observations, params)
-
-        initargs = (models, time.time(), mp.Value('i', 0))
-        if conf['cores'] == 1:  # Do not create a new process
-            init_worker_fluxes(*initargs)
-            for idx in range(len(params)):
-                worker_fluxes(idx)
-        else:  # Analyse observations in parallel
-            with mp.Pool(processes=conf['cores'],
-                         initializer=init_worker_fluxes,
+    def _parallel_job(worker, items, initargs, initializer, ncores):
+        if ncores == 1:  # Do not create a new process
+            initializer(*initargs)
+            for idx, item in enumerate(items):
+                worker(idx, item)
+        else:  # run in parallel
+            with mp.Pool(processes=ncores, initializer=initializer,
                          initargs=initargs) as pool:
-                pool.map(worker_fluxes, range(len(params)))
+                pool.starmap(worker, enumerate(items))
 
-        return models
+    def _compute_models(self, conf, obs, params):
+        nblocks = len(params.blocks)
+        for iblock in range(nblocks):
+            print('Computing models for block {}/{}...'.format(iblock + 1,
+                                                               nblocks))
+
+            models = ModelsManager(conf, obs, params, iblock)
+
+            initargs = (models, time.time(), mp.Value('i', 0))
+            self._parallel_job(worker_fluxes, params.blocks[iblock], initargs,
+                               init_worker_fluxes, conf['cores'])
+
+            print("Saving the models ....")
+            models.save('models-block-{}'.format(iblock))
+
 
     def process(self, conf):
         """Process with the savedfluxes analysis.
@@ -95,11 +112,7 @@ class SaveFluxes(AnalysisModule):
         # have changed between two indices or the number of models.
         params = ParametersManager(conf)
 
-        print("Computing the models ...")
-        models = self._compute_models(conf, observations, params)
-
-        print("Saving the models ...")
-        models.save('models')
+        self._compute_models(conf, observations, params)
 
 
 # AnalysisModule to be returned by get_module

@@ -47,7 +47,7 @@ def init_fluxes(models, t0, ncomputed):
     gbl_ncomputed = ncomputed
 
 
-def fluxes(idx):
+def fluxes(idx, midx):
     """Worker process to retrieve a SED and affect the relevant data to shared
     RawArrays.
 
@@ -60,11 +60,11 @@ def fluxes(idx):
     global gbl_previous_idx
     if gbl_previous_idx > -1:
         gbl_warehouse.partial_clear_cache(
-            gbl_models.params.index_module_changed(gbl_previous_idx, idx))
-    gbl_previous_idx = idx
+            gbl_models.params.index_module_changed(gbl_previous_idx, midx))
+    gbl_previous_idx = midx
 
     sed = gbl_warehouse.get_sed(gbl_models.params.modules,
-                                gbl_models.params.from_index(idx))
+                                gbl_models.params.from_index(midx))
 
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
         gbl_models.fluxes[:, idx] = np.full(len(gbl_obs.bands), np.nan)
@@ -76,7 +76,7 @@ def fluxes(idx):
                                          for name in gbl_properties]
 
     if gbl_save is True:
-        sed.to_fits("out/{}".format(idx))
+        sed.to_fits("out/{}".format(midx))
 
     with gbl_ncomputed.get_lock():
         gbl_ncomputed.value += 1
