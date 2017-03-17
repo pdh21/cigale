@@ -13,58 +13,38 @@ from ...warehouse import SedWarehouse
 from ..utils import nothread
 
 
-def init_fluxes(params, filters, save_sed, variables, fluxes, info, t_begin,
-                n_computed):
+def init_fluxes(models, t0, ncomputed):
     """Initializer of the pool of processes. It is mostly used to convert
     RawArrays into numpy arrays. The latter are defined as global variables to
     be accessible from the workers.
 
     Parameters
     ----------
-    params: ParametersManager
-        Manages the parameters from a 1D index.
-    filters: List
-        Contains the names of the filters to compute the fluxes.
-    save_sed: boolean
-        Indicates whether the SED should be saved.
-    variables: list
-        List of variables to be computed
-    fluxes: RawArray and tuple containing the shape
-        Fluxes of individual models. Shared among workers.
-    n_computed: Value
-        Number of computed models. Shared among workers.
-    t_begin: float
+    models: ModelsManagers
+        Manages the storage of the computed models (fluxes and properties).
+    t0: float
         Time of the beginning of the computation.
+    ncomputed: Value
+        Number of computed models. Shared among workers.
 
     """
-    global gbl_model_fluxes, gbl_model_info, gbl_n_computed, gbl_t_begin
-    global gbl_params, gbl_previous_idx, gbl_filters, gbl_save_sed
-    global gbl_warehouse, gbl_variables
+    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_obs
+    global gbl_properties, gbl_save, gbl_t0, gbl_ncomputed
 
     # Limit the number of threads to 1 if we use MKL in order to limit the
     # oversubscription of the CPU/RAM.
     nothread()
 
-    gbl_model_fluxes = np.ctypeslib.as_array(fluxes[0])
-    gbl_model_fluxes = gbl_model_fluxes.reshape(fluxes[1])
-
-    gbl_model_info = np.ctypeslib.as_array(info[0])
-    gbl_model_info = gbl_model_info.reshape(info[1])
-
-    gbl_n_computed = n_computed
-    gbl_t_begin = t_begin
-
-    gbl_params = params
-
     gbl_previous_idx = -1
-
-    gbl_filters = filters
-
-    gbl_save_sed = save_sed
-
-    gbl_variables = variables
-
     gbl_warehouse = SedWarehouse()
+
+    gbl_models = models
+    gbl_obs = models.obs
+    gbl_properties = [prop[:-4] if prop.endswith('_log') else prop for prop in
+                      models.propertiesnames]
+    gbl_save = models.conf['analysis_params']['save_sed']
+    gbl_t0 = t0
+    gbl_ncomputed = ncomputed
 
 
 def fluxes(idx):
@@ -74,36 +54,36 @@ def fluxes(idx):
     Parameters
     ----------
     idx: int
-        Index of the model to retrieve its parameters from the parameters
-        manager.
+        Index of the model within the current block of models.
 
     """
-    global gbl_previous_idx, gbl_keys
+    global gbl_previous_idx
     if gbl_previous_idx > -1:
         gbl_warehouse.partial_clear_cache(
-            gbl_params.index_module_changed(gbl_previous_idx, idx))
+            gbl_models.params.index_module_changed(gbl_previous_idx, idx))
     gbl_previous_idx = idx
 
-    sed = gbl_warehouse.get_sed(gbl_params.modules,
-                                gbl_params.from_index(idx))
+    sed = gbl_warehouse.get_sed(gbl_models.params.modules,
+                                gbl_models.params.from_index(idx))
 
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
-        gbl_model_fluxes[idx, :] = np.full(len(gbl_filters), np.nan)
-        gbl_model_info[idx, :] = np.full(len(gbl_variables), np.nan)
+        gbl_models.fluxes[:, idx] = np.full(len(gbl_obs.bands), np.nan)
+        gbl_models.properties[:, idx] = np.full(len(gbl_properties), np.nan)
     else:
-        gbl_model_fluxes[idx, :] = np.array([sed.compute_fnu(filter_) for
-                                           filter_ in gbl_filters])
-        gbl_model_info[idx, :] = np.array([sed.info[name] for name in
-                                           gbl_variables])
+        gbl_models.fluxes[:, idx] = [sed.compute_fnu(filter_)
+                                     for filter_ in gbl_obs.bands]
+        gbl_models.properties[:, idx] = [sed.info[name]
+                                         for name in gbl_properties]
 
-    if gbl_save_sed is True:
+    if gbl_save is True:
         sed.to_fits("out/{}".format(idx))
-    with gbl_n_computed.get_lock():
-        gbl_n_computed.value += 1
-        n_computed = gbl_n_computed.value
-    if n_computed % 250 == 0 or n_computed == gbl_params.size:
-        t_elapsed = time.time() - gbl_t_begin
+
+    with gbl_ncomputed.get_lock():
+        gbl_ncomputed.value += 1
+        ncomputed = gbl_ncomputed.value
+    nmodels = len(gbl_models.block)
+    if ncomputed % 250 == 0 or ncomputed == nmodels:
+        dt = time.time() - gbl_t0
         print("{}/{} models computed in {:.1f} seconds ({:.1f} models/s)".
-              format(n_computed, gbl_params.size, t_elapsed,
-                     n_computed/t_elapsed),
-              end="\n" if n_computed == gbl_params.size else "\r")
+              format(ncomputed, nmodels, dt, ncomputed/dt),
+              end="\n" if ncomputed == nmodels else "\r")
