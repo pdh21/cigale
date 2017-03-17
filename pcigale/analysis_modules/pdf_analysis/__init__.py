@@ -44,10 +44,6 @@ from .workers import analysis as worker_analysis
 from ...managers.parameters import ParametersManager
 
 
-# Tolerance threshold under which any flux or error is considered as 0.
-TOLERANCE = 1e-12
-
-
 class PdfAnalysis(AnalysisModule):
     """PDF analysis module"""
 
@@ -136,8 +132,7 @@ class PdfAnalysis(AnalysisModule):
         # Read the observation table and complete it by adding error where
         # none is provided and by adding the systematic deviation.
         obs_table = complete_obs_table(read_table(conf['data_file']),
-                                       conf['bands'], filters, TOLERANCE,
-                                       lim_flag)
+                                       conf['bands'], filters, 0., lim_flag)
         n_obs = len(obs_table)
 
         z = np.array(conf['sed_modules_params']['redshifting']['redshift'])
@@ -234,8 +229,7 @@ class PdfAnalysis(AnalysisModule):
             mock_fluxes = obs_fluxes.copy()
             bestmod_fluxes = np.ctypeslib.as_array(best_fluxes[0])
             bestmod_fluxes = bestmod_fluxes.reshape(best_fluxes[1])
-            wdata = np.where((obs_fluxes > TOLERANCE) &
-                             (obs_errors > TOLERANCE))
+            wdata = np.where((obs_fluxes > 0.) & (obs_errors > 0.))
             mock_fluxes[wdata] = np.random.normal(bestmod_fluxes[wdata],
                                                   obs_errors[wdata])
 
