@@ -34,13 +34,14 @@ import time
 import numpy as np
 
 from ...utils import read_table
-from .. import AnalysisModule, complete_obs_table
+from .. import AnalysisModule
 from .utils import save_results, analyse_chi2
 from ...warehouse import SedWarehouse
 from .workers import sed as worker_sed
 from .workers import init_sed as init_worker_sed
 from .workers import init_analysis as init_worker_analysis
 from .workers import analysis as worker_analysis
+from ...managers.observations import ObservationsManager
 from ...managers.parameters import ParametersManager
 
 
@@ -131,9 +132,8 @@ class PdfAnalysis(AnalysisModule):
 
         # Read the observation table and complete it by adding error where
         # none is provided and by adding the systematic deviation.
-        obs_table = complete_obs_table(read_table(conf['data_file']),
-                                       conf['bands'], filters, 0., lim_flag)
-        n_obs = len(obs_table)
+        obs = ObservationsManager(conf)
+        n_obs = len(obs.table)
 
         z = np.array(conf['sed_modules_params']['redshifting']['redshift'])
 
@@ -199,19 +199,19 @@ class PdfAnalysis(AnalysisModule):
                     n_obs)
         if conf['cores'] == 1:  # Do not create a new process
             init_worker_analysis(*initargs)
-            for idx, obs in enumerate(obs_table):
+            for idx, obs in enumerate(obs.table):
                 worker_analysis(idx, obs)
         else:  # Analyse observations in parallel
             with mp.Pool(processes=conf['cores'],
                          initializer=init_worker_analysis,
                          initargs=initargs) as pool:
-                pool.starmap(worker_analysis, enumerate(obs_table))
+                pool.starmap(worker_analysis, enumerate(obs.table))
 
         analyse_chi2(best_chi2_red)
 
         print("\nSaving results...")
 
-        save_results("results", obs_table['id'], variables, analysed_averages,
+        save_results("results", obs.table['id'], variables, analysed_averages,
                      analysed_std, best_chi2, best_chi2_red, best_parameters,
                      best_fluxes, filters, info)
 
@@ -223,8 +223,8 @@ class PdfAnalysis(AnalysisModule):
             for k in save:
                 save[k] = False
 
-            obs_fluxes = np.array([obs_table[name] for name in filters]).T
-            obs_errors = np.array([obs_table[name + "_err"] for name in
+            obs_fluxes = np.array([obs.table[name] for name in filters]).T
+            obs_errors = np.array([obs.table[name + "_err"] for name in
                                    filters]).T
             mock_fluxes = obs_fluxes.copy()
             bestmod_fluxes = np.ctypeslib.as_array(best_fluxes[0])
@@ -233,9 +233,8 @@ class PdfAnalysis(AnalysisModule):
             mock_fluxes[wdata] = np.random.normal(bestmod_fluxes[wdata],
                                                   obs_errors[wdata])
 
-            mock_table = obs_table.copy()
             for idx, name in enumerate(filters):
-                mock_table[name] = mock_fluxes[:, idx]
+                obs.table[name] = mock_fluxes[:, idx]
 
             initargs = (params, filters, variables, z, model_fluxes,
                         model_variables, time.time(), mp.Value('i', 0),
@@ -244,17 +243,17 @@ class PdfAnalysis(AnalysisModule):
                         lim_flag, n_obs)
             if conf['cores'] == 1:  # Do not create a new process
                 init_worker_analysis(*initargs)
-                for idx, mock in enumerate(mock_table):
+                for idx, mock in enumerate(obs.table):
                     worker_analysis(idx, mock)
             else:  # Analyse observations in parallel
                 with mp.Pool(processes=conf['cores'],
                              initializer=init_worker_analysis,
                              initargs=initargs) as pool:
-                    pool.starmap(worker_analysis, enumerate(mock_table))
+                    pool.starmap(worker_analysis, enumerate(obs.table))
 
             print("\nSaving results...")
 
-            save_results("results_mock", mock_table['id'], variables,
+            save_results("results_mock", obs.table['id'], variables,
                          analysed_averages, analysed_std, best_chi2,
                          best_chi2_red, best_parameters, best_fluxes, filters,
                          info)
