@@ -81,7 +81,7 @@ class ModelsManager(object):
         table = Table(np.vstack((self.fluxes, self.properties)).T,
                       names=self.obs.bands + self.propertiesnames)
 
-        table.add_column(Column(np.arange(len(table)), name='id'), index=0)
+        table.add_column(Column(self.block, name='id'), index=0)
 
         table.write("out/{}.fits".format(filename))
         table.write("out/{}.txt".format(filename), format='ascii.fixed_width',
