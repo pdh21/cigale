@@ -72,8 +72,8 @@ class ParametersManagerGrid(object):
             Number of redshifts.
 
         """
-        k, m = divmod(len(l), nb)
-        step = k + nz - m
+        k = len(l) // nb
+        step = k + nz - k%nz
 
         return [l[i * step: (i+1) * step] for i in range(nb)]
 
