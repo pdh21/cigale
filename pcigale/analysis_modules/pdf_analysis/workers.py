@@ -6,6 +6,7 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Yannick Roehlly, Médéric Boquien & Denis Burgarella
 
+from copy import deepcopy
 import time
 
 import numpy as np
@@ -236,8 +237,12 @@ def bestfit(oidx, obs):
         gbl_warehouse.partial_clear_cache(
             gbl_params.index_module_changed(gbl_previous_idx, best_index))
     gbl_previous_idx = best_index
-    sed = gbl_warehouse.get_sed(gbl_params.modules,
-                                gbl_params.from_index(best_index))
+
+    # We compute the model at the exact redshift not to have to correct for the
+    # difference between the object and the grid redshifts.
+    params = deepcopy(gbl_params.from_index(best_index))
+    params[-1]['redshift'] = obs['redshift']
+    sed = gbl_warehouse.get_sed(gbl_params.modules, params)
 
     fluxes = np.array([sed.compute_fnu(filt) for filt in gbl_obs.bands])
     obs_fluxes = np.array([obs[name] for name in gbl_obs.bands])
@@ -249,8 +254,7 @@ def bestfit(oidx, obs):
                                             gbl_results.best.propertiesnames]
     iprop = [i for i, k in enumerate(gbl_results.best.propertiesnames)
              if k in gbl_results.best.massproportional]
-    corr_dz = compute_corr_dz(sed.info['universe.redshift'], obs['redshift'])
-    gbl_results.best.properties[oidx, iprop] *= scaling * corr_dz
+    gbl_results.best.properties[oidx, iprop] *= scaling
     gbl_results.best.fluxes[oidx, :] = fluxes * scaling
 
     if gbl_conf['analysis_params']["save_best_sed"]:
