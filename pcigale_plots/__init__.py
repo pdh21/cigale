@@ -49,11 +49,13 @@ def _chi2_worker(obj_name, var_name):
         Name of the analysed variable..
 
     """
-    if os.path.isfile("out/{}_{}_chi2.fits".format(obj_name, var_name)):
-        chi2 = Table.read("out/{}_{}_chi2.fits".format(obj_name, var_name))
+    fname = "out/{}_{}_chi2.npy".format(obj_name, var_name)
+    if os.path.isfile(fname):
+        data = np.memmap(fname, dtype=np.float64)
+        data = np.memmap(fname, dtype=np.float64, shape=(2, data.size // 2))
         figure = plt.figure()
         ax = figure.add_subplot(111)
-        ax.scatter(chi2[var_name], chi2['chi2'], color='k', s=.1)
+        ax.scatter(data[1, :], data[0, :], color='k', s=.1)
         ax.set_xlabel(var_name)
         ax.set_ylabel("Reduced $\chi^2$")
         ax.set_ylim(0., )
@@ -77,11 +79,34 @@ def _pdf_worker(obj_name, var_name):
         Name of the analysed variable..
 
     """
-    if os.path.isfile("out/{}_{}_pdf.fits".format(obj_name, var_name)):
-        pdf = Table.read("out/{}_{}_pdf.fits".format(obj_name, var_name))
+    fname = "out/{}_{}_chi2.npy".format(obj_name, var_name)
+    if os.path.isfile(fname):
+        data = np.memmap(fname, dtype=np.float64)
+        data = np.memmap(fname, dtype=np.float64, shape=(2, data.size // 2))
+
+        likelihood = np.exp(-data[0, :] / 2.)
+        model_variable = data[1, :]
+
+        Npdf = 100
+        min_hist = np.min(model_variable)
+        max_hist = np.max(model_variable)
+        Nhist = min(Npdf, len(np.unique(model_variable)))
+
+        if min_hist == max_hist:
+            pdf_grid = np.array([min_hist, max_hist])
+            pdf_prob = np.array([1., 1.])
+        else:
+            pdf_prob, pdf_grid = np.histogram(model_variable, Nhist,
+                                              (min_hist, max_hist),
+                                              weights=likelihood, density=True)
+            pdf_x = (pdf_grid[1:]+pdf_grid[:-1]) / 2.
+
+            pdf_grid = np.linspace(min_hist, max_hist, Npdf)
+            pdf_prob = np.interp(pdf_grid, pdf_x, pdf_prob)
+
         figure = plt.figure()
         ax = figure.add_subplot(111)
-        ax.plot(pdf[var_name], pdf['probability density'], color='k')
+        ax.plot(pdf_grid, pdf_prob, color='k')
         ax.set_xlabel(var_name)
         ax.set_ylabel("Probability density")
         ax.minorticks_on()

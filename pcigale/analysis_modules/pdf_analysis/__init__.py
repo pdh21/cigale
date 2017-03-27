@@ -28,19 +28,20 @@ reduced χ²) is given for each observation.
 from collections import OrderedDict
 import ctypes
 import multiprocessing as mp
-from multiprocessing.sharedctypes import RawArray
 import time
 
 import numpy as np
 
 from ...utils import read_table
 from .. import AnalysisModule
-from .utils import save_results, analyse_chi2
-from ...warehouse import SedWarehouse
 from .workers import sed as worker_sed
 from .workers import init_sed as init_worker_sed
 from .workers import init_analysis as init_worker_analysis
+from .workers import init_bestfit as init_worker_bestfit
 from .workers import analysis as worker_analysis
+from .workers import bestfit as worker_bestfit
+from ...managers.results import ResultsManager
+from ...managers.models import ModelsManager
 from ...managers.observations import ObservationsManager
 from ...managers.parameters import ParametersManager
 
@@ -63,14 +64,8 @@ class PdfAnalysis(AnalysisModule):
         )),
         ("save_chi2", (
             "boolean()",
-            "If true, for each observation and each analysed variable save "
-            "the reduced chi2.",
-            False
-        )),
-        ("save_pdf", (
-            "boolean()",
-            "If true, for each observation and each analysed variable save "
-            "the probability density function.",
+            "If true, for each observation and each analysed property, save "
+            "the raw chi2. It occupies ~15 MB/million models/variable.",
             False
         )),
         ("lim_flag", (
@@ -92,8 +87,79 @@ class PdfAnalysis(AnalysisModule):
             "compute the grid of models. To disable rounding give a negative "
             "value. Do not round if you use narrow-band filters.",
             2
+        )),
+        ("blocks", (
+            "integer(min=1)",
+            "Number of blocks to compute the models and analyse the "
+            "observations. If there is enough memory, we strongly recommend "
+            "this to be set to 1.",
+            1
         ))
     ])
+
+
+    def _compute_models(self, conf, obs, params, iblock):
+        models = ModelsManager(conf, obs, params, iblock)
+
+        initargs = (models, time.time(), mp.Value('i', 0))
+        self._parallel_job(worker_sed, params.blocks[iblock], initargs,
+                           init_worker_sed, conf['cores'])
+
+        return models
+
+    def _compute_bayes(self, conf, obs, models):
+        results = ResultsManager(models)
+
+        initargs = (models, results, time.time(), mp.Value('i', 0))
+        self._parallel_job(worker_analysis, obs, initargs,
+                           init_worker_analysis, conf['cores'])
+
+        return results
+
+    def _compute_best(self, conf, obs, params, results):
+        initargs = (conf, params, obs, results, time.time(),
+                    mp.Value('i', 0))
+        self._parallel_job(worker_bestfit, obs, initargs,
+                           init_worker_bestfit, conf['cores'])
+
+    def _parallel_job(self, worker, items, initargs, initializer, ncores):
+        if ncores == 1:  # Do not create a new process
+            initializer(*initargs)
+            for idx, item in enumerate(items):
+                worker(idx, item)
+        else:  # run in parallel
+            with mp.Pool(processes=ncores, initializer=initializer,
+                         initargs=initargs) as pool:
+                pool.starmap(worker, enumerate(items))
+
+    def _compute(self, conf, obs, params):
+        results = []
+        nblocks = len(params.blocks)
+        for iblock in range(nblocks):
+            print('\nProcessing block {}/{}...'.format(iblock + 1, nblocks))
+            # We keep the models if there is only one block. This allows to
+            # avoid recomputing the models when we do a mock analysis
+            if not hasattr(self, '_models'):
+                print("\nComputing models ...")
+                models = self._compute_models(conf, obs, params, iblock)
+                if nblocks == 1:
+                    self._models = models
+            else:
+                print("\nLoading precomputed models")
+                models = self._models
+
+            print("\nEstimating the physical properties ...")
+            result = self._compute_bayes(conf, obs, models)
+            results.append(result)
+            print("\nBlock processed.")
+
+        print("\nEstimating physical properties on all blocks")
+        results = ResultsManager.merge(results)
+
+        print("\nComputing the best fit spectra")
+        self._compute_best(conf, obs, params, results)
+
+        return results
 
     def process(self, conf):
         """Process with the psum analysis.
@@ -117,146 +183,37 @@ class PdfAnalysis(AnalysisModule):
         # Rename the output directory if it exists
         self.prepare_dirs()
 
-        # Initalise variables from input arguments.
-        variables = conf['analysis_params']["variables"]
-        variables_nolog = [variable[:-4] if variable.endswith('_log') else
-                           variable for variable in variables]
-        n_variables = len(variables)
-        save = {key: conf['analysis_params']["save_{}".format(key)] for key in
-                ["best_sed", "chi2", "pdf"]}
-        lim_flag = conf['analysis_params']["lim_flag"]
-
-        filters = [name for name in conf['bands'] if not
-                   name.endswith('_err')]
-        n_filters = len(filters)
-
-        # Read the observation table and complete it by adding error where
-        # none is provided and by adding the systematic deviation.
+        # Store the observations in a manager which sanitises the data, checks
+        # all the required fluxes are present, adding errors if needed,
+        # discarding invalid fluxes, etc.
         obs = ObservationsManager(conf)
-        n_obs = len(obs.table)
+        obs.save('observations')
 
-        z = np.array(conf['sed_modules_params']['redshifting']['redshift'])
-
-        # The parameters manager allows us to retrieve the models parameters
-        # from a 1D index. This is useful in that we do not have to create
-        # a list of parameters as they are computed on-the-fly. It also has
-        # nice goodies such as finding the index of the first parameter to
-        # have changed between two indices or the number of models.
+        # Store the grid of parameters in a manager to facilitate the
+        # computation of the models
         params = ParametersManager(conf)
-        n_params = params.size
 
-        # Retrieve an arbitrary SED to obtain the list of output parameters
-        warehouse = SedWarehouse()
-        sed = warehouse.get_sed(conf['sed_modules'], params.from_index(0))
-        info = list(sed.info.keys())
-        info.sort()
-        n_info = len(info)
-        del warehouse, sed
+        results = self._compute(conf, obs, params)
+        results.best.analyse_chi2()
 
-        print("Computing the models fluxes...")
-
-        # Arrays where we store the data related to the models. For memory
-        # efficiency reasons, we use RawArrays that will be passed in argument
-        # to the pool. Each worker will fill a part of the RawArrays. It is
-        # important that there is no conflict and that two different workers do
-        # not write on the same section.
-        # We put the shape in a tuple along with the RawArray because workers
-        # need to know the shape to create the numpy array from the RawArray.
-        model_fluxes = (RawArray(ctypes.c_double, n_params * n_filters),
-                        (n_filters, n_params))
-        model_variables = (RawArray(ctypes.c_double, n_params * n_variables),
-                           (n_variables, n_params))
-
-        initargs = (params, filters, variables_nolog, model_fluxes,
-                    model_variables, time.time(), mp.Value('i', 0))
-        if conf['cores'] == 1:  # Do not create a new process
-            init_worker_sed(*initargs)
-            for idx in range(n_params):
-                worker_sed(idx)
-        else:  # Compute the models in parallel
-            with mp.Pool(processes=conf['cores'], initializer=init_worker_sed,
-                         initargs=initargs) as pool:
-                pool.map(worker_sed, range(n_params))
-
-        print("\nAnalysing models...")
-
-        # We use RawArrays for the same reason as previously
-        analysed_averages = (RawArray(ctypes.c_double, n_obs * n_variables),
-                             (n_obs, n_variables))
-        analysed_std = (RawArray(ctypes.c_double, n_obs * n_variables),
-                        (n_obs, n_variables))
-        best_fluxes = (RawArray(ctypes.c_double, n_obs * n_filters),
-                       (n_obs, n_filters))
-        best_parameters = (RawArray(ctypes.c_double, n_obs * n_info),
-                           (n_obs, n_info))
-        best_chi2 = (RawArray(ctypes.c_double, n_obs), (n_obs))
-        best_chi2_red = (RawArray(ctypes.c_double, n_obs), (n_obs))
-
-        initargs = (params, filters, variables, z, model_fluxes,
-                    model_variables, time.time(), mp.Value('i', 0),
-                    analysed_averages, analysed_std, best_fluxes,
-                    best_parameters, best_chi2, best_chi2_red, save, lim_flag,
-                    n_obs)
-        if conf['cores'] == 1:  # Do not create a new process
-            init_worker_analysis(*initargs)
-            for idx, obs in enumerate(obs.table):
-                worker_analysis(idx, obs)
-        else:  # Analyse observations in parallel
-            with mp.Pool(processes=conf['cores'],
-                         initializer=init_worker_analysis,
-                         initargs=initargs) as pool:
-                pool.starmap(worker_analysis, enumerate(obs.table))
-
-        analyse_chi2(best_chi2_red)
-
-        print("\nSaving results...")
-
-        save_results("results", obs.table['id'], variables, analysed_averages,
-                     analysed_std, best_chi2, best_chi2_red, best_parameters,
-                     best_fluxes, filters, info)
+        print("\nSaving the analysis results...")
+        results.save("results")
 
         if conf['analysis_params']['mock_flag'] is True:
+            print("\nAnalysing the mock observations...")
 
-            print("\nMock analysis...")
+            # For the mock analysis we do not save the ancillary files.
+            for k in ['best_sed', 'chi2', 'pdf']:
+                conf['analysis_params']["save_{}".format(k)] = False
 
-            # For the mock analysis we do not save the ancillary files
-            for k in save:
-                save[k] = False
+            # We replace the observations with a mock catalogue..
+            obs.generate_mock(results)
+            obs.save('mock_observations')
 
-            obs_fluxes = np.array([obs.table[name] for name in filters]).T
-            obs_errors = np.array([obs.table[name + "_err"] for name in
-                                   filters]).T
-            mock_fluxes = obs_fluxes.copy()
-            bestmod_fluxes = np.ctypeslib.as_array(best_fluxes[0])
-            bestmod_fluxes = bestmod_fluxes.reshape(best_fluxes[1])
-            wdata = np.where((obs_fluxes > 0.) & (obs_errors > 0.))
-            mock_fluxes[wdata] = np.random.normal(bestmod_fluxes[wdata],
-                                                  obs_errors[wdata])
+            results = self._compute(conf, obs, params)
 
-            for idx, name in enumerate(filters):
-                obs.table[name] = mock_fluxes[:, idx]
-
-            initargs = (params, filters, variables, z, model_fluxes,
-                        model_variables, time.time(), mp.Value('i', 0),
-                        analysed_averages, analysed_std, best_fluxes,
-                        best_parameters, best_chi2, best_chi2_red, save,
-                        lim_flag, n_obs)
-            if conf['cores'] == 1:  # Do not create a new process
-                init_worker_analysis(*initargs)
-                for idx, mock in enumerate(obs.table):
-                    worker_analysis(idx, mock)
-            else:  # Analyse observations in parallel
-                with mp.Pool(processes=conf['cores'],
-                             initializer=init_worker_analysis,
-                             initargs=initargs) as pool:
-                    pool.starmap(worker_analysis, enumerate(obs.table))
-
-            print("\nSaving results...")
-
-            save_results("results_mock", obs.table['id'], variables,
-                         analysed_averages, analysed_std, best_chi2,
-                         best_chi2_red, best_parameters, best_fluxes, filters,
-                         info)
+            print("\nSaving the mock analysis results...")
+            results.save("mock_results")
 
         print("Run completed!")
 

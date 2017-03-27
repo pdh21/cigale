@@ -6,9 +6,12 @@
 - An option `redshift\_decimals` is now provided in `pdf\_analysis` to indicate the number of decimals to round the observed redshifts to compute the grid of models. By default the model redshifts are rounded to two decimals but this can be insufficient at low z and/or when using narrow-band filters for instance. This only applies to the grid. The physical properties are still computed for the redshift at full precision. (Médéric Boquien)
 - Bands with negative fluxes are now considered valid and are fitted as any other band. (Médéric Boquien)
 - Allow the models to be computed by blocks in `savefluxes`. This can be useful when computing a very large grid and/or to split the results file into various smaller files as large files can be difficult to handle. The number of blocks is set with the `blocks` parameters in the pcigale.ini. (Médéric Boquien)
+- Allow the observations to be analysed by blocks of models in `pdf\_analysis`. This is useful when computing a very large grid of models that would not fit in memory. The number of blocks is set with the `blocks` parameters in the pcigale.ini. (Médéric Boquien)
 
 ### Changed
 - Make the timestamp more readable when moving the out/ directory. (Médéric Boquien)
+- To accommodate the analysis of the observations by blocks, all models are now included in the estimation of the physical properties and no cut in chi² is done anymore. (Médéric Boquien)
+- To accommodate the analysis of the observations by blocks, the `save_pdf` option has been eliminated. To plot PDF one needs to set `save_chi2` to True and then run `pcigale-plots pdf`. (Médéric Boquien)
 
 ### Fixed
 - Corrected a typo that prevented `restframe\_parameters` from being listed among the available modules. (Médéric Boquien)
