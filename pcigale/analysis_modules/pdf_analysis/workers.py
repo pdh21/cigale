@@ -161,7 +161,7 @@ def analysis(idx, obs):
         # work on views of the arrays and not on copies to save on RAM.
         z = np.array(gbl_models.conf['sed_modules_params']['redshifting']['redshift'])
         wz = slice(np.abs(obs['redshift']-z).argmin(), None, z.size)
-        corr_dz = compute_corr_dz(z, obs['redshift'])
+        corr_dz = compute_corr_dz(z[wz.start], obs['redshift'])
     else:  # We do not know the redshift so we use the full grid
         wz = slice(0, None, 1)
         corr_dz = 1.
