@@ -178,12 +178,7 @@ class ParametersManagerFile(object):
         table = read_table(conf['parameters_file'])
 
         self.size = len(table)
-
-        self.modules = []
-        for colname in table.colnames:
-            module = colname.split('.', 1)[0]
-            if module not in self.modules:
-                self.modules.append(module)
+        self.modules = conf['sed_modules']
         self.blocks = self._split(range(self.size),
                                   conf['analysis_params']['blocks'])
 
