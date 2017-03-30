@@ -184,6 +184,8 @@ class ParametersManagerFile(object):
             module = colname.split('.', 1)[0]
             if module not in self.modules:
                 self.modules.append(module)
+        self.blocks = self._split(range(self.size),
+                                  conf['analysis_params']['blocks'])
 
         # The parameters file is read using astropy.Table. Unfortunately, it
         # stores strings as np.str_, which is not marshalable, which means we
@@ -206,6 +208,26 @@ class ParametersManagerFile(object):
             self.parameters.append(dict_params)
 
         del table
+
+    @staticmethod
+    def _split(l, nb):
+        """Split a list l into nb blocks.
+
+        Parameters
+        ----------
+        l: list
+            List to split.
+        nb: int
+            Number of blocks.
+
+        """
+        step = len(l) // nb
+        if step > 0:
+            return [l[i * step: (i+1) * step] for i in range(nb)]
+
+        raise ValueError("The number of blocks must be no more than the number"
+                         "of models.")
+
 
     def from_index(self, index):
         """Provides the parameters of a model given an index.
