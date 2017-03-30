@@ -176,7 +176,6 @@ class ParametersManagerFile(object):
 
         """
         table = read_table(conf['parameters_file'])
-        table.sort(table.colnames)
 
         self.size = len(table)
 

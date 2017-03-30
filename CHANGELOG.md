@@ -18,6 +18,7 @@
 - The filters in the residual plot of `pcigale-plots sed` are now drawn in order of increasing wavelength so that the line joining all the filters does not make loops. (Médéric Boquien)
 - In the absence of a nebular component `restframe\_parameters` would crash when attempting to compute the equivalent widths of the lines listed in `EW_lines`. Now they are simply ignored. (Médéric Boquien)
 - The luminosity spectrum of the best fit was saved assuming the distance corresponding to the redshift rounded to two decimals. This was an issue in particular at very low redshift as a difference of 0.005 in redshift can translate to a large difference on the luminosity distance. Now the exact luminosity distance of the object is used to compute the spectrum luminosity. (Médéric Boquien, reported by Jorge Melnick)
+- When using the `parameters\_file` option, the indices of the models now correspond to the line number of the input file. (Médéric Boquien)
 
 ### Optimised
 - The cache architecture has been simplified, making it somewhat faster. It speeds up the model generation by ~1%. (Médéric Boquien)
