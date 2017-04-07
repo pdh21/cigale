@@ -193,7 +193,7 @@ def analysis(idx, obs):
             if variable in gbl_results.bayes.massproportional:
                 values = _(gbl_models.properties[i, wz] * scaling * corr_dz)
             else:
-                values = _(gbl_models.properties[i, wz] * corr_dz)
+                values = _(gbl_models.properties[i, wz])
 
             mean, std = weighted_param(values, likelihood)
             gbl_results.bayes.means[idx, i] = mean
