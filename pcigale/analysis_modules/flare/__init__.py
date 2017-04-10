@@ -603,7 +603,7 @@ class FLARE(AnalysisModule):
         info = conf['analysis_params']['variables']
         n_info = len(info)
 
-        if create_simu == False:
+        if create_simu == True:
             # We do not bother to carry heavy/big arrays if we do not wish to save them.
             naxis1 = 1
             n_pixels = 2048
@@ -843,30 +843,34 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample, create_simu,
         A = 2.05
         B = 0.16
         C = 1.54
-
+        nu = -0.21
+        m_ref = 5e10
+        # v2 onlys uses Sargent et al. (2014)
+        # v2 & v4 use Sargent et al. (2014, Fig. 18),         valid above logMstar = 10.2
+        #         use Whitaker Sargent et a. (2014; Fig/ 17), valid below logMstar = 10.2
         if np.log10(m_mf) > 10.2:
+            # This is from Sargent et al. (2014, Fig. 18), valid above logMstar = 10.2
             N = 0.095
-            nu = -0.2
-            sSFR_mf = N * 10**(nu * np.log10(m_mf/5e10)) * np.exp(A*z / (1+B*z**C))
+            sSFR_mf = N * 10**(nu * np.log10(m_mf/m_ref)) * np.exp(A*z / (1+B*z**C))
         else:
-            N = 1.8e-9
-            nu = -3.27
-            sSFR_mf = N * 10**(nu * np.log10(m_mf/1.6e10)) * np.exp(A*z / (1+B*z**C))
+            # This is from Whitaker Sargent et a. (2014; Fig/ 17), valid below logMstar = 10.2
+            N = 5.994e-12
+            sSFR_mf = N * 10**(np.log10(m_mf)+nu * np.log10(m_mf/m_ref)) * np.exp(A*z / (1+B*z**C))
 
         # We select the models with the requested stellar mass
         i_m_best, m_best = min(enumerate(out_mass), key=lambda x: abs(x[1]-m_mf))
         #print('i_m_best, m_best, m_mf, A_fuv_mf', i_m_best, m_best, m_mf, A_fuv_mf)
         # If the requested stellar mass is not in out_mass, we take the closest one
-        if (m_best < m_mf*(1.-dm) or m_best > m_mf*(1.+dm)):
-            count_m += 1
+        #if (m_best < m_mf*(1.-dm) or m_best > m_mf*(1.+dm)):
+        count_m += 1
             #print('count_m', count_m, m_best, m_mf)
         m = m_best
 
         # We select the models with the requested dust attenuation
         dA_fuv = 0.2
         j_A_fuv_best, A_fuv_best = min(enumerate(out_A_fuv), key=lambda x: abs(x[1]-A_fuv_mf))
-        if (A_fuv_best < A_fuv_mf*(1.-dA_fuv) or A_fuv_best > A_fuv_mf*(1.+dA_fuv)):
-            count_afuv += 1
+        #if (A_fuv_best < A_fuv_mf*(1.-dA_fuv) or A_fuv_best > A_fuv_mf*(1.+dA_fuv)):
+        count_afuv += 1
             #print('count_afuv', count_afuv, A_fuv_best, A_fuv_mf, out_A_fuv)
         A_fuv = A_fuv_best
 
@@ -875,8 +879,8 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample, create_simu,
         k_sSFR_best, sSFR_best = min(enumerate(out_sSFR), key=lambda x: abs(x[1]-sSFR_mf))
         #print('sSFR', ind_z, z, k_sSFR_best, sSFR_best, sSFR_mf)
         # If the requested sSFR is not in out_sSFR, we take the closest one
-        if (np.isnan(sSFR_best) or sSFR_best < sSFR_mf*(1.-dsSFR) or sSFR_best > sSFR_mf*(1.+dsSFR)):
-            count_ssfr += 1
+        #if (np.isnan(sSFR_best) or sSFR_best < sSFR_mf*(1.-dsSFR) or sSFR_best > sSFR_mf*(1.+dsSFR)):
+        count_ssfr += 1
 
         sSFR = sSFR_best
 
@@ -890,13 +894,14 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample, create_simu,
         #np.set_printoptions(threshold=np.inf)
         #import ipdb; ipdb.set_trace()
 
-        mask_zsma = \
-          (np.abs(out_redshift-z)/z      <= dz)     & \
-          (np.abs(out_mass-m)/m          <= dm)     & \
-          (np.abs(out_sSFR-sSFR)/sSFR    <= dsSFR)  & \
-          (np.abs(out_A_fuv-A_fuv)/A_fuv <= dA_fuv)
+        #mask_zsma = \
+        #  (np.abs(out_redshift-z)/z      <= dz)     & \
+        #  (np.abs(out_mass-m)/m          <= dm)     & \
+        #  (np.abs(out_sSFR-sSFR)/sSFR    <= dsSFR)  & \
+        #  (np.abs(out_A_fuv-A_fuv)/A_fuv <= dA_fuv)
 
-        masked_indx = np.where(mask_zsma)
+        #masked_indx = np.where(mask_zsma)
+        masked_indx = np.where(z>0)
 
         if len(masked_indx[0])==0:
             #print('No model found, we skip it')

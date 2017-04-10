@@ -30,7 +30,7 @@ from ...warehouse import SedWarehouse
 from ..utils import OUT_DIR
 
 from collections import OrderedDict
-from PIL import Image
+#from PIL import Image
 from random import randint
 
 import matplotlib.pyplot as plt
@@ -103,10 +103,10 @@ def set_config(instrument, wave):
         #---------------JWST
 
         # For JWST: same exposure time for imaging and spectroscopy
-        D1 = 564 # cm rom http://jwst.nasa.gov/faq_scientists.html
+        D1 = 600 # cm rom http://jwst.nasa.gov/faq_scientists.html
         D2 = 0.11 * D1 # From http://jwst.nasa.gov/faq_scientists.html
         A = pi*((D1/2)**2 - (D2/2)**2)
-        pixel_ima = 0.032  # arcsec/pixel which is the average
+        pixel_ima = 0.065  # arcsec/pixel which is the average
                    # of 0.032 for JWST/NIRCAM short and 0.065 for JWST/NIRCAM long
         pixel_spec = 0.1 # arcsec/pixel for spectroscopy
         slice_width = 0.1 # arcsec/pixel for JWST/NIRSPEC
@@ -121,10 +121,50 @@ def set_config(instrument, wave):
         Omega_spec = 2.5 * 2 # 1 slice_width, i.e., pixel in space x 2 pixels / spect. res. elt
         eta_spec = 0.6 #
         emissivity = 0.05 # emissivity
-        T_tel_min = 60 # K
-        T_tel_max = 100 # K
+        T_tel_min = 4 # K
+        T_tel_max = 4 # K
         Delta_T_tel = 10 # K
         onexposure_ima = 10 # sec
+        onexposure_spec = 500 # sec
+
+    elif instrument == 'OST':
+        #-------------OST
+
+        # Physical and mathematical constants
+        h = 6.626e-34 # J.s or J/Hz
+        c = 3.0e8    # m/s
+        k = 1.38e-23  # J/K
+        pi = 3.1415926
+
+        # For OST: same exposure time for imaging and spectroscopy
+        # We assume that OST is diffraction-limited:
+        #Diff_Limit = 0.453 # 20um for 9.1m ~ 0.453 arcsec FWHM (1.03*lambda/D)
+        First_min = 0.553  # 20um for 9.1m ~ 0.453 arcsec FWHM (1.22*lambda/D)
+        D1 = 910 # cm
+        D2 = 0.187 * D1 # Same assumption as WISH
+        A = pi*((D1/2)**2 - (D2/2)**2) # cm2
+        pixel_ima = 0.066 # arcsec/pixel # For imaging
+        eta_tel = 0.97**4 # 0.885
+        strehl = 0.90 # For JWST, Strehl ratio is the ratio of peak diffraction
+                      # intensities of an aberrated vs. perfect wavefront.
+        EE2um = 0.838 * strehl # Encircled Energy of 83.8% at First_min = 1.22*lambda/D
+            # From http://www.telescope-optics.net/diffraction_image.htm#The_diameter_
+
+        Omega_ima = (1 + np.rint(First_min / pixel_ima))**2 # a squared area in pixels
+        R_ima = 4 # lambda / Delta_lambda
+        slice_width = 0.4 # arcsec ~ 1 pixel
+        slice_length = 24.0 # arcsec = 24.0/0.4 = 60 pixels
+        R_spec = 750 # lambda / Delta_lambda
+        #pixel_spec = 0.366 # arcsec/pixel for spectroscopy
+        pixel_spec = slice_width # arcsec/pixel for spectroscopy
+        Omega_spec = 1 * 2 # 1 slice_width: 1 pixel x 2 pixels per spectral res. elt
+        eta_spec = 0.97**10 * 0.70  # 0.737 * 0.70 = 0.516
+        #print('Omega_ima, Omega_spec', Omega_ima, Omega_spec)
+        emissivity = 0.05 # emissivity
+        T_tel_min = 4 # K
+        T_tel_max = 4 # K
+        Delta_T_tel = 4 # K
+        onexposure_ima = 500 # sec
         onexposure_spec = 500 # sec
 
     return onexposure_ima, onexposure_spec, pixel_ima, pixel_spec, \
@@ -194,6 +234,7 @@ def ZodiacalLight(wave):
     #Zodi_Leinert = Leinert['zodi'] # in erg/s/cm2/A/arcsec2
     #f = interp1d(wave_Leinert/1e10, Zodi_Leinert)
     #Zodi_from_Leinert = f(wave) # in erg/s/cm2/A/arcsec2
+    BB_CMB = blackbody_lam(wave, 2.728) / joule / E_photon * steradian
 
     # in units of erg/s/cm2/um/arcsec2 -> photons/s/cm2/μm/sr
     Zodi_from_BB_Jakobsen = 2.0e8*(wave*1e6)**(-1.8) + 7.1e-8*BB256 # in ph/s/cm2/μm/sr
@@ -201,6 +242,10 @@ def ZodiacalLight(wave):
     # http://home.strw.leidenuniv.nl/~franx/nirspec/sensitivity/NIRSpec_sens_Rev2.0.pdf
     Zodi_from_BB_Allen = 3e-14 * BB5800 + 7.0e-8 * BB256 # in ph/s/cm2/μm/sr
     # From Allen's book, p. 146: https://books.google.nl/books?id=w8PK2XFLLH8C&redir_esc=y
+
+    # in units of erg/s/cm2/um/arcsec2 -> photons/s/cm2/μm/sr
+    CMB = 7.1e-8*BB_CMB # in ph/s/cm2/μm/sr
+    CMB = CMB * E_photon * joule / steradian / 1e4
 
     Zodi_from_BB_Jakobsen = Zodi_from_BB_Jakobsen * E_photon * joule / steradian / 1e4
     # in units of ph/s/cm2/μm/sr -> erg/s/cm2/A/arcsec2
@@ -212,7 +257,7 @@ def ZodiacalLight(wave):
     Zodi = Zodi_from_BB_Jakobsen
     #Zodi = Zodi_from_BB_Allen
 
-    return(Zodi)
+    return(Zodi+CMB)
 #
 #----------------------------------------------------------------------
 def Detector(instrument, wave):
@@ -241,6 +286,20 @@ def Detector(instrument, wave):
         QE = 0.70 * np.ones_like(wave)
         # from http://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20140008961.pdf
         ADU = 1.53 # e-/ADU
+    elif instrument == 'OST':
+        # Based on MIRI detectors as found here:
+        # http://ircamera.as.arizona.edu/MIRI/miridetectorperf.pdf
+        RON = 14. * np.ones_like(wave) # e-
+        Dark_Temp = np.array(    [2.,   3.,   4.,   5.,   6.,   7.,   8.,   9.  ]) # in K
+        Dark_teledyne = np.array([0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03]) # in e-/pix/sec
+        Dark_teledyne *= 12.5 # in e-/pix/sec from teledyne specs
+        #Dark_teledyne *= 100. # in e-/pix/sec from teledyne specs
+        T_detector = 4 #K Opt 1: Dark = 0.066, Opt 2: 0.825 (x12.5), Opt 3: 6.6 (x100.)
+        Dark = np.interp(T_detector, Dark_Temp, Dark_teledyne) * np.ones_like(wave) # e-/sec
+        #Dark = 0.05 * np.ones_like(wave) # e-/sec
+        QE = 0.75 * np.ones_like(wave)
+        # from http://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20140008961.pdf
+        ADU = 1. # e-/ADU
 
     return(RON, Dark, QE, ADU)
 #
@@ -462,7 +521,7 @@ def PlotPhot(S_nu_mAB, S_nu_SNR, SNR_mAB,
         photometry.write('# Wave SNR_phot m_AB f_nu T_tel \n')
 
         for ifilt in range(len(FLARE_filters)):
-            photometry.write('%.5f %2s' %(lambda_eff[ifilt]*1e6, '  '))
+            photometry.write('%.5f %2s' %(lambda_filt_eff[ifilt]*1e6, '  '))
             photometry.write('%.2f %2s' %(FLARE_SNR[i_T_tel, ifilt], '  '))
             photometry.write('%.2f %2s' %(-2.5*np.log10(FLARE_fluxes[ifilt])-48.56, '  '))
             photometry.write('%.2f %2s' %(FLARE_fluxes[ifilt]*1e32, '  '))
@@ -993,7 +1052,7 @@ def simulation(idx):
         gbl_model_info[idx, :] = np.array([sed.info[name] for name in
                                            gbl_variables])
     # Which project?
-    Project  = 'FLARE' # or 'JWST'
+    Project  = 'OST' # 'FLARE' or 'JWST' or 'OST'
 
     # Directory where the output files are stored
     OUT_DIR = "out/"
@@ -1018,7 +1077,8 @@ def simulation(idx):
     nu = lambda_to_nu(wavelength) # observed Hz
 
     # We select the spectrum in the correct observed frame for models
-    lambda_min, lambda_max = 1, 5 #um for FLARE
+    lambda_min, lambda_max = 5, 40 #um for OST
+    #lambda_min, lambda_max = 1, 5 #um for FLARE
     #lambda_min, lambda_max = 0.6, 2.0 #um for WFIRST
     w_z = np.where((wavelength >= 1000.*lambda_min) &
                         (wavelength <= 1000.*lambda_max) )
@@ -1122,8 +1182,14 @@ def simulation(idx):
     Lyman_alpha = 121.6*1e-9
 
     # We read the transmissions of the filters
-    FLARE_filters = np.array(['F115W', 'F150W', 'F200W', 'F277W', 'F356W', 'F444W'])
-    FLARE_lambda = np.array([1.15e-6, 1.50e-6, 2.00e-6, 2.77e-6, 3.56e-6, 4.44e-6]) # in m
+
+    OST_filters = np.array(['F560W', 'F770W', 'F1000W', 'F1130W', 'F1280W', 'F1500W', 'F1800W', 'F2100W', 'F2550W'])
+    OST_lambda = np.array([  5.6e-6,  7.7e-6,  10.0e-6,  11.3e-6,  12.8e-6,  15.0e-6,  18.0e-6,  21.0e-6,  25.5e-6]) # in m
+
+    #FLARE_filters = np.array(['F115W', 'F150W', 'F200W', 'F277W', 'F356W', 'F444W'])
+    #FLARE_lambda = np.array([1.15e-6, 1.50e-6, 2.00e-6, 2.77e-6, 3.56e-6, 4.44e-6]) # in m
+    FLARE_filters = OST_filters
+    FLARE_lambda = OST_lambda
     FLARE_SNR = np.zeros((len(T_tel), len(FLARE_lambda)))
     S_nu_SNR = np.zeros((len(T_tel), len(FLARE_lambda)))
     lambda_filt_min = np.zeros_like(FLARE_lambda)
@@ -1201,6 +1267,7 @@ def simulation(idx):
             SNR_mAB = SNR * np.ones_like(wavelength_r) # limiting SNR
         # S_c_SNR in ph/s
         # Signal**2 - SNR**2 * Signal - SNR**2 * (Background + Dark + Readout) = 0
+            transmission_r[transmission_r<1e-10] = 1e-10
             S_c_SNR = SolveQuadratic(1.,
                                  -1.*SNR_mAB**2,
                                  -1.*SNR_mAB**2 * (Background_0 + Dark_0 + Readout_0))
@@ -1210,7 +1277,6 @@ def simulation(idx):
 
             S_nu_SNR[i_T_tel, ifilt] = \
                            np.mean(S_nu_SNR_0*transmission_r[ifilt,:])
-
     create_table1 = True
     if create_table1 == True:
 
@@ -1279,10 +1345,14 @@ def simulation(idx):
 
     # However, with these models, we have less data than needed => interpolation
 
-    lambda_octave1_min = 1.25 # um for FLARE
-    lambda_octave1_max = 2.50 # um for FLARE
-    lambda_octave2_min = 2.50 # um for FLARE
-    lambda_octave2_max = 5.00 # um for FLARE
+    lambda_octave1_min = 5.0 # um for FLARE
+    lambda_octave1_max = 15.0 # um for FLARE
+    lambda_octave2_min = 15.0 # um for FLARE
+    lambda_octave2_max = 30.0 # um for FLARE
+    #lambda_octave1_min = 1.25 # um for FLARE
+    #lambda_octave1_max = 2.50 # um for FLARE
+    #lambda_octave2_min = 2.50 # um for FLARE
+    #lambda_octave2_max = 5.00 # um for FLARE
     #lambda_octave1_min = 0.60 # um for WFIRST
     #lambda_octave1_max = 1.30 # um for WFIRST
     #lambda_octave2_min = 1.30 # um for WFIRST

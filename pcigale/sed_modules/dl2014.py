@@ -122,6 +122,16 @@ class DL2014(SedModule):
         # To compute the dust mass we simply divide the luminosity in W by the
         # emissivity in W/kg of dust.
         sed.add_info('dust.mass', luminosity / self.emissivity, True)
+        m_dust =  luminosity / self.emissivity
+        # Leroy et al. (2011, Sect. 5.2):
+        # log10(delta_GDR) = log10(M_dust) - log10(M_mol) = (9.4 +/- 1.1) − (0.85 +/- 0.13)x[12+log10(O/H)]
+        # log10(M_mol) = log10(M_dust) - (9.4 +/- 1.1) + (0.85 +/- 0.13)x[12+log10(O/H)]
+        # Sun: log(O/H) + 12 = 8.9 for the Sun and for BC03: Z_Sun = 0.019
+        Z_Sun = 0.0143
+        self.metallicity = float(sed.info['stellar.metallicity'])
+        sed.add_info('dust.m_mol',
+                      m_dust * 10**(9.4-0.85*(8.69-np.log10(self.metallicity/Z_Sun))),
+                      True)
 
         sed.add_contribution('dust.Umin_Umin', self.model_minmin.wave,
                              luminosity * self.model_minmin.lumin)
