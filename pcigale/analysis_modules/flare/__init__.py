@@ -861,16 +861,16 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample, create_simu,
         i_m_best, m_best = min(enumerate(out_mass), key=lambda x: abs(x[1]-m_mf))
         #print('i_m_best, m_best, m_mf, A_fuv_mf', i_m_best, m_best, m_mf, A_fuv_mf)
         # If the requested stellar mass is not in out_mass, we take the closest one
-        #if (m_best < m_mf*(1.-dm) or m_best > m_mf*(1.+dm)):
-        count_m += 1
+        if (m_best < m_mf*(1.-dm) or m_best > m_mf*(1.+dm)):
+            count_m += 1
             #print('count_m', count_m, m_best, m_mf)
         m = m_best
 
         # We select the models with the requested dust attenuation
         dA_fuv = 0.2
         j_A_fuv_best, A_fuv_best = min(enumerate(out_A_fuv), key=lambda x: abs(x[1]-A_fuv_mf))
-        #if (A_fuv_best < A_fuv_mf*(1.-dA_fuv) or A_fuv_best > A_fuv_mf*(1.+dA_fuv)):
-        count_afuv += 1
+        if (A_fuv_best < A_fuv_mf*(1.-dA_fuv) or A_fuv_best > A_fuv_mf*(1.+dA_fuv)):
+            count_afuv += 1
             #print('count_afuv', count_afuv, A_fuv_best, A_fuv_mf, out_A_fuv)
         A_fuv = A_fuv_best
 
@@ -879,8 +879,8 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample, create_simu,
         k_sSFR_best, sSFR_best = min(enumerate(out_sSFR), key=lambda x: abs(x[1]-sSFR_mf))
         #print('sSFR', ind_z, z, k_sSFR_best, sSFR_best, sSFR_mf)
         # If the requested sSFR is not in out_sSFR, we take the closest one
-        #if (np.isnan(sSFR_best) or sSFR_best < sSFR_mf*(1.-dsSFR) or sSFR_best > sSFR_mf*(1.+dsSFR)):
-        count_ssfr += 1
+        if (np.isnan(sSFR_best) or sSFR_best < sSFR_mf*(1.-dsSFR) or sSFR_best > sSFR_mf*(1.+dsSFR)):
+            count_ssfr += 1
 
         sSFR = sSFR_best
 
@@ -894,14 +894,13 @@ def save_spectra(RA_sample, Dec_sample, m_sample, z_sample, create_simu,
         #np.set_printoptions(threshold=np.inf)
         #import ipdb; ipdb.set_trace()
 
-        #mask_zsma = \
-        #  (np.abs(out_redshift-z)/z      <= dz)     & \
-        #  (np.abs(out_mass-m)/m          <= dm)     & \
-        #  (np.abs(out_sSFR-sSFR)/sSFR    <= dsSFR)  & \
-        #  (np.abs(out_A_fuv-A_fuv)/A_fuv <= dA_fuv)
+        mask_zsma = \
+          (np.abs(out_redshift-z)/z      <= dz)     & \
+          (np.abs(out_mass-m)/m          <= dm)     & \
+          (np.abs(out_sSFR-sSFR)/sSFR    <= dsSFR)  & \
+          (np.abs(out_A_fuv-A_fuv)/A_fuv <= dA_fuv)
 
-        #masked_indx = np.where(mask_zsma)
-        masked_indx = np.where(z>0)
+        masked_indx = np.where(mask_zsma)
 
         if len(masked_indx[0])==0:
             #print('No model found, we skip it')
