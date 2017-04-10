@@ -89,11 +89,10 @@ class BayesResultsManager(object):
 
         for i, variable in enumerate(merged.propertiesnames):
             if variable.endswith('_log'):
-                maxstd = lambda mean, std: max(0.02, std)
+                merged.errors[:, i] = np.maximum(0.02, merged.errors[:, i])
             else:
-                maxstd = lambda mean, std: max(0.05 * mean, std)
-            merged.errors[:, i] = maxstd(merged.means[:, i],
-                                         merged.errors[:, i])
+                merged.errors[:, i] = np.maximum(0.05 * merged.means[:, i],
+                                                 merged.errors[:, i])
 
         return merged
 
