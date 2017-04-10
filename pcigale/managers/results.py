@@ -66,10 +66,6 @@ class BayesResultsManager(object):
                     for result in results)):
             raise TypeError("A list of BayesResultsManager is required.")
 
-        if len(results) == 1:
-            results[0]._weights = None
-            return results[0]
-
         means = np.array([result.means for result in results])
         errors = np.array([result.errors for result in results])
         weights = np.array([result.weights for result in results])[..., None]
@@ -90,6 +86,14 @@ class BayesResultsManager(object):
         merged.errors[:] = np.sqrt(np.sum(weights * (errors**2 +
                                           (means-merged.means)**2), axis=0) /
                                    sumweights)
+
+        for i, variable in enumerate(merged.propertiesnames):
+            if variable.endswith('_log'):
+                maxstd = lambda mean, std: max(0.02, std)
+            else:
+                maxstd = lambda mean, std: max(0.05 * mean, std)
+            merged.errors[:, i] = maxstd(merged.means[:, i],
+                                         merged.errors[:, i])
 
         return merged
 

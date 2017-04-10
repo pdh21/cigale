@@ -185,10 +185,8 @@ def analysis(idx, obs):
             if variable.endswith('_log'):
                 variable = variable[:-4]
                 _ = np.log10
-                maxstd = lambda mean, std: max(0.02, std)
             else:
                 _ = lambda x: x
-                maxstd = lambda mean, std: max(0.05 * mean, std)
 
             if variable in gbl_results.bayes.massproportional:
                 values = _(gbl_models.properties[i, wz] * scaling * corr_dz)
@@ -197,7 +195,7 @@ def analysis(idx, obs):
 
             mean, std = weighted_param(values, likelihood)
             gbl_results.bayes.means[idx, i] = mean
-            gbl_results.bayes.errors[idx, i] = maxstd(mean, std)
+            gbl_results.bayes.errors[idx, i] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
                 save_chi2(obs, variable, gbl_models, chi2, values)
         best_idx_z = np.nanargmin(chi2)
