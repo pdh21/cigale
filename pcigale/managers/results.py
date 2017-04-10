@@ -72,7 +72,7 @@ class BayesResultsManager(object):
 
         means = np.array([result.means for result in results])
         errors = np.array([result.errors for result in results])
-        weights = np.array([result.weights for result in results])
+        weights = np.array([result.weights for result in results])[..., None]
 
         merged = results[0]
         merged._means = shared_array((merged.nobs, merged.nproperties))
@@ -80,16 +80,16 @@ class BayesResultsManager(object):
         merged._weights = None
 
         sumweights = np.sum(weights, axis=0)
-        merged.means[:] = np.sum(means*weights[:, :, None], axis=0) / \
-                          sumweights[:, None]
+
+        merged.means[:] = np.sum(means * weights, axis=0) / sumweights
+
         # We compute the merged standard deviation by combining the standard
-        # deviations for each block. This is done using a parallel algorithm.
-        # See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
+        # deviations for each block. See http://stats.stackexchange.com/a/10445
         # where the number of datapoints has been substituted with the weights.
-        merged.errors[:] = np.sqrt((np.sum(errors**2.*weights[:, :, None], axis=0) +
-                                    np.sum((means[1:, :, :]-means[:1, :, :])**2 *
-                                           (weights[1:, :]*weights[:1, :] / sumweights)[:, :, None],
-                                           axis=0)) / sumweights[:, None])
+        # In short we exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
+        merged.errors[:] = np.sqrt(np.sum(weights * (errors**2 +
+                                          (means-merged.means)**2), axis=0) /
+                                   sumweights)
 
         return merged
 
