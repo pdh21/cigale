@@ -177,7 +177,7 @@ def analysis(idx, obs):
         # We use the exponential probability associated with the χ² as
         # likelihood function.
         likelihood = np.exp(-chi2 / 2.)
-        gbl_results.bayes.weights[idx] = np.sum(likelihood)
+        gbl_results.bayes.weights[idx] = np.nansum(likelihood)
 
         # We compute the weighted average and standard deviation using the
         # likelihood as weight.
