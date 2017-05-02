@@ -185,10 +185,11 @@ def compute_chi2(model_fluxes, obs_fluxes, obs_errors, lim_flag):
     limits = lim_flag and np.any(obs_errors <= 0.)
 
     scaling = _compute_scaling(model_fluxes, obs_fluxes, obs_errors)
+
     # Some observations may not have flux values in some filter(s), but
     # they can have upper limit(s).
     if limits == True:
-        for imod in range(len(model_fluxes)):
+        for imod in range(scaling.size):
             scaling[imod] = optimize.root(dchi2_over_ds2, scaling[imod],
                                           args=(obs_fluxes, obs_errors,
                                                 model_fluxes[:, imod])).x
