@@ -1551,7 +1551,7 @@ def simulation(idx):
                     new_bckd_lambda[i_T_tel,:],
                     new_bckd_lambda[i_T_tel,:]*err_side_lambda[i_T_tel])
             spectra[idx, :] = data[i_obj, :, i_T_tel]
-            no_spectra[i_obj, :] = nodata[i_obj, :, i_T_tel]
+            #no_spectra[i_obj, :] = nodata[i_obj, :, i_T_tel]
 
         if flag_sim == True:
             PlotSimSpectrum(1e-9*new_wavelength, lambda_min, lambda_max,

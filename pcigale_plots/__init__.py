@@ -274,7 +274,9 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
 
             #ax1.set_xlim(xmin, xmax)
             # Force the x-axis range
-            ax1.set_xlim(1e-1, 1e4)
+            ax1.set_xlim(8e-1, 1e4)
+            # Force the x-axis range to the UV in um
+            #ax1.set_xlim(8e-1, 1e1)
             ymin = min(np.min(obs_fluxes[mask_ok]),
                        np.min(mod_fluxes[mask_ok]))
             if not mask_uplim.any() == False:
@@ -287,10 +289,13 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
                            np.max(mod_fluxes[mask_ok]))
             ax1.set_ylim(1e-1*ymin, 1e1*ymax)
             # Force the y-axis range
-            ax1.set_ylim(1e-4,  1e2)
+            ax1.set_ylim(1e-6,  1e1*ymax)
             #ax2.set_xlim(xmin, xmax)
             # Force the x-axis range
-            ax2.set_xlim(1e-1, 1e4)
+            ax2.set_xlim(8e-1, 1e4)
+            # Force the x-axis range to the UV in um
+            #ax1.set_xlim(8e-1, 1e1)
+            #ax2.set_xlim(8e-1, 1e1)
             ax2.set_ylim(-1.0, 1.0)
             if sed_type == 'lum':
                 ax2.set_xlabel("Rest-frame wavelength [$\mu$m]")

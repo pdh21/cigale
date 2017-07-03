@@ -41,7 +41,7 @@ from ...handlers.parameters_handler import ParametersHandler
 
 # Directory where the output files are stored
 OUT_DIR = "out/"
-create_simu = False
+create_simu = True
 
 def previous_and_next(some_iterable):
     prevs, items, nexts = tee(some_iterable, 3)
@@ -572,7 +572,6 @@ class FLARE(AnalysisModule):
         # FOV in arcmin
         FoV_axis1 = float(conf['analysis_params']['FoV_axis1'])
         FoV_axis2 = float(conf['analysis_params']['FoV_axis2'])
-
         redshifts = conf['sed_modules_params']['set_redshift']['redshift']
         #RA_sample, Dec_sample, z_sample = density_z(FoV_axis1, FoV_axis2, redshifts)
         #print('Echantillon', len(RA_sample), len(Dec_sample), len(z_sample))
@@ -633,16 +632,17 @@ class FLARE(AnalysisModule):
             for idx in range(n_params):
                 worker_simulation(idx)
         else:  # Create models in parallel
+            print('inside modelling')
             with mp.Pool(processes=conf['cores'],
                          initializer=init_worker_simulation,
                          initargs=initargs) as pool:
                 pool.map(worker_simulation, range(n_params))
 
+        print('outside modelling')
         out_file_txt = out_file+'.txt'
         out_format_txt = 'ascii'
         save_fluxes(model_fluxes, model_parameters, filters, info, out_file_txt,
                     out_format=out_format_txt)
-
         out_file_fits = out_file+'.fits'
         save_spectra(RA_sample, Dec_sample, m_sample, z_sample, create_simu,
                      model_spectra, model_background, model_redshift,
