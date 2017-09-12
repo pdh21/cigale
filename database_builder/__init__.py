@@ -20,7 +20,7 @@ import numpy as np
 from scipy import interpolate
 import scipy.constants as cst
 from astropy.table import Table
-from pcigale.data import (Database, Filter, M2005, BC03, Fritz2006,
+from pcigale.data import (Database, Filter, M2005, BC03, SB99, Fritz2006,
                           Dale2014, DL2007, DL2014, NebularLines,
                           NebularContinuum, Schreiber2016)
 
@@ -376,6 +376,73 @@ def build_bc2003(base):
         base.add_bc03(BC03(
             imf,
             metallicity[key],
+            time_grid,
+            ssp_wave,
+            color_table,
+            ssp_lumin
+        ))
+
+def build_sb99(base):
+    sb99_dir = os.path.join(os.path.dirname(__file__), 'sb99/')
+
+    # Time grid (1 Myr to 14 Gyr with 1 Myr step)
+    time_grid = np.arange(1, 14000)
+
+    # Metallicities associated to each key
+    metallicity = {
+        "52": 0.002,
+        "54": 0.014,
+        "62": 0.002,
+        "64": 0.014
+    }
+
+    # Rotations associated to each key
+    rotation = {
+        "52": 0.0,
+        "54": 0.0,
+        "62": 0.4,
+        "64": 0.4
+    }
+
+    for imf, model in itertools.product(['krou', 'salp'], metallicity.keys()):
+        base_filename = "{}/{}_{}".format(sb99_dir, imf, model)
+
+        print("Importing {}...".format(base_filename))
+
+        ssp_filename = "{}.spectrum".format(base_filename)
+        quanta_filename = "{}.quanta".format(base_filename)
+        yield_filename = "{}.yield".format(base_filename)
+
+        ssp_time, ssp_wave, ssp_lumin = np.genfromtxt(ssp_filename,
+                                                      skip_header=6,
+                                                      usecols=(0, 1, 3),
+                                                      unpack=True)
+        aux_time, NLy = np.genfromtxt(quanta_filename, skip_header=7,
+                                      usecols=(0, 1, ), unpack=True)
+        mass = np.genfromtxt(yield_filename, skip_header=7, usecols=(13,))
+
+        ssp_time = np.unique(ssp_time) / 1e6
+        ssp_wave = np.unique(ssp_wave) / 10.
+        aux_time /= 1e6
+
+        ssp_lumin = ssp_lumin.reshape(ssp_time.size, ssp_wave.size)
+
+        # 1e-6 for 1 Msun and 1e-6 from erg/s/Å to W/m.
+        ssp_lumin = 10**ssp_lumin * 1e-12
+        NLy = 10**NLy / 1e6
+        mass = 1. - 10**(mass-6.)
+
+        color_table = np.vstack((NLy, mass))
+
+        # Regrid the SSP data to the evenly spaced time grid.
+        color_table = interpolate.interp1d(aux_time, color_table)(time_grid)
+        ssp_lumin = interpolate.interp1d(ssp_time,
+                                         np.transpose(ssp_lumin))(time_grid)
+
+        base.add_sb99(SB99(
+            imf,
+            metallicity[model],
+            rotation[model],
             time_grid,
             ssp_wave,
             color_table,
@@ -763,32 +830,37 @@ def build_base():
     print("\nDONE\n")
     print('#' * 78)
 
-    print("4- Importing Draine and Li (2007) models\n")
+    print("4- Importing Starburst99 SSP\n")
+    build_sb99(base)
+    print("\nDONE\n")
+    print('#' * 78)
+
+    print("5- Importing Draine and Li (2007) models\n")
     build_dl2007(base)
     print("\nDONE\n")
     print('#' * 78)
 
-    print("5- Importing the updated Draine and Li (2007 models)\n")
+    print("6- Importing the updated Draine and Li (2007 models)\n")
     build_dl2014(base)
     print("\nDONE\n")
     print('#' * 78)
 
-    print("6- Importing Fritz et al. (2006) models\n")
+    print("7- Importing Fritz et al. (2006) models\n")
     build_fritz2006(base)
     print("\nDONE\n")
     print('#' * 78)
 
-    print("7- Importing Dale et al (2014) templates\n")
+    print("8- Importing Dale et al (2014) templates\n")
     build_dale2014(base)
     print("\nDONE\n")
     print('#' * 78)
 
-    print("8- Importing nebular lines and continuum\n")
+    print("9- Importing nebular lines and continuum\n")
     build_nebular(base)
     print("\nDONE\n")
     print('#' * 78)
 
-    print("9- Importing Schreiber et al (2016) models\n")
+    print("10- Importing Schreiber et al (2016) models\n")
     build_schreiber2016(base)
     print("\nDONE\n")
     print('#' * 78)

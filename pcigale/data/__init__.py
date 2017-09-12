@@ -31,6 +31,7 @@ from .fritz2006 import Fritz2006
 from .nebular_continuum import NebularContinuum
 from .nebular_lines import NebularLines
 from .schreiber2016 import Schreiber2016
+from .sb99 import SB99
 
 DATABASE_FILE = pkg_resources.resource_filename(__name__, 'data.db')
 
@@ -109,6 +110,30 @@ class _BC03(BASE):
     def __init__(self, ssp):
         self.imf = ssp.imf
         self.metallicity = ssp.metallicity
+        self.time_grid = ssp.time_grid
+        self.wavelength_grid = ssp.wavelength_grid
+        self.info_table = ssp.info_table
+        self.spec_table = ssp.spec_table
+
+
+class _SB99(BASE):
+    """Storage for Starburst 99 SSP
+    """
+
+    __tablename__ = "sb99"
+
+    imf = Column(String, primary_key=True)
+    metallicity = Column(Float, primary_key=True)
+    rotation = Column(Float, primary_key=True)
+    time_grid = Column(PickleType)
+    wavelength_grid = Column(PickleType)
+    info_table = Column(PickleType)
+    spec_table = Column(PickleType)
+
+    def __init__(self, ssp):
+        self.imf = ssp.imf
+        self.metallicity = ssp.metallicity
+        self.rotation = ssp.rotation
         self.time_grid = ssp.time_grid
         self.wavelength_grid = ssp.wavelength_grid
         self.info_table = ssp.info_table
@@ -419,6 +444,73 @@ class Database(object):
             dictionary of parameters and their values
         """
         return self._get_parameters(_BC03)
+
+    def add_sb99(self, ssp_sb99):
+        """
+        Add a Starburst 99 SSP to the pcigale database
+
+        Parameters
+        ----------
+        ssp_sb99: pcigale.data.SspSB99
+        """
+        if self.is_writable:
+            ssp = _SB99(ssp_sb99)
+            self.session.add(ssp)
+            try:
+                self.session.commit()
+            except exc.IntegrityError:
+                self.session.rollback()
+                raise DatabaseInsertError('The SSP is already in the base.')
+        else:
+            raise Exception('The database is not writable.')
+
+    def get_sb99(self, imf, metallicity, rotation):
+        """
+        Query the database for the Starburst 99 SSP corresponding to the given
+        initial mass function and metallicity.
+
+        Parameters
+        ----------
+        imf: string
+            Initial mass function (salp for Salpeter, chab for Chabrier)
+        metallicity: float
+            0.014 for Solar metallicity
+        rotation: float
+            Stellar rotation
+        Returns
+        -------
+        ssp: pcigale.data.SB99
+            The SB99 object.
+
+        Raises
+        ------
+        DatabaseLookupError: if the requested SSP is not in the database.
+
+        """
+        result = self.session.query(_SB99)\
+            .filter(_SB99.imf == imf)\
+            .filter(_SB99.metallicity == metallicity)\
+            .filter(_SB99.rotation == rotation)\
+            .first()
+        if result:
+            return SB99(result.imf, result.metallicity, result.rotation,
+                        result.time_grid, result.wavelength_grid,
+                        result.info_table, result.spec_table)
+        else:
+            raise DatabaseLookupError(
+                "The SB99 SSP for imf <{0}>, metallicity <{1}>, and rotation "
+                "<{2}> is not in the database.".format(imf, metallicity,
+                                                      rotation))
+
+    def get_sb99_parameters(self):
+        """Get parameters for the Starburst 99 stellar models.
+
+        Returns
+        -------
+        paramaters: dictionary
+            dictionary of parameters and their values
+        """
+        return self._get_parameters(_SB99)
 
     def add_dl2007(self, models):
         """
