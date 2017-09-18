@@ -344,10 +344,6 @@ def build_bc2003(base):
         color_table.append(color4_table[6])        # Mstar
         color_table.append(color4_table[7])        # Mgas
         color_table.append(10 ** color3_table[5])  # NLy
-        color_table.append(color3_table[1])        # B4000
-        color_table.append(color3_table[2])        # B4_VN
-        color_table.append(color3_table[3])        # B4_SDSS
-        color_table.append(color3_table[4])        # B(912)
 
         color_table = np.array(color_table)
 

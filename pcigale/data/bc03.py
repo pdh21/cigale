@@ -102,7 +102,7 @@ class BC03(object):
         # computation. We take only the first three elements from the
         # info_table as the others do not make sense when convolved with the
         # SFH (break strength).
-        info_table = self.info_table[:3, :sfh.size]
+        info_table = self.info_table[:, :sfh.size]
         spec_table = self.spec_table[:, :sfh.size]
 
         # The convolution is just a matter of reverting the SFH and computing
