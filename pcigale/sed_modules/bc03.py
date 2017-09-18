@@ -81,8 +81,8 @@ class BC03(SedModule):
         # compute the energy absorbed by the dust before ionising gas.
         wave = self.ssp.wavelength_grid
         w = np.where(wave <= 91.1)
-        lum_lyc_young = np.trapz(spec_young[w], wave[w])
-        lum_lyc_old = np.trapz(spec_old[w], wave[w])
+        lum_lyc_young, lum_lyc_old = np.trapz([spec_young[w], spec_old[w]],
+                                              wave[w])
 
         sed.add_module(self.name, self.parameters)
 
