@@ -79,6 +79,8 @@ class SB99(SedModule):
         out = self.ssp.convolve(sed.sfh, self.separation_age)
         spec_young, spec_old, info_young, info_old, info_all = out
 
+        lum_stellar = np.trapz(spec_old + spec_young, self.ssp.wavelength_grid)
+
         sed.add_module(self.name, self.parameters)
 
         sed.add_info("stellar.imf", self.imf)
@@ -91,6 +93,8 @@ class SB99(SedModule):
 
         sed.add_info("stellar.m_star_old", info_old["m_star"], True)
         sed.add_info("stellar.n_ly_old", info_old["n_ly"], True)
+
+        sed.add_info("stellar.luminosity", lum_stellar, True)
 
         sed.add_contribution("stellar.old", self.ssp.wavelength_grid, spec_old)
         sed.add_contribution("stellar.young", self.ssp.wavelength_grid,
