@@ -313,8 +313,8 @@ def build_m2005(base):
                              mass_table, flux_age))
 
 
-def build_bc2003(base):
-    bc03_dir = os.path.join(os.path.dirname(__file__), 'bc03//')
+def build_bc2003(base, res):
+    bc03_dir = os.path.join(os.path.dirname(__file__), 'bc03/')
 
     # Time grid (1 Myr to 14 Gyr with 1 Myr step)
     time_grid = np.arange(1, 14000)
@@ -330,12 +330,14 @@ def build_bc2003(base):
     }
 
     for key, imf in itertools.product(metallicity, ["salp", "chab"]):
-        base_filename = bc03_dir + "bc2003_lr_" + key + "_" + imf + "_ssp"
-        ssp_filename = base_filename + ".ised_ASCII"
-        color3_filename = base_filename + ".3color"
-        color4_filename = base_filename + ".4color"
+        ssp_filename = "{}bc2003_{}_{}_{}_ssp.ised_ASCII".format(bc03_dir, res,
+                                                                 key, imf)
+        color3_filename = "{}bc2003_lr_{}_{}_ssp.3color".format(bc03_dir, key,
+                                                                imf)
+        color4_filename = "{}bc2003_lr_{}_{}_ssp.4color".format(bc03_dir, key,
+                                                                imf)
 
-        print("Importing %s..." % base_filename)
+        print("Importing {}...".format(ssp_filename))
 
         # Read the desired information from the color files
         color_table = []
@@ -738,7 +740,7 @@ def build_schreiber2016(base):
     base.add_schreiber2016(models)
 
 
-def build_base():
+def build_base(bc03res='lr'):
     base = Database(writable=True)
     base.upgrade_base()
 
@@ -755,7 +757,7 @@ def build_base():
     print('#' * 78)
 
     print("3- Importing Bruzual and Charlot 2003 SSP\n")
-    build_bc2003(base)
+    build_bc2003(base, bc03res)
     print("\nDONE\n")
     print('#' * 78)
 
