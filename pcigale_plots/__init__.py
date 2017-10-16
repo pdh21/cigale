@@ -175,45 +175,19 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
             del Fmodel[:]
             del chi[:]
 
-            # Stellar emission
-            if 'nebular.absorption_young' in sed.columns:
-                ax1.loglog(wavelength_spec[wsed],
-                           (sed['stellar.young'][wsed] +
-                            sed['attenuation.stellar.young'][wsed] +
-                            sed['nebular.absorption_young'][wsed] +
-                            sed['stellar.old'][wsed] +
-                            sed['attenuation.stellar.old'][wsed] +
-                            sed['nebular.absorption_old'][wsed]),
-                           label="Stellar attenuated ", color='orange',
-                           marker=None, nonposy='clip', linestyle='-',
-                           linewidth=0.5)
-            else:
-                ax1.loglog(wavelength_spec[wsed],
-                           (sed['stellar.young'][wsed] +
-                            sed['attenuation.stellar.young'][wsed] +
-                            sed['stellar.old'][wsed] +
-                            sed['attenuation.stellar.old'][wsed]),
-                           label="Stellar attenuated ", color='orange',
-                           marker=None, nonposy='clip', linestyle='-',
-                           linewidth=0.5)
+            ax1.loglog(wavelength_spec[wsed],
+                        (sed['stellar.young'][wsed] +
+                        sed['attenuation.stellar.young'][wsed] +
+                        sed['stellar.old'][wsed] +
+                        sed['attenuation.stellar.old'][wsed]),
+                        label="Stellar attenuated ", color='orange',
+                        marker=None, nonposy='clip', linestyle='-',
+                        linewidth=0.5)
             ax1.loglog(wavelength_spec[wsed],
                        (sed['stellar.old'][wsed] +
                         sed['stellar.young'][wsed]),
                        label="Stellar unattenuated", color='b', marker=None,
                        nonposy='clip', linestyle='--', linewidth=0.5)
-            # Nebular emission
-            if 'nebular.lines_young' in sed.columns:
-                ax1.loglog(wavelength_spec[wsed],
-                           (sed['nebular.lines_young'][wsed] +
-                            sed['nebular.lines_old'][wsed] +
-                            sed['nebular.continuum_young'][wsed] +
-                            sed['nebular.continuum_old'][wsed] +
-                            sed['attenuation.nebular.lines_young'][wsed] +
-                            sed['attenuation.nebular.lines_old'][wsed] +
-                            sed['attenuation.nebular.continuum_young'][wsed] +
-                            sed['attenuation.nebular.continuum_old'][wsed]),
-                           label="Nebular emission", color='y', marker=None,
-                           nonposy='clip', linewidth=.5)
             # Dust emission Draine & Li
             if 'dust.Umin_Umin' in sed.columns:
                 ax1.loglog(wavelength_spec[wsed],

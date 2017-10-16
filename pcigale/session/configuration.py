@@ -97,7 +97,6 @@ class Configuration(object):
             ["Order of the modules use for SED creation. Available modules:"] +
             ["SFH: sfh2exp, sfhdelayed, sfhfromfile, sfhperiodic"] +
             ["SSP: bc03", ] +
-            ["Nebular emission: nebular"] +
             ["Dust attenuation: dustatt_calzleit, dustatt_powerlaw, "
              "dustatt_2powerlaws"] +
             ["Dust emission: casey2012, dl2014"] +
@@ -260,7 +259,6 @@ class Configuration(object):
         modules = OrderedDict((('SFH', ['sfh2exp', 'sfhdelayed', 'sfhfromfile',
                                         'sfhperiodic']),
                                ('SSP', ['bc03',]),
-                               ('nebular', ['nebular']),
                                ('dust attenuation', ['dustatt_calzleit',
                                                      'dustatt_powerlaw',
                                                      'dustatt_2powerlaws']),
@@ -272,9 +270,6 @@ class Configuration(object):
 
         comments = {'SFH': "ERROR! Choosing one SFH module is mandatory.",
                     'SSP': "ERROR! Choosing one SSP module is mandatory.",
-                    'nebular': "WARNING! Choosing the nebular module is "
-                               "recommended. Without it the Lyman continuum "
-                               "is left untouched.",
                     'dust attenuation': "No dust attenuation module found.",
                     'dust emission': "No dust emission module found.",
                     'AGN': "No AGN module found.",
