@@ -17,8 +17,7 @@ import numpy as np
 from scipy import interpolate
 import scipy.constants as cst
 from astropy.table import Table
-from pcigale.data import (Database, Filter, BC03, Fritz2006,
-                          DL2014, Schreiber2016)
+from pcigale.data import (Database, Filter, BC03, Fritz2006, DL2014)
 
 
 def read_bc03_ssp(filename):
@@ -385,33 +384,6 @@ def build_fritz2006(base):
 
     base.add_fritz2006(models)
 
-def build_schreiber2016(base):
-    models = []
-    schreiber2016_dir = os.path.join(os.path.dirname(__file__),
-                                     'schreiber2016/')
-
-    print("Importing {}...".format(schreiber2016_dir + 'g15_pah.fits'))
-    pah = Table.read(schreiber2016_dir + 'g15_pah.fits')
-    print("Importing {}...".format(schreiber2016_dir + 'g15_dust.fits'))
-    dust = Table.read(schreiber2016_dir + 'g15_dust.fits')
-
-    # Getting the lambda grid for the templates and convert from μm to nm.
-    wave = dust['LAM'][0, 0, :].data * 1e3
-
-    for td in np.arange(15., 100.):
-        # Find the closest temperature in the model list of tdust
-        tsed = np.argmin(np.absolute(dust['TDUST'][0].data-td))
-
-        # The models are in νFν.  We convert this to W/nm.
-        lumin_dust = dust['SED'][0, tsed, :].data / wave
-        lumin_pah = pah['SED'][0, tsed, :].data / wave
-
-        models.append(Schreiber2016(0, td, wave, lumin_dust))
-        models.append(Schreiber2016(1, td, wave, lumin_pah))
-
-    base.add_schreiber2016(models)
-
-
 def build_base():
     base = Database(writable=True)
     base.upgrade_base()
@@ -434,11 +406,6 @@ def build_base():
 
     print("6- Importing Fritz et al. (2006) models\n")
     build_fritz2006(base)
-    print("\nDONE\n")
-    print('#' * 78)
-
-    print("9- Importing Schreiber et al (2016) models\n")
-    build_schreiber2016(base)
     print("\nDONE\n")
     print('#' * 78)
 
