@@ -20,7 +20,6 @@ import numpy as np
 
 from .filters import Filter
 from .bc03 import BC03
-from .dale2014 import Dale2014
 from .dl2007 import DL2007
 from .dl2014 import DL2014
 from .fritz2006 import Fritz2006
@@ -87,23 +86,6 @@ class _BC03(BASE):
         self.wavelength_grid = ssp.wavelength_grid
         self.info_table = ssp.info_table
         self.spec_table = ssp.spec_table
-
-
-class _Dale2014(BASE):
-    """Storage for Dale et al (2014) infra-red templates
-    """
-
-    __tablename__ = 'dale2014_templates'
-    fracAGN = Column(Float, primary_key=True)
-    alpha = Column(String, primary_key=True)
-    wave = Column(PickleType)
-    lumin = Column(PickleType)
-
-    def __init__(self, iragn):
-        self.fracAGN = iragn.fracAGN
-        self.alpha = iragn.alpha
-        self.wave = iragn.wave
-        self.lumin = iragn.lumin
 
 
 class _DL2007(BASE):
@@ -468,73 +450,6 @@ class Database(object):
             dictionary of parameters and their values
         """
         return self._get_parameters(_DL2014)
-
-    def add_dale2014(self, models):
-        """
-        Add Dale et al (2014) templates the collection.
-
-        Parameters
-        ----------
-        models: list of pcigale.data.Dale2014 objects
-
-        """
-
-        if self.is_writable:
-            for model in models:
-                self.session.add(_Dale2014(model))
-            try:
-                self.session.commit()
-            except exc.IntegrityError:
-                self.session.rollback()
-                raise DatabaseInsertError(
-                    'The Dale2014 template is already in the base.')
-        else:
-            raise Exception('The database is not writable.')
-
-    def get_dale2014(self, frac_agn, alpha):
-        """
-        Get the Dale et al (2014) template corresponding to the given set of
-        parameters.
-
-        Parameters
-        ----------
-        frac_agn: float
-            contribution of the AGN to the IR luminosity
-        alpha: float
-            alpha corresponding to the updated Dale & Helou (2002) star
-            forming template.
-
-        Returns
-        -------
-        template: pcigale.data.Dale2014
-            The Dale et al. (2014) IR template.
-
-        Raises
-        ------
-        DatabaseLookupError: if the requested template is not in the database.
-
-        """
-        result = (self.session.query(_Dale2014).
-                  filter(_Dale2014.fracAGN == frac_agn).
-                  filter(_Dale2014.alpha == alpha).
-                  first())
-        if result:
-            return Dale2014(result.fracAGN, result.alpha, result.wave,
-                            result.lumin)
-        else:
-            raise DatabaseLookupError(
-                "The Dale2014 template for frac_agn <{0}> and alpha <{1}> "
-                "is not in the database.".format(frac_agn, alpha))
-
-    def get_dale2014_parameters(self):
-        """Get parameters for the Dale 2014 models.
-
-        Returns
-        -------
-        paramaters: dictionary
-            dictionary of parameters and their values
-        """
-        return self._get_parameters(_Dale2014)
 
     def add_fritz2006(self, models):
         """

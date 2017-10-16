@@ -18,7 +18,7 @@ from scipy import interpolate
 import scipy.constants as cst
 from astropy.table import Table
 from pcigale.data import (Database, Filter, BC03, Fritz2006,
-                          Dale2014, DL2007, DL2014, NebularLines,
+                          DL2007, DL2014, NebularLines,
                           NebularContinuum, Schreiber2016)
 
 
@@ -244,66 +244,6 @@ def build_bc2003(base):
             color_table,
             ssp_lumin
         ))
-
-
-def build_dale2014(base):
-    models = []
-    dale2014_dir = os.path.join(os.path.dirname(__file__), 'dale2014/')
-
-    # Getting the alpha grid for the templates
-    d14cal = np.genfromtxt(dale2014_dir + 'dhcal.dat')
-    alpha_grid = d14cal[:, 1]
-
-    # Getting the lambda grid for the templates and convert from microns to nm.
-    first_template = np.genfromtxt(dale2014_dir + 'spectra.0.00AGN.dat')
-    wave = first_template[:, 0] * 1E3
-
-    # Getting the stellar emission and interpolate it at the same wavelength
-    # grid
-    stell_emission_file = np.genfromtxt(dale2014_dir +
-                                        'stellar_SED_age13Gyr_tau10Gyr.spec')
-    # A -> to nm
-    wave_stell = stell_emission_file[:, 0] * 0.1
-    # W/A -> W/nm
-    stell_emission = stell_emission_file[:, 1] * 10
-    stell_emission_interp = np.interp(wave, wave_stell, stell_emission)
-
-    # The models are in nuFnu and contain stellar emission.
-    # We convert this to W/nm and remove the stellar emission.
-
-    # Emission from dust heated by SB
-    fraction = 0.0
-    filename = dale2014_dir + "spectra.0.00AGN.dat"
-    print("Importing {}...".format(filename))
-    datafile = open(filename)
-    data = "".join(datafile.readlines())
-    datafile.close()
-
-    for al in range(1, len(alpha_grid)+1, 1):
-        lumin_with_stell = np.genfromtxt(io.BytesIO(data.encode()),
-                                         usecols=(al))
-        lumin_with_stell = pow(10, lumin_with_stell) / wave
-        constant = lumin_with_stell[7] / stell_emission_interp[7]
-        lumin = lumin_with_stell - stell_emission_interp * constant
-        lumin[lumin < 0] = 0
-        lumin[wave < 2E3] = 0
-        norm = np.trapz(lumin, x=wave)
-        lumin /= norm
-
-        models.append(Dale2014(fraction, alpha_grid[al-1], wave, lumin))
-    # Emission from dust heated by AGN - Quasar template
-    filename = dale2014_dir + "shi_agn.regridded.extended.dat"
-    print("Importing {}...".format(filename))
-
-    wave, lumin_quasar = np.genfromtxt(filename, unpack=True)
-    wave *= 1e3
-    lumin_quasar = 10**lumin_quasar / wave
-    norm = np.trapz(lumin_quasar, x=wave)
-    lumin_quasar /= norm
-
-    models.append(Dale2014(1.0, 0.0, wave, lumin_quasar))
-
-    base.add_dale2014(models)
 
 
 def build_dl2007(base):
@@ -632,11 +572,6 @@ def build_base():
 
     print("6- Importing Fritz et al. (2006) models\n")
     build_fritz2006(base)
-    print("\nDONE\n")
-    print('#' * 78)
-
-    print("7- Importing Dale et al (2014) templates\n")
-    build_dale2014(base)
     print("\nDONE\n")
     print('#' * 78)
 

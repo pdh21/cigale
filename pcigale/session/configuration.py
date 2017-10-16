@@ -100,8 +100,8 @@ class Configuration(object):
             ["Nebular emission: nebular"] +
             ["Dust attenuation: dustatt_calzleit, dustatt_powerlaw, "
              "dustatt_2powerlaws"] +
-            ["Dust emission: casey2012, dale2014, dl2007, dl2014"] +
-            ["AGN: dale2014, fritz2006"] +
+            ["Dust emission: casey2012, dl2007, dl2014"] +
+            ["AGN: fritz2006"] +
             ["Radio: radio"] +
             ["Redshift: redshifting (mandatory!)"])
         self.spec['sed_modules'] = "cigale_string_list()"
@@ -264,9 +264,9 @@ class Configuration(object):
                                ('dust attenuation', ['dustatt_calzleit',
                                                      'dustatt_powerlaw',
                                                      'dustatt_2powerlaws']),
-                               ('dust emission', ['casey2012', 'dale2014',
+                               ('dust emission', ['casey2012',
                                                   'dl2007', 'dl2014']),
-                               ('AGN', ['dale2014', 'fritz2006']),
+                               ('AGN', ['fritz2006',]),
                                ('radio', ['radio']),
                                ('restframe parameters', ['restframe_params']),
                                ('redshift', ['redshifting'])))
