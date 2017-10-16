@@ -97,8 +97,7 @@ class Configuration(object):
             ["Order of the modules use for SED creation. Available modules:"] +
             ["SFH: sfh2exp, sfhdelayed, sfhfromfile, sfhperiodic"] +
             ["SSP: bc03", ] +
-            ["Dust attenuation: dustatt_powerlaw, "
-             "dustatt_2powerlaws"] +
+            ["Dust attenuation: dustatt_2powerlaws"] +
             ["Dust emission: dl2014"] +
             ["AGN: fritz2006"] +
             ["Radio: radio"] +
@@ -259,8 +258,7 @@ class Configuration(object):
         modules = OrderedDict((('SFH', ['sfh2exp', 'sfhdelayed', 'sfhfromfile',
                                         'sfhperiodic']),
                                ('SSP', ['bc03',]),
-                               ('dust attenuation', ['dustatt_powerlaw',
-                                                     'dustatt_2powerlaws']),
+                               ('dust attenuation', ['dustatt_2powerlaws']),
                                ('dust emission', ['dl2014']),
                                ('AGN', ['fritz2006',]),
                                ('radio', ['radio']),
