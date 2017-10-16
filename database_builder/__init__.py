@@ -4,10 +4,7 @@
 # Authors: Yannick Roehlly, Médéric Boquien, Laure Ciesla
 
 """
-This script is used the build pcigale internal database containing:
-- The various filter transmission tables;
-- The Maraston 2005 single stellar population (SSP) data;
-- The Dale and Helou 2002 infra-red templates.
+This script is used the build pcigale internal database.
 
 """
 import sys
@@ -20,7 +17,7 @@ import numpy as np
 from scipy import interpolate
 import scipy.constants as cst
 from astropy.table import Table
-from pcigale.data import (Database, Filter, M2005, BC03, Fritz2006,
+from pcigale.data import (Database, Filter, BC03, Fritz2006,
                           Dale2014, DL2007, DL2014, NebularLines,
                           NebularContinuum, Schreiber2016)
 
@@ -177,95 +174,6 @@ def build_filters(base):
         filters.append(new_filter)
 
     base.add_filters(filters)
-
-
-def build_m2005(base):
-    m2005_dir = os.path.join(os.path.dirname(__file__), 'maraston2005/')
-
-    # Age grid (1 Myr to 13.7 Gyr with 1 Myr step)
-    age_grid = np.arange(1, 13701)
-
-    # Transpose the table to have access to each value vector on the first
-    # axis
-    kroupa_mass = np.genfromtxt(m2005_dir + 'stellarmass.kroupa').transpose()
-    salpeter_mass = \
-        np.genfromtxt(m2005_dir + '/stellarmass.salpeter').transpose()
-
-    for spec_file in glob.glob(m2005_dir + '*.rhb'):
-
-        print("Importing %s..." % spec_file)
-
-        spec_table = np.genfromtxt(spec_file).transpose()
-        metallicity = spec_table[1, 0]
-
-        if 'krz' in spec_file:
-            imf = 'krou'
-            mass_table = np.copy(kroupa_mass)
-        elif 'ssz' in spec_file:
-            imf = 'salp'
-            mass_table = np.copy(salpeter_mass)
-        else:
-            raise ValueError('Unknown IMF!!!')
-
-        # Keep only the actual metallicity values in the mass table
-        # we don't take the first column which contains metallicity.
-        # We also eliminate the turn-off mas which makes no send for composite
-        # populations.
-        mass_table = mass_table[1:7, mass_table[0] == metallicity]
-
-        # Interpolate the mass table over the new age grid. We multiply per
-        # 1000 because the time in Maraston files is given in Gyr.
-        mass_table = interpolate.interp1d(mass_table[0] * 1000,
-                                          mass_table)(age_grid)
-
-        # Remove the age column from the mass table
-        mass_table = np.delete(mass_table, 0, 0)
-
-        # Remove the metallicity column from the spec table
-        spec_table = np.delete(spec_table, 1, 0)
-
-        # Convert the wavelength from Å to nm
-        spec_table[1] = spec_table[1] * 0.1
-
-        # For all ages, the lambda grid is the same.
-        lambda_grid = np.unique(spec_table[1])
-
-        # Creation of the age vs lambda flux table
-        tmp_list = []
-        for wavelength in lambda_grid:
-            [age_grid_orig, lambda_grid_orig, flux_orig] = \
-                spec_table[:, spec_table[1, :] == wavelength]
-            flux_orig = flux_orig * 10 * 1.e-7  # From erg/s^-1/Å to W/nm
-            age_grid_orig *= 1000  # Gyr to Myr
-            flux_regrid = interpolate.interp1d(age_grid_orig,
-                                               flux_orig)(age_grid)
-
-            tmp_list.append(flux_regrid)
-        flux_age = np.array(tmp_list)
-
-        # To avoid the creation of waves when interpolating, we refine the grid
-        # beyond 10 μm following a log scale in wavelength. The interpolation
-        # is also done in log space as the spectrum is power-law-like
-        lambda_grid_resamp = np.around(np.logspace(np.log10(10000),
-                                                   np.log10(160000), 50))
-        argmin = np.argmin(10000.-lambda_grid > 0)-1
-        flux_age_resamp = 10.**interpolate.interp1d(
-                                    np.log10(lambda_grid[argmin:]),
-                                    np.log10(flux_age[argmin:, :]),
-                                    assume_sorted=True,
-                                    axis=0)(np.log10(lambda_grid_resamp))
-
-        lambda_grid = np.hstack([lambda_grid[:argmin+1], lambda_grid_resamp])
-        flux_age = np.vstack([flux_age[:argmin+1, :], flux_age_resamp])
-
-        # Use Z value for metallicity, not log([Z/H])
-        metallicity = {-1.35: 0.001,
-                       -0.33: 0.01,
-                       0.0: 0.02,
-                       0.35: 0.04}[metallicity]
-
-        base.add_m2005(M2005(imf, metallicity, age_grid, lambda_grid,
-                             mass_table, flux_age))
 
 
 def build_bc2003(base):
@@ -704,11 +612,6 @@ def build_base():
     print('#' * 78)
     print("1- Importing filters...\n")
     build_filters(base)
-    print("\nDONE\n")
-    print('#' * 78)
-
-    print("2- Importing Maraston 2005 SSP\n")
-    build_m2005(base)
     print("\nDONE\n")
     print('#' * 78)
 
