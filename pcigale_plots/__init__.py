@@ -26,6 +26,7 @@ from pcigale.data import Database
 from pcigale.utils import read_table
 from pcigale.session.configuration import Configuration
 import matplotlib.gridspec as gridspec
+from scipy.stats import chisquare
 
 __version__ = "0.1-alpha"
 
@@ -39,6 +40,12 @@ OUT_DIR = "out/"
 PLOT_L_MIN = 0.1
 PLOT_L_MAX = 5e5
 
+##################################################################################
+################# Kasia M ########################################################
+Fspectrum,Fmodel,Fspectrum_err,chi=[],[],[],[]
+threshold=8.0
+
+##################################################################################
 
 def _chi2_worker(obj_name, var_name):
     """Plot the reduced χ² associated with a given analysed variable
@@ -63,7 +70,7 @@ def _chi2_worker(obj_name, var_name):
         ax.minorticks_on()
         figure.suptitle("Reduced $\chi^2$ distribution of {} for {}."
                         .format(var_name, obj_name))
-        figure.savefig(OUT_DIR + "{}_{}_chi2.pdf".format(obj_name, var_name))
+        figure.savefig(OUT_DIR + "{}_{}_chi2.png".format(obj_name, var_name))
         plt.close(figure)
     else:
         print("No chi² found for {}. No plot created.".format(obj_name))
@@ -90,7 +97,7 @@ def _pdf_worker(obj_name, var_name):
         ax.minorticks_on()
         figure.suptitle("Probability distribution function of {} for {}"
                         .format(var_name, obj_name))
-        figure.savefig(OUT_DIR + "{}_{}_pdf.pdf".format(obj_name, var_name))
+        figure.savefig(OUT_DIR + "{}_{}_pdf.png".format(obj_name, var_name))
         plt.close(figure)
     else:
         print("No PDF found for {}. No plot created.".format(obj_name))
@@ -114,7 +121,7 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
         Do not add the logo when set to true.
 
     """
-
+    f=open(OUT_DIR + "additional_chi2",'a')
     if os.path.isfile(OUT_DIR + "{}_best_model.fits".format(obs['id'])):
 
         sed = Table.read(OUT_DIR + "{}_best_model.fits".format(obs['id']))
@@ -164,6 +171,9 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
         if (sed.columns[1][wsed] > 0.).any():
             ax1 = plt.subplot(gs[0])
             ax2 = plt.subplot(gs[1])
+            del Fspectrum[:]
+            del Fmodel[:]
+            del chi[:]
 
             # Stellar emission
             if 'nebular.absorption_young' in sed.columns:
@@ -232,6 +242,7 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
                            marker=None, nonposy='clip', linestyle='-',
                            linewidth=0.5)
 
+
             ax1.loglog(wavelength_spec[wsed], sed['L_lambda_total'][wsed],
                        label="Model spectrum", color='k', nonposy='clip',
                        linestyle='-', linewidth=1.5)
@@ -272,7 +283,41 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
 
             figure.subplots_adjust(hspace=0., wspace=0.)
 
-            ax1.set_xlim(xmin, xmax)
+##################################################################################
+####################### Kasia M ##################################################
+
+            # chi2 IR
+            for i in range(0,len(filters_wl)):
+                if filters_wl[i]/(1+obs['redshift'])>=threshold:
+                    if obs_fluxes[i]>0 and obs_fluxes_err[i]>0:
+                        corr_error = np.sqrt(
+                            obs_fluxes_err[i]**2 +
+                            (obs_fluxes[i] * .1) **2
+                        )
+                        chi.append((obs_fluxes[i]-mod_fluxes[i])**2/corr_error**2)
+            if len(chi)>1:
+                IRchi2=np.sum(chi)/(len(chi)-1)
+            else:
+                IRchi2=9999.99
+            #print(str(obs['id']),float(IRchi2), file=f)
+            del chi[:]
+            # chi2 OPT
+            for i in range(0,len(filters_wl)):
+                if filters_wl[i]/(1+obs['redshift'])<threshold:
+                    if obs_fluxes[i]>0 and obs_fluxes_err[i]>0:
+                        corr_error = np.sqrt(
+                            obs_fluxes_err[i]**2 +
+                            (obs_fluxes[i] * .1) **2
+                        )
+                        chi.append((obs_fluxes[i]-mod_fluxes[i])**2/corr_error**2)
+            if len(chi)>1:
+                OPTchi2=np.sum(chi)/(len(chi)-1)
+            else:
+                OPTchi2=9999.99
+            print(str(obs['id']),float(OPTchi2),float(IRchi2), file=f)
+            #print(str(obs['id']),float(OPTchi2),float(IRchi2))
+            ##################################################################################
+            ax1.axvline(threshold*(1+obs['redshift']), linewidth=1.5, linestyle=':', color='magenta')
             ymin = min(np.min(obs_fluxes[mask_ok]),
                        np.min(mod_fluxes[mask_ok]))
             if not mask_uplim.any() == False:
@@ -298,17 +343,26 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
             ax2.legend(fontsize=6, loc='best', fancybox=True, framealpha=0.5)
             plt.setp(ax1.get_xticklabels(), visible=False)
             plt.setp(ax1.get_yticklabels()[1], visible=False)
-            figure.suptitle("Best model for {} at z = {}. Reduced $\chi^2$={}".
+##################################################################################
+################# Kasia M ########################################################
+
+            #figure.suptitle("Best model for {} at z = {}. Reduced $\chi^2$={}".
+            #                format(obs['id'], np.round(obs['redshift'],
+            #                       decimals=3),
+            #                       np.round(mod['best.reduced_chi_square'],
+            #                                decimals=2)))
+            figure.suptitle("Best model for {} at z = {} $\chi^2$={} \n OPT$\chi^2$={} IR$\chi^2$={} threshold (OPT IR)={}  [$\mu$m]".
                             format(obs['id'], np.round(obs['redshift'],
                                    decimals=3),
                                    np.round(mod['best.reduced_chi_square'],
-                                            decimals=2)))
+                                            decimals=2),np.round(OPTchi2,decimals=2),np.round(IRchi2,decimals=2), np.round(threshold*(1+obs['redshift']),decimals=2)))
+##################################################################################
             if nologo is False:
                 image = plt.imread(pkg_resources.resource_filename(__name__,
                                    "data/CIGALE.png"))
                 figure.figimage(image, 75, 330, origin='upper', zorder=10,
                                 alpha=1)
-            figure.savefig(OUT_DIR + "{}_best_model.pdf".format(obs['id']))
+            figure.savefig(OUT_DIR + "{}_best_model.png".format(obs['id']))
             plt.close(figure)
         else:
             print("No valid best SED found for {}. No plot created.".
@@ -360,7 +414,7 @@ def _mock_worker(exact, estimated, param, nologo):
         plt.figimage(image, 510, 55, origin='upper', zorder=10, alpha=1)
 
     plt.tight_layout()
-    plt.savefig(OUT_DIR + 'mock_{}.pdf'.format(param))
+    plt.savefig(OUT_DIR + 'mock_{}.png'.format(param))
 
     plt.close()
 
