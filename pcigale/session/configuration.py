@@ -99,7 +99,7 @@ class Configuration(object):
             ["SSP: bc03", ] +
             ["Dust attenuation: dustatt_calzleit, dustatt_powerlaw, "
              "dustatt_2powerlaws"] +
-            ["Dust emission: casey2012, dl2014"] +
+            ["Dust emission: dl2014"] +
             ["AGN: fritz2006"] +
             ["Radio: radio"] +
             ["Redshift: redshifting (mandatory!)"])
@@ -262,7 +262,7 @@ class Configuration(object):
                                ('dust attenuation', ['dustatt_calzleit',
                                                      'dustatt_powerlaw',
                                                      'dustatt_2powerlaws']),
-                               ('dust emission', ['casey2012', 'dl2014']),
+                               ('dust emission', ['dl2014']),
                                ('AGN', ['fritz2006',]),
                                ('radio', ['radio']),
                                ('restframe parameters', ['restframe_params']),
