@@ -75,21 +75,12 @@ class Configuration(object):
             "the filter names for the fluxes, and the filter names with the "
             "'_err' suffix for the uncertainties. The fluxes and the "
             "uncertainties must be in mJy. This file is optional to generate "
-            "the configuration file, in particular for the savefluxes module.")
+            "the configuration file.")
         self.spec['data_file'] = "string()"
 
         self.config['parameters_file'] = ""
         self.config.comments['parameters_file'] = [""] + wrap(
-            "Optional file containing the list of physical parameters. Each "
-            "column must be in the form module_name.parameter_name, with each "
-            "line being a different model. The columns must be in the order "
-            "the modules will be called. The redshift column must be the last "
-            "one. Finally, if this parameter is not empty, cigale will not "
-            "interpret the configuration parameters given in pcigale.ini. "
-            "They will be given only for information. Note that this module "
-            "should only be used in conjonction with the savefluxes module. "
-            "Using it with the pdf_analysis module will yield incorrect "
-            "results.")
+            "Don't use this parameter with HELP version of CIGALE.")
         self.spec['parameters_file'] = "string()"
 
         self.config['sed_modules'] = []
@@ -106,7 +97,7 @@ class Configuration(object):
         self.config['analysis_method'] = ""
         self.config.comments['analysis_method'] = [""] + wrap(
             "Method used for statistical analysis. Available methods: "
-            "pdf_analysis, savefluxes.")
+            "pdf_analysis.")
         self.spec['analysis_method'] = "string()"
 
         self.config['cores'] = ""
