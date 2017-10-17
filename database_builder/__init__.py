@@ -386,7 +386,8 @@ def build_sb99(base):
     sb99_dir = os.path.join(os.path.dirname(__file__), 'sb99/')
 
     # Time grid (1 Myr to 14 Gyr with 1 Myr step)
-    time_grid = np.arange(1, 14000)
+    time_grid = np.arange(1, 13990)
+    fine_time_grid = np.linspace(0.1, 13990, 139900)
 
     # Metallicities associated to each key
     metallicity = {
@@ -404,7 +405,7 @@ def build_sb99(base):
         "64": 0.4
     }
 
-    for imf, model in itertools.product(['krou', 'salp'], metallicity.keys()):
+    for imf, model in itertools.product(['krou'], metallicity.keys()):
         base_filename = "{}/{}_{}".format(sb99_dir, imf, model)
 
         print("Importing {}...".format(base_filename))
@@ -424,9 +425,8 @@ def build_sb99(base):
         ssp_time = np.unique(ssp_time) / 1e6
         ssp_wave = np.unique(ssp_wave) / 10.
         aux_time /= 1e6
-
         ssp_lumin = ssp_lumin.reshape(ssp_time.size, ssp_wave.size)
-
+        ssp_lumin = np.transpose(ssp_lumin)
         # 1e-6 for 1 Msun and 1e-6 from erg/s/Å to W/m.
         ssp_lumin = 10**ssp_lumin * 1e-12
         NLy = 10**NLy / 1e6
@@ -435,9 +435,13 @@ def build_sb99(base):
         color_table = np.vstack((NLy, mass))
 
         # Regrid the SSP data to the evenly spaced time grid.
-        color_table = interpolate.interp1d(aux_time, color_table)(time_grid)
-        ssp_lumin = interpolate.interp1d(ssp_time,
-                                         np.transpose(ssp_lumin))(time_grid)
+        color_table = interpolate.interp1d(aux_time, color_table)(fine_time_grid)
+        color_table = np.mean(color_table.reshape(2, -1, 10), axis=-1)
+
+        ssp_lumin_interp = np.empty((1221, 13990))
+        for i in range(0, ssp_wave.size, 100):
+            ssp_interp = interpolate.interp1d(ssp_time, ssp_lumin[i:i+100, :])(fine_time_grid)
+            ssp_lumin_interp[i:i+100, :] = np.mean(ssp_interp.reshape(ssp_interp.shape[0], -1, 10), axis=-1)
 
         base.add_sb99(SB99(
             imf,
@@ -446,7 +450,7 @@ def build_sb99(base):
             time_grid,
             ssp_wave,
             color_table,
-            ssp_lumin
+            ssp_lumin_interp
         ))
 
 
