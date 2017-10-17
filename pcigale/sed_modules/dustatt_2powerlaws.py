@@ -130,7 +130,7 @@ class TwoPowerLawAtt(SedModule):
             "Filters for which the attenuation will be computed and added to "
             "the SED information dictionary. You can give several filter "
             "names separated by a & (don't use commas).",
-            "V_B90 & FUV"
+            "bessell_b & galex_fuv"
         ))
     ])
 
