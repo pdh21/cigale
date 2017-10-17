@@ -38,7 +38,7 @@ class DL2014(SedModule):
             '4.58 & 5.26 & 5.95 & 6.63 & 7.32)',
             "Mass fraction of PAH. Possible values are: 0.47, 1.12, 1.77, "
             "2.50, 3.19, 3.90, 4.58, 5.26, 5.95, 6.63, 7.32.",
-            2.50
+            [0.47, 1.12, 2.5, 3.9]
         )),
         ('umin', (
             'cigale_list(options=0.10 & 0.12 & 0.15 & 0.17 & 0.20 & 0.25 & '
@@ -51,7 +51,7 @@ class DL2014(SedModule):
             "0.700, 0.800, 1.000, 1.200, 1.500, 1.700, 2.000, 2.500, 3.000, "
             "3.500, 4.000, 5.000, 6.000, 7.000, 8.000, 10.00, 12.00, 15.00, "
             "17.00, 20.00, 25.00, 30.00, 35.00, 40.00, 50.00.",
-            1.0
+            [5.0, 10.0, 25.0]
         )),
         ('alpha', (
             'cigale_list(options=1.0 & 1.1 & 1.2 & 1.3 & 1.4 & 1.5 & 1.6 & '
@@ -66,7 +66,7 @@ class DL2014(SedModule):
             'cigale_list(minvalue=0., maxvalue=1.)',
             "Fraction illuminated from Umin to Umax. Possible values between "
             "0 and 1.",
-            0.1
+            0.02
         ))
     ])
 

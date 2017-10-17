@@ -83,7 +83,9 @@ class Configuration(object):
             "Don't use this parameter with HELP version of CIGALE.")
         self.spec['parameters_file'] = "string()"
 
-        self.config['sed_modules'] = []
+        self.config['sed_modules'] = ["sfhdelayedplusExpburst", "bc03",
+                                      "dustatt_2powerlaws", "dl2014",
+                                      "fritz2006", "redshifting"]
         self.config.comments['sed_modules'] = ([""] +
             ["Order of the modules use for SED creation. Available modules:"] +
             ["SFH: sfhdelayedplusExpburst"] +
@@ -94,7 +96,7 @@ class Configuration(object):
             ["Redshift: redshifting (mandatory!)"])
         self.spec['sed_modules'] = "cigale_string_list()"
 
-        self.config['analysis_method'] = ""
+        self.config['analysis_method'] = "pdf_analysis"
         self.config.comments['analysis_method'] = [""] + wrap(
             "Method used for statistical analysis. Available methods: "
             "pdf_analysis.")

@@ -52,7 +52,7 @@ class Fritz2006(SedModule):
             "10.0)",
             "Optical depth at 9.7 microns. "
             "Possible values are: 0.1, 0.3, 0.6, 1.0, 2.0, 3.0, 6.0, 10.0.",
-            1.0
+            [1.0, 6.0]
         )),
         ('beta', (
             "cigale_list(options=-1.00 & -0.75 & -0.50 & -0.25 & 0.00)",
@@ -62,7 +62,7 @@ class Fritz2006(SedModule):
         ('gamma', (
             'cigale_list(options=0.0 & 2.0 & 4.0 & 6.0)',
             "Gamma. Possible values are: 0.0, 2.0, 4.0, 6.0.",
-            4.0
+            0.0
         )),
         ('opening_angle', (
             'cigale_list(options=60. & 100. & 140.)',
@@ -77,12 +77,12 @@ class Fritz2006(SedModule):
             "Psy = 90◦ for type 1 and Psy = 0° for type 2. Possible values "
             "are: 0.001, 10.100, 20.100, 30.100, 40.100, 50.100, 60.100, "
             "70.100, 80.100, 89.990.",
-            50.100
+            0.001
         )),
         ('fracAGN', (
             'cigale_list(minvalue=0., maxvalue=1.)',
             "AGN fraction.",
-            0.1
+            [0.0, 0.05, 0.1, 0.25, 0.8]
         ))
     ])
 

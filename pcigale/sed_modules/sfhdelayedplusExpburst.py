@@ -10,7 +10,7 @@ New Double star formation history module
 ===========================================================
 
 This module implements a star formation history (SFH) composed of a delay-tau,
-described as a delayed rise of the SFR up to a maximum followed by an exponential decrease, 
+described as a delayed rise of the SFR up to a maximum followed by an exponential decrease,
  + a superimposed decreasing exponential burst.
 
 """
@@ -31,28 +31,28 @@ class sfhdelayedplusExpburst(SedModule):
         ("tau_main", (
             "cigale_list()",
             "e-folding time of the main stellar population model in Myr.",
-            2000.
+            3000.
         )),
         ("tau_burst", (
             "cigale_list()",
             "e-folding time of the late starburst population model in Myr.",
-            50.
+            10000.
         )),
         ("f_burst", (
             "cigale_list(minvalue=0., maxvalue=0.9999)",
             "Mass fraction of the late burst population.",
-            0.01
+            [0.001, 0.010, 0.030, 0.100, 0.200, 0.300]
         )),
         ("age", (
             "cigale_list(dtype=int, minvalue=0.)",
             "Age of the main stellar population in the galaxy in Myr. The "
             "precision is 1 Myr.",
-            5000
+            [1000, 2500,  4500, 6000, 8000, 12000]
         )),
         ("burst_age", (
             "cigale_list(dtype=int, minvalue=1.)",
             "Age of the late burst in Myr. The precision is 1 Myr.",
-            20
+            [10, 50, 80, 110]
         )),
         ("sfr_0", (
             "float(min=0)",

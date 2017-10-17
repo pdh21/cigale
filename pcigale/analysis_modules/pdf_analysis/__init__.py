@@ -58,12 +58,17 @@ class PdfAnalysis(AnalysisModule):
             "List of the physical properties to estimate. Leave empty to "
             "analyse all the physical properties (not recommended when there "
             "are many models).",
-            ["sfh.sfr", "sfh.sfr10Myrs", "sfh.sfr100Myrs"]
+            ["stellar.m_star", "sfh.sfr10Myrs", "dust.luminosity", "dust.mass",
+             "dust.qpah", "dust.umin", "param.FUV_luminosity", "agn.fracAGN",
+             "attenuation.bessell_b", "attenuation.galex_fuv",
+             "attenuation.slope_BC", "attenuation.BC_to_ISM_factor",
+             "attenuation.slope_ISM", "sfh.tau_main", "sfh.age",
+             "sfh.burst_age", "sfh.f_burst"]
         )),
         ("save_best_sed", (
             "boolean()",
             "If true, save the best SED for each observation to a file.",
-            False
+            True
         )),
         ("save_chi2", (
             "boolean()",
@@ -87,7 +92,7 @@ class PdfAnalysis(AnalysisModule):
             "boolean()",
             "If true, for each object we create a mock object "
             "and analyse them.",
-            False
+            True
         ))
     ])
 

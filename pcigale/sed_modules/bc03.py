@@ -33,7 +33,7 @@ class BC03(SedModule):
         ("imf", (
             "cigale_list(dtype=int, options=0. & 1.)",
             "Initial mass function: 0 (Salpeter) or 1 (Chabrier).",
-            0
+            1
         )),
         ("metallicity", (
             "cigale_list(options=0.0001 & 0.0004 & 0.004 & 0.008 & 0.02 & "

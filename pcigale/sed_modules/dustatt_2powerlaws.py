@@ -108,17 +108,17 @@ class TwoPowerLawAtt(SedModule):
         ("Av_BC", (
             "cigale_list(minvalue=0)",
             "V-band attenuation in the birth clouds.",
-            1.
+            [0.3, 0.8, 1.2, 1.7, 2.3, 2.8, 3.3, 3.8]
         )),
         ("slope_BC", (
             "cigale_list()",
             "Power law slope of the attenuation in the birth clouds.",
-            -1.3
+            -0.7
         )),
         ("BC_to_ISM_factor", (
             "cigale_list(minvalue=0., maxvalue=1.)",
             "Av ISM / Av BC (<1).",
-            0.44
+            [0.3, 0.5, 0.8, 1.0]
         )),
         ("slope_ISM", (
             "cigale_list()",
