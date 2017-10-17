@@ -84,13 +84,14 @@ class Configuration(object):
         self.spec['parameters_file'] = "string()"
 
         self.config['sed_modules'] = ["sfhdelayedplusExpburst", "bc03",
-                                      "dustatt_2powerlaws", "dl2014",
-                                      "fritz2006", "redshifting"]
+                                      "dustatt_2powerlaws", "lyc_absorption",
+                                      "dl2014", "fritz2006", "redshifting"]
         self.config.comments['sed_modules'] = ([""] +
             ["Order of the modules use for SED creation. Available modules:"] +
             ["SFH: sfhdelayedplusExpburst"] +
             ["SSP: bc03", ] +
             ["Dust attenuation: dustatt_2powerlaws"] +
+            ["Lymann continuum absorption: lyc_absorption"] +
             ["Dust emission: dl2014"] +
             ["AGN: fritz2006"] +
             ["Redshift: redshifting (mandatory!)"])
