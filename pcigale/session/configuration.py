@@ -91,7 +91,7 @@ class Configuration(object):
             ["SFH: sfhdelayedplusExpburst"] +
             ["SSP: bc03", ] +
             ["Dust attenuation: dustatt_2powerlaws"] +
-            ["Lymann continuum absorption: lyc_absorption"] +
+            ["Lyman continuum absorption: lyc_absorption"] +
             ["Dust emission: dl2014"] +
             ["AGN: fritz2006"] +
             ["Redshift: redshifting (mandatory!)"])

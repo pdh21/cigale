@@ -4,11 +4,11 @@
 # Author: Yannick Roehlly
 
 """
-Simple module to add Lymann continuum absorption
-================================================
+Simple module to add Lyman continuum absorption
+===============================================
 
 This module is a simple module developed for the Herschel Extragalactic Legacy
-Programme (HELP) to deal with the Lymann continuum without using the full
+Programme (HELP) to deal with the Lyman continuum without using the full
 nebular module from CIGALE.
 
 """
@@ -21,12 +21,12 @@ from . import SedModule
 
 
 class LycAbsorption(SedModule):
-    """Module to remove the Lymann continuum.
+    """Module to remove the Lyman continuum.
 
-    This module reduces the emission in the Lymann continuum.  It uses two
+    This module reduces the emission in the Lyman continuum.  It uses two
     parameters:
 
-    - f_esc is the fraction of Lymann continuum photons escaping the galaxy;
+    - f_esc is the fraction of Lyman continuum photons escaping the galaxy;
     - f_dust is the fraction of these photons that heat the dust.
 
     The remaining photons are supposed to be capture by gas and to be
@@ -55,7 +55,7 @@ class LycAbsorption(SedModule):
             raise ValueError("Sum of f_esc and f_dust must be lower than 1.")
 
     def process(self, sed):
-        """Reduce the Lymann continuum emission.
+        """Reduce the Lyman continuum emission.
 
         Parameters
         ----------
