@@ -430,7 +430,7 @@ def sed(config, sed_type, nologo):
                                for name in config.configuration['bands']
                                if not name.endswith('_err')])
 
-    with mp.Pool(processes=config.configuration['cores']) as pool:
+    with mp.Pool(processes=int(config.configuration['cores'])) as pool:
         pool.starmap(_sed_worker, zip(obs, mod, repeat(filters),
                                       repeat(sed_type), repeat(nologo)))
         pool.close()
