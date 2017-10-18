@@ -38,7 +38,7 @@ MOCK_RESULTS = "results_mock.fits"
 OUT_DIR = "out/"
 # Wavelength limits (restframe) when plotting the best SED.
 PLOT_L_MIN = 0.1
-PLOT_L_MAX = 5e5
+PLOT_L_MAX = 5e4
 
 ##################################################################################
 ################# Kasia M ########################################################
