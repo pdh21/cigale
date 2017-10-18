@@ -170,10 +170,10 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
         gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])
         if (sed.columns[1][wsed] > 0.).any():
             ax1 = plt.subplot(gs[0])
-            ax2 = plt.subplot(gs[1])
             del Fspectrum[:]
             del Fmodel[:]
             del chi[:]
+            ax2 = plt.subplot(gs[1], sharex=ax1)
 
             ax1.loglog(wavelength_spec[wsed],
                         (sed['stellar.young'][wsed] +
