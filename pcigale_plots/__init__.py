@@ -334,7 +334,7 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
             if nologo is False:
                 image = plt.imread(pkg_resources.resource_filename(__name__,
                                    "data/CIGALE.png"))
-                figure.figimage(image, 75, 330, origin='upper', zorder=10,
+                figure.figimage(image, 580, 7, origin='upper', zorder=10,
                                 alpha=1)
             figure.savefig(OUT_DIR + "{}_best_model.png".format(obs['id']))
             plt.close(figure)
