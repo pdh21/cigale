@@ -39,13 +39,9 @@ OUT_DIR = "out/"
 # Wavelength limits (restframe) when plotting the best SED.
 PLOT_L_MIN = 0.1
 PLOT_L_MAX = 5e4
+# Wavelength separating rest-frame optical from IR (in µm)
+OPT_IR_LIMIT = 0.8
 
-##################################################################################
-################# Kasia M ########################################################
-Fspectrum,Fmodel,Fspectrum_err,chi=[],[],[],[]
-threshold=8.0
-
-##################################################################################
 
 def _chi2_worker(obj_name, var_name):
     """Plot the reduced χ² associated with a given analysed variable
@@ -121,7 +117,6 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
         Do not add the logo when set to true.
 
     """
-    f=open(OUT_DIR + "additional_chi2",'a')
     if os.path.isfile(OUT_DIR + "{}_best_model.fits".format(obs['id'])):
 
         sed = Table.read(OUT_DIR + "{}_best_model.fits".format(obs['id']))
@@ -170,9 +165,6 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
         gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])
         if (sed.columns[1][wsed] > 0.).any():
             ax1 = plt.subplot(gs[0])
-            del Fspectrum[:]
-            del Fmodel[:]
-            del chi[:]
             ax2 = plt.subplot(gs[1], sharex=ax1)
 
             ax1.loglog(wavelength_spec[wsed],
@@ -216,7 +208,6 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
                            marker=None, nonposy='clip', linestyle='-',
                            linewidth=0.5)
 
-
             ax1.loglog(wavelength_spec[wsed], sed['L_lambda_total'][wsed],
                        label="Model spectrum", color='k', nonposy='clip',
                        linestyle='-', linewidth=1.5)
@@ -251,47 +242,57 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
                          yerr=obs_fluxes_err[mask]/obs_fluxes[mask]*3,
                          marker='_', label="(Obs-Mod)/Obs", color='k',
                          capsize=0.)
+
+            # chi2 IR
+            chi = []
+            for i in range(0, len(filters_wl)):
+                if filters_wl[i]/(1+obs['redshift']) >= OPT_IR_LIMIT:
+                    if obs_fluxes[i] > 0 and obs_fluxes_err[i] > 0:
+                        corr_error = np.sqrt(
+                            obs_fluxes_err[i]**2 +
+                            (obs_fluxes[i] * .1)**2
+                        )
+                        chi.append((obs_fluxes[i] -
+                                    mod_fluxes[i])**2 / corr_error**2)
+            if len(chi) > 1:
+                IRchi2 = np.sum(chi)/(len(chi) - 1)
+            else:
+                IRchi2 = 9999.99
+
+            # chi2 OPT
+            chi = []
+            for i in range(0, len(filters_wl)):
+                if filters_wl[i]/(1+obs['redshift']) < OPT_IR_LIMIT:
+                    if obs_fluxes[i] > 0 and obs_fluxes_err[i] > 0:
+                        corr_error = np.sqrt(
+                            obs_fluxes_err[i]**2 +
+                            (obs_fluxes[i] * .1)**2
+                        )
+                        chi.append((obs_fluxes[i] -
+                                    mod_fluxes[i])**2 / corr_error**2)
+            if len(chi) > 1:
+                OPTchi2 = np.sum(chi)/(len(chi) - 1)
+            else:
+                OPTchi2=9999.99
+
+            # No sure if opening the file in append mode in the worker won't
+            # pose problems because of multiprocessing.
+            with open(OUT_DIR + "additional_chi2", 'a') as chi2_file:
+                chi2_file.write("{} {} {}\n".format(
+                    str(obs['id']),
+                    float(OPTchi2),
+                    float(IRchi2)
+                ))
+
+            # Vertical line for restframe optical / IR separation
+            ax1.axvline(OPT_IR_LIMIT * (1 + obs['redshift']),
+                        linewidth=1.5, linestyle=':', color='magenta')
+
             ax2.plot([xmin, xmax], [0., 0.], ls='--', color='k')
             ax2.set_xscale('log')
             ax2.minorticks_on()
 
             figure.subplots_adjust(hspace=0., wspace=0.)
-
-##################################################################################
-####################### Kasia M ##################################################
-
-            # chi2 IR
-            for i in range(0,len(filters_wl)):
-                if filters_wl[i]/(1+obs['redshift'])>=threshold:
-                    if obs_fluxes[i]>0 and obs_fluxes_err[i]>0:
-                        corr_error = np.sqrt(
-                            obs_fluxes_err[i]**2 +
-                            (obs_fluxes[i] * .1) **2
-                        )
-                        chi.append((obs_fluxes[i]-mod_fluxes[i])**2/corr_error**2)
-            if len(chi)>1:
-                IRchi2=np.sum(chi)/(len(chi)-1)
-            else:
-                IRchi2=9999.99
-            #print(str(obs['id']),float(IRchi2), file=f)
-            del chi[:]
-            # chi2 OPT
-            for i in range(0,len(filters_wl)):
-                if filters_wl[i]/(1+obs['redshift'])<threshold:
-                    if obs_fluxes[i]>0 and obs_fluxes_err[i]>0:
-                        corr_error = np.sqrt(
-                            obs_fluxes_err[i]**2 +
-                            (obs_fluxes[i] * .1) **2
-                        )
-                        chi.append((obs_fluxes[i]-mod_fluxes[i])**2/corr_error**2)
-            if len(chi)>1:
-                OPTchi2=np.sum(chi)/(len(chi)-1)
-            else:
-                OPTchi2=9999.99
-            print(str(obs['id']),float(OPTchi2),float(IRchi2), file=f)
-            #print(str(obs['id']),float(OPTchi2),float(IRchi2))
-            ##################################################################################
-            ax1.axvline(threshold*(1+obs['redshift']), linewidth=1.5, linestyle=':', color='magenta')
             ymin = min(np.min(obs_fluxes[mask_ok]),
                        np.min(mod_fluxes[mask_ok]))
             if not mask_uplim.any() == False:
@@ -317,20 +318,18 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
             ax2.legend(fontsize=6, loc='best', fancybox=True, framealpha=0.5)
             plt.setp(ax1.get_xticklabels(), visible=False)
             plt.setp(ax1.get_yticklabels()[1], visible=False)
-##################################################################################
-################# Kasia M ########################################################
 
-            #figure.suptitle("Best model for {} at z = {}. Reduced $\chi^2$={}".
-            #                format(obs['id'], np.round(obs['redshift'],
-            #                       decimals=3),
-            #                       np.round(mod['best.reduced_chi_square'],
-            #                                decimals=2)))
-            figure.suptitle("Best model for {} at z = {} $\chi^2$={} \n OPT$\chi^2$={} IR$\chi^2$={} threshold (OPT IR)={}  [$\mu$m]".
-                            format(obs['id'], np.round(obs['redshift'],
-                                   decimals=3),
-                                   np.round(mod['best.reduced_chi_square'],
-                                            decimals=2),np.round(OPTchi2,decimals=2),np.round(IRchi2,decimals=2), np.round(threshold*(1+obs['redshift']),decimals=2)))
-##################################################################################
+            figure.suptitle(
+                "Best model for {} at z = {} $\chi^2$={} \n OPT$\chi^2$={} " \
+                "IR$\chi^2$={} threshold (OPT IR)={}  [$\mu$m]".format(
+                    obs['id'],
+                    np.round(obs['redshift'], decimals=3),
+                    np.round(mod['best.reduced_chi_square'], decimals=2),
+                    np.round(OPTchi2, decimals=2),
+                    np.round(IRchi2, decimals=2),
+                    np.round(OPT_IR_LIMIT * (1 + obs['redshift']), decimals=2)
+                ))
+
             if nologo is False:
                 image = plt.imread(pkg_resources.resource_filename(__name__,
                                    "data/CIGALE.png"))
