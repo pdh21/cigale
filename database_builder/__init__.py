@@ -318,6 +318,7 @@ def build_bc2003(base, res):
 
     # Time grid (1 Myr to 14 Gyr with 1 Myr step)
     time_grid = np.arange(1, 14000)
+    fine_time_grid = np.linspace(0.1, 13999, 139990)
 
     # Metallicities associated to each key
     metallicity = {
@@ -351,10 +352,29 @@ def build_bc2003(base, res):
 
         ssp_time, ssp_wave, ssp_lumin = read_bc03_ssp(ssp_filename)
 
-        # Regrid the SSP data to the evenly spaced time grid.
-        color_table = interpolate.interp1d(ssp_time, color_table)(time_grid)
-        ssp_lumin = interpolate.interp1d(ssp_time,
-                                         ssp_lumin)(time_grid)
+        # Regrid the SSP data to the evenly spaced time grid. In doing so we
+        # assume 10 bursts every 0.1 Myr over a period of 1 Myr in order to
+        # capture short evolutionary phases.
+        # The time grid starts after 0.1 Myr, so we assume the value is the same
+        # as the first actual time step.
+        fill_value = (color_table[:, 0], color_table[:, -1])
+        color_table = interpolate.interp1d(ssp_time, color_table,
+                                           fill_value=fill_value,
+                                           bounds_error=False,
+                                           assume_sorted=True)(fine_time_grid)
+        color_table = np.mean(color_table.reshape(3, -1, 10), axis=-1)
+
+        # We have to do the interpolation-averaging in several blocks as it is
+        # a bit RAM intensive
+        ssp_lumin_interp = np.empty((ssp_wave.size, time_grid.size))
+        for i in range(0, ssp_wave.size, 100):
+            fill_value = (ssp_lumin[i:i+100, 0], ssp_lumin[i:i+100, -1])
+            ssp_interp = interpolate.interp1d(ssp_time, ssp_lumin[i:i+100, :],
+                                              fill_value=fill_value,
+                                              bounds_error=False,
+                                              assume_sorted=True)(fine_time_grid)
+            ssp_interp = ssp_interp.reshape(ssp_interp.shape[0], -1, 10)
+            ssp_lumin_interp[i:i+100, :] = np.mean(ssp_interp, axis=-1)
 
         # To avoid the creation of waves when interpolating, we refine the grid
         # beyond 10 μm following a log scale in wavelength. The interpolation
@@ -364,12 +384,13 @@ def build_bc2003(base, res):
         argmin = np.argmin(10000.-ssp_wave > 0)-1
         ssp_lumin_resamp = 10.**interpolate.interp1d(
                                     np.log10(ssp_wave[argmin:]),
-                                    np.log10(ssp_lumin[argmin:, :]),
+                                    np.log10(ssp_lumin_interp[argmin:, :]),
                                     assume_sorted=True,
                                     axis=0)(np.log10(ssp_wave_resamp))
 
         ssp_wave = np.hstack([ssp_wave[:argmin+1], ssp_wave_resamp])
-        ssp_lumin = np.vstack([ssp_lumin[:argmin+1, :], ssp_lumin_resamp])
+        ssp_lumin = np.vstack([ssp_lumin_interp[:argmin+1, :],
+                               ssp_lumin_resamp])
 
         base.add_bc03(BC03(
             imf,
