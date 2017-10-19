@@ -40,7 +40,7 @@ OUT_DIR = "out/"
 PLOT_L_MIN = 0.1
 PLOT_L_MAX = 5e4
 # Wavelength separating rest-frame optical from IR (in µm)
-OPT_IR_LIMIT = 0.8
+OPT_IR_LIMIT = 8.0
 
 
 def _chi2_worker(obj_name, var_name):
