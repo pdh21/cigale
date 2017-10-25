@@ -7,11 +7,14 @@
 - Bands with negative fluxes are now considered valid and are fitted as any other band. (Médéric Boquien)
 - Allow the models to be computed by blocks in `savefluxes`. This can be useful when computing a very large grid and/or to split the results file into various smaller files as large files can be difficult to handle. The number of blocks is set with the `blocks` parameters in the pcigale.ini. (Médéric Boquien)
 - Allow the observations to be analysed by blocks of models in `pdf\_analysis`. This is useful when computing a very large grid of models that would not fit in memory. The number of blocks is set with the `blocks` parameters in the pcigale.ini. (Médéric Boquien)
+- The integrated stellar luminosity is now provided as `stellar.lum`. (Médéric Boquien)
+- The high resolution BC03 models have been added. They can be activated when building the database by adding `--bc03res=hr` to the build command. In that case the low resolution models are not built. (Médéric Boquien)
 
 ### Changed
 - Make the timestamp more readable when moving the out/ directory. (Médéric Boquien)
 - To accommodate the analysis of the observations by blocks, all models are now included in the estimation of the physical properties and no cut in chi² is done anymore. (Médéric Boquien)
 - To accommodate the analysis of the observations by blocks, the `save_pdf` option has been eliminated. To plot PDF one needs to set `save_chi2` to True and then run `pcigale-plots pdf`. (Médéric Boquien)
+- In order to capture rapid evolutionary phases, we assume that in a given period of 1 Myr, 10 small episodes of star formation occurred every 0.1 Myr, rather than one episode every 1 Myr.
 
 ### Fixed
 - Corrected a typo that prevented `restframe\_parameters` from being listed among the available modules. (Médéric Boquien)

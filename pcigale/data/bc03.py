@@ -44,12 +44,6 @@ class BC03(object):
                 * info_table[1]: Mass returned to the ISM by evolved stars in
                     solar mass
                 * info_table[2]: rate of H-ionizing photons (s-1)
-                * info_table[3]: Amplitude of 4000 Å break (Bruzual 2003)
-                * info_table[4]: Amplitude of 4000 Å narrow break (Balogh
-                                   et al. 1999)
-                * info_table[5]: Amplitude of 4000 Å break (Stoughton
-                                   et al. 2002)
-                * cinfo_table[6]: Amplitude of Lyman discontinuity
         spec_table: 2D array of floats
             Spectrum of the SSP in W/nm (first axis) every 1 Myr (second axis).
 
@@ -102,7 +96,7 @@ class BC03(object):
         # computation. We take only the first three elements from the
         # info_table as the others do not make sense when convolved with the
         # SFH (break strength).
-        info_table = self.info_table[:3, :sfh.size]
+        info_table = self.info_table[:, :sfh.size]
         spec_table = self.spec_table[:, :sfh.size]
 
         # The convolution is just a matter of reverting the SFH and computing
