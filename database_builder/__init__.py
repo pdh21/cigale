@@ -432,7 +432,7 @@ def build_sb99(base):
         "64": 0.4
     }
 
-    for imf, model in itertools.product(['krou', 'salp'], metallicity.keys()):
+    for imf, model in itertools.product(['krou'], metallicity.keys()):
         base_filename = "{}/{}_{}".format(sb99_dir, imf, model)
 
         print("Importing {}...".format(base_filename))
