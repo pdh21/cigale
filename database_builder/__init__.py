@@ -414,6 +414,7 @@ def build_sb99(base):
 
     # Time grid (1 Myr to 14 Gyr with 1 Myr step)
     time_grid = np.arange(1, 14000)
+    fine_time_grid = np.linspace(0.1, 13999, 139990)
 
     # Metallicities associated to each key
     metallicity = {
@@ -452,7 +453,7 @@ def build_sb99(base):
         ssp_wave = np.unique(ssp_wave) / 10.
         aux_time /= 1e6
 
-        ssp_lumin = ssp_lumin.reshape(ssp_time.size, ssp_wave.size)
+        ssp_lumin = ssp_lumin.reshape(ssp_time.size, ssp_wave.size).T
 
         # 1e-6 for 1 Msun and 1e-6 from erg/s/Å to W/m.
         ssp_lumin = 10**ssp_lumin * 1e-12
@@ -461,10 +462,29 @@ def build_sb99(base):
 
         color_table = np.vstack((NLy, mass))
 
-        # Regrid the SSP data to the evenly spaced time grid.
-        color_table = interpolate.interp1d(aux_time, color_table)(time_grid)
-        ssp_lumin = interpolate.interp1d(ssp_time,
-                                         np.transpose(ssp_lumin))(time_grid)
+        # Regrid the SSP data to the evenly spaced time grid. In doing so we
+        # assume 10 bursts every 0.1 Myr over a period of 1 Myr in order to
+        # capture short evolutionary phases.
+        # The time grid starts after 0.1 Myr, so we assume the value is the same
+        # as the first actual time step.
+        fill_value = (color_table[:, 0], color_table[:, -1])
+        color_table = interpolate.interp1d(aux_time, color_table,
+                                           fill_value=fill_value,
+                                           bounds_error=False,
+                                           assume_sorted=True)(fine_time_grid)
+        color_table = np.mean(color_table.reshape(2, -1, 10), axis=-1)
+
+        # We have to do the interpolation-averaging in several blocks as it is
+        # a bit RAM intensive
+        ssp_lumin_interp = np.empty((ssp_wave.size, time_grid.size))
+        for i in range(0, ssp_wave.size, 100):
+            fill_value = (ssp_lumin[i:i+100, 0], ssp_lumin[i:i+100, -1])
+            ssp_interp = interpolate.interp1d(ssp_time, ssp_lumin[i:i+100, :],
+                                              fill_value=fill_value,
+                                              bounds_error=False,
+                                              assume_sorted=True)(fine_time_grid)
+            ssp_interp = ssp_interp.reshape(ssp_interp.shape[0], -1, 10)
+            ssp_lumin_interp[i:i+100, :] = np.mean(ssp_interp, axis=-1)
 
         base.add_sb99(SB99(
             imf,
@@ -473,7 +493,7 @@ def build_sb99(base):
             time_grid,
             ssp_wave,
             color_table,
-            ssp_lumin
+            ssp_lumin_interp
         ))
 
 
