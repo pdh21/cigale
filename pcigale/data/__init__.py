@@ -31,6 +31,7 @@ from .fritz2006 import Fritz2006
 from .nebular_continuum import NebularContinuum
 from .nebular_lines import NebularLines
 from .schreiber2016 import Schreiber2016
+from .themis import THEMIS
 
 DATABASE_FILE = pkg_resources.resource_filename(__name__, 'data.db')
 
@@ -250,6 +251,27 @@ class _Schreiber2016(BASE):
         self.tdust = ir.tdust
         self.wave = ir.wave
         self.lumin = ir.lumin
+
+
+class _THEMIS(BASE):
+    """Storage for the Jones et al (2017) IR models
+    """
+
+    __tablename__ = 'THEMIS_models'
+    qhac = Column(Float, primary_key=True)
+    umin = Column(Float, primary_key=True)
+    umax = Column(Float, primary_key=True)
+    alpha = Column(Float, primary_key=True)
+    wave = Column(PickleType)
+    lumin = Column(PickleType)
+
+    def __init__(self, model):
+        self.qhac = model.qhac
+        self.umin = model.umin
+        self.umax = model.umax
+        self.alpha = model.alpha
+        self.wave = model.wave
+        self.lumin = model.lumin
 
 
 class Database(object):
@@ -873,6 +895,69 @@ class Database(object):
         """
         return self._get_parameters(_Schreiber2016)
 
+    def add_themis(self, models):
+        """
+        Add a list of Jones et al (2017) models to the database.
+
+        Parameters
+        ----------
+        models: list of pcigale.data.THEMIS objects
+
+        """
+        if self.is_writable:
+            for model in models:
+                self.session.add(_THEMIS(model))
+            try:
+                self.session.commit()
+            except exc.IntegrityError:
+                self.session.rollback()
+                raise DatabaseInsertError(
+                    'Error.')
+        else:
+            raise Exception('The database is not writable.')
+
+    def get_themis(self, qhac, umin, umax, alpha):
+        """
+        Get the Jones et al (2017) model corresponding to the given set of
+        parameters.
+
+        Parameters
+        ----------
+        qhac: float
+            Mass fraction of hydrocarbon solids i.e., a-C(:H) smaller than
+        1.5 nm, also known as HAC
+        umin: float
+            Minimum radiation field
+        umin: float
+            Maximum radiation field
+        alpha: float
+            Powerlaw slope dU/dM∝U¯ᵅ
+
+        Returns
+        -------
+        model: pcigale.data.THEMIS
+            The Jones et al (2017) model.
+
+        Raises
+        ------
+        DatabaseLookupError: if the requested model is not in the database.
+
+        """
+        result = (self.session.query(_THEMIS).
+                  filter(_THEMIS.qhac == qhac).
+                  filter(_THEMIS.umin == umin).
+                  filter(_THEMIS.umax == umax).
+                  filter(_THEMIS.alpha == alpha).
+                  first())
+        if result:
+            return THEMIS(result.qhac, result.umin, result.umax, result.alpha,
+                          result.wave, result.lumin)
+        else:
+            raise DatabaseLookupError(
+                "The THEMIS model for qhac <{0}>, umin <{1}>, umax <{2}>, and "
+                "alpha <{3}> is not in the database."
+                .format(qhac, umin, umax, alpha))
+
     def _get_parameters(self, schema):
         """Generic function to get parameters from an arbitrary schema.
 
@@ -903,6 +988,16 @@ class Database(object):
                 raise DatabaseInsertError('The filter is already in the base.')
         else:
             raise Exception('The database is not writable.')
+
+    def get_themis_parameters(self):
+        """Get parameters for the THEMIS models.
+
+        Returns
+        -------
+        paramaters: dictionary
+            dictionary of parameters and their values
+        """
+        return self._get_parameters(_THEMIS)
 
     def add_filters(self, pcigale_filters):
         """
