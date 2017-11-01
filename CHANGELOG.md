@@ -9,6 +9,7 @@
 - Allow the observations to be analysed by blocks of models in `pdf\_analysis`. This is useful when computing a very large grid of models that would not fit in memory. The number of blocks is set with the `blocks` parameters in the pcigale.ini. (Médéric Boquien)
 - The integrated stellar luminosity is now provided as `stellar.lum`. (Médéric Boquien)
 - The high resolution BC03 models have been added. They can be activated when building the database by adding `--bc03res=hr` to the build command. In that case the low resolution models are not built. (Médéric Boquien)
+- Dust templates generated with THEMIS (Jones et al. 2017) have been contributed by the DustPedia team (Davis et al. 2017). Special acknowledgement to Angelos Nersesian and Frédéric Galliano for creating the dust templates and writing the code. (Dustpedia team)
 
 ### Changed
 - Make the timestamp more readable when moving the out/ directory. (Médéric Boquien)
