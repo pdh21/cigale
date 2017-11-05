@@ -137,8 +137,12 @@ class Configuration(object):
         if self.config['data_file'] != '':
             obs_table = read_table(self.config['data_file'])
 
-            # Check that the id and redshift columns are present in the input
-            # file
+            # Check that the the file was correctly read and that the id and
+            # redshift columns are present in the input file
+            if 'col1' in obs_table.columns:
+                raise Exception("The input could not be read properly. Verify "
+                                "its format and that it does not have two "
+                                "columns with the same name.")
             if 'id' not in obs_table.columns:
                 raise Exception("Column id not present in input file")
             if 'redshift' not in obs_table.columns:

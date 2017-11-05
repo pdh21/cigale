@@ -25,6 +25,7 @@
 - When using the `parameters\_file` option, the indices of the models now correspond to the line number of the input file. (Médéric Boquien)
 - When using the `parameters\_file` option, the list of modules is read from `sed\_modules` rather than being inferred from the input file. (Médéric Boquien)
 - The computation of the upper limits would only work for the first few models, reverting back to regular fits for the others. (Médéric Boquien)
+- A more explicit message is now given when the flux table cannot be read properly. (Médéric Boquien)
 
 ### Optimised
 - The cache architecture has been simplified, making it somewhat faster. It speeds up the model generation by ~1%. (Médéric Boquien)
