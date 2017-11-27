@@ -57,7 +57,7 @@ def main():
     if sys.version_info[:2] < (3, 5):
         raise Exception("Python {}.{} is unsupported. Please upgrade to "
                         "Python 3.5 or later.".format(*sys.version_info[:2]))
-    if sys.version_info[:2] < (3,6):
+    if sys.version_info[:2] < (3, 6):
         print("Python {}.{} detected. For better performance we recommend "
               "Python 3.6 or later.".format(*sys.version_info[:2]))
 
