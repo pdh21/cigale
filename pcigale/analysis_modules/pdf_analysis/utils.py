@@ -148,7 +148,7 @@ def _compute_scaling(model_fluxes, obs_fluxes, obs_errors):
     num = np.zeros(model_fluxes.shape[1])
     denom = np.zeros(model_fluxes.shape[1])
     for i in range(obs_fluxes.size):
-        if np.isfinite(obs_fluxes[i]):
+        if np.isfinite(obs_fluxes[i]) and obs_errors[i] > 0.:
             num += model_fluxes[i, :] * (obs_fluxes[i] / (obs_errors[i] *
                                                           obs_errors[i]))
             denom += np.square(model_fluxes[i, :] * (1./obs_errors[i]))
