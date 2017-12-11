@@ -6,7 +6,6 @@
 # Author: Yannick Roehlly & Médéric Boquien
 
 from functools import lru_cache
-import os
 
 from astropy import log
 from astropy.cosmology import WMAP7 as cosmo
@@ -21,15 +20,12 @@ def save_chi2(obs, variable, models, chi2, values):
     """Save the chi² and the associated physocal properties
 
     """
-    fname = 'out/{}_{}_chi2.npy'.format(obs['id'], variable)
-    if os.path.exists(fname):
-        data = np.memmap(fname, dtype=np.float64, mode='r+',
-                         shape=(2, models.params.size))
-    else:
-        data = np.memmap(fname, dtype=np.float64, mode='w+',
-                         shape=(2, models.params.size))
-    data[0, models.block] = chi2
-    data[1, models.block] = values
+    fname = 'out/{}_{}_chi2-block-{}.npy'.format(obs['id'], variable,
+                                                 models.iblock)
+    data = np.memmap(fname, dtype=np.float64, mode='w+',
+                     shape=(2, chi2.size))
+    data[0, :] = chi2
+    data[1, :] = values
 
 
 @lru_cache(maxsize=None)
