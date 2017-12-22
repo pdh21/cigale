@@ -270,7 +270,8 @@ class Configuration(object):
                                                   'themis']),
                                ('AGN', ['dale2014', 'fritz2006']),
                                ('radio', ['radio']),
-                               ('restframe_parameters', ['restframe_params']),
+                               ('restframe_parameters',
+                                ['restframe_parameters']),
                                ('redshift', ['redshifting'])))
 
         comments = {'SFH': "ERROR! Choosing one SFH module is mandatory.",

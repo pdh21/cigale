@@ -27,6 +27,7 @@
 - The computation of the upper limits would only work for the first few models, reverting back to regular fits for the others. (Médéric Boquien)
 - A more explicit message is now given when the flux table cannot be read properly. (Médéric Boquien)
 - Make sure that we do not try to fit data that have an error bar of 0 mJy. (Médéric Boquien)
+- An erroneous warning was displayed when using the `restframe\_parameters` module. (Médéric Boquien)
 
 ### Optimised
 - The cache architecture has been simplified, making it somewhat faster. It speeds up the model generation by ~1%. (Médéric Boquien)
