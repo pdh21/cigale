@@ -63,13 +63,13 @@ class _Filter(BASE):
     name = Column(String, primary_key=True)
     description = Column(String)
     trans_table = Column(PickleType)
-    effective_wavelength = Column(Float)
+    pivot_wavelength = Column(Float)
 
     def __init__(self, f):
         self.name = f.name
         self.description = f.description
         self.trans_table = f.trans_table
-        self.effective_wavelength = f.effective_wavelength
+        self.pivot_wavelength = f.pivot_wavelength
 
 
 class _M2005(BASE):
@@ -1062,7 +1062,7 @@ class Database(object):
                   first())
         if result:
             return Filter(result.name, result.description, result.trans_table,
-                          result.effective_wavelength)
+                          result.pivot_wavelength)
         else:
             raise DatabaseLookupError(
                 "The filter <{0}> is not in the database".format(name))
@@ -1081,7 +1081,7 @@ class Database(object):
         """Generator to parse the filter database."""
         for filt in self.session.query(_Filter):
             yield Filter(filt.name, filt.description, filt.trans_table,
-                         filt.effective_wavelength)
+                         filt.pivot_wavelength)
 
     def parse_m2005(self):
         """Generator to parse the Maraston 2005 SSP database."""

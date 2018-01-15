@@ -165,13 +165,13 @@ def build_filters(base):
 
         new_filter = Filter(filter_name, filter_description, filter_table)
 
-        # We normalise the filter and compute the effective wavelength.
-        # If the filter is a pseudo-filter used to compute line fluxes, it
-        # should not be normalised.
+        # We normalise the filter and compute the pivot wavelength. If the
+        # filter is a pseudo-filter used to compute line fluxes, it should not
+        # be normalised.
         if not filter_name.startswith('PSEUDO'):
             new_filter.normalise()
         else:
-            new_filter.effective_wavelength = np.mean(
+            new_filter.pivot_wavelength = np.mean(
                 filter_table[0][filter_table[1] > 0]
             )
         filters.append(new_filter)
@@ -211,13 +211,13 @@ def build_filters_gazpar(base):
 
         new_filter = Filter(filter_name, filter_desc, filter_table)
 
-        # We normalise the filter and compute the effective wavelength.
-        # If the filter is a pseudo-filter used to compute line fluxes, it
-        # should not be normalised.
+        # We normalise the filter and compute the pivot wavelength. If the
+        # filter is a pseudo-filter used to compute line fluxes, it should not
+        # be normalised.
         if not filter_name.startswith('PSEUDO'):
             new_filter.normalise()
         else:
-            new_filter.effective_wavelength = np.mean(
+            new_filter.pivot_wavelength = np.mean(
                 filter_table[0][filter_table[1] > 0]
             )
         filters.append(new_filter)

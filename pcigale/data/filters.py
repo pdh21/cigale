@@ -4,6 +4,7 @@
 # Author: Yannick Roehlly
 
 import numpy as np
+from scipy.constants import c
 
 
 class Filter(object):
@@ -11,9 +12,9 @@ class Filter(object):
     """
 
     def __init__(self, name, description=None, trans_table=None,
-                 effective_wavelength=None):
+                 pivot_wavelength=None):
         """Create a new filter. If the transmission type, the description
-        the transmission table or the effective wavelength are not specified,
+        the transmission table or the pivot wavelength are not specified,
         their value is set to None.
 
         Parameters
@@ -25,14 +26,14 @@ class Filter(object):
         trans_table: array
             trans_table[0] is the wavelength in nm,
             trans_table[1] is the transmission)
-        effective_wavelength: float
-            Effective wavelength of the filter
+        pivot_wavelength: float
+            Pivot wavelength of the filter
         """
 
         self.name = name
         self.description = description
         self.trans_table = trans_table
-        self.effective_wavelength = effective_wavelength
+        self.pivot_wavelength = pivot_wavelength
 
     def __str__(self):
         """Pretty print the filter information
@@ -40,18 +41,24 @@ class Filter(object):
         result = ""
         result += ("Filter name: %s\n" % self.name)
         result += ("Description: %s\n" % self.description)
-        result += ("Effective wavelength: %s nm\n" %
-                   self.effective_wavelength)
+        result += ("Pivot wavelength: %s nm\n" %
+                   self.pivot_wavelength)
         return result
 
     def normalise(self):
         """
-        Normalise the transmission table to 1 and compute the effective
-        wavelength of the filter.
+        Compute the pivot wavelength of the filter and normalise the filter
+        to compute the flux in Fν (mJy) in cigale.
         """
-        self.trans_table[1] = self.trans_table[1] / (
-            np.trapz(self.trans_table[1], self.trans_table[0]))
+        self.pivot_wavelength = np.sqrt(np.trapz(self.trans_table[1],
+                                                 self.trans_table[0]) /
+                                        np.trapz(self.trans_table[1] /
+                                                 self.trans_table[0] ** 2,
+                                                 self.trans_table[0]))
 
-        self.effective_wavelength = np.trapz(self.trans_table[1] *
-                                             self.trans_table[0],
-                                             self.trans_table[0])
+        # The factor 10²⁰ is so that we get the fluxes directly in mJy when we
+        # integrate with the wavelength in units of nm and the spectrum in
+        # units of W/m²/nm.
+        self.trans_table[1] = 1e20 * self.trans_table[1] / (
+            c * np.trapz(self.trans_table[1] / self.trans_table[0]**2,
+                         self.trans_table[0]))

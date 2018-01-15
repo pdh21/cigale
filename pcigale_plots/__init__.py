@@ -144,7 +144,7 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
 
         sed = Table.read("out/{}_best_model.fits".format(obs['id']))
 
-        filters_wl = np.array([filt.effective_wavelength
+        filters_wl = np.array([filt.pivot_wavelength
                                for filt in filters.values()])
         wavelength_spec = sed['wavelength']
         obs_fluxes = np.array([obs[filt] for filt in filters.keys()])

@@ -17,6 +17,7 @@
 - To accommodate the analysis of the observations by blocks, the `save_pdf` option has been eliminated. To plot PDF one needs to set `save_chi2` to True and then run `pcigale-plots pdf`. (Médéric Boquien)
 - In order to capture rapid evolutionary phases, we assume that in a given period of 1 Myr, 10 small episodes of star formation occurred every 0.1 Myr, rather than one episode every 1 Myr.
 - When computing the attenuation curve, the bump is now added so that its relative strength does not depend on δ. (Médéric Boquien, issue reported by Samir Salim)
+- Fν was computed by calculating Fλ and then converting to Fν, which led to typical differences in fluxes of typically 1-2% and a bit more for a handful of pathological filters. Now Fν is computed directly and a bit faster. (Médéric Boquien, issue reported by Yannick Roehlly and Wouter Dobbels)
 
 ### Fixed
 - Corrected a typo that prevented `restframe\_parameters` from being listed among the available modules. (Médéric Boquien)
