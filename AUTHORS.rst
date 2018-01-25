@@ -1,13 +1,13 @@
-pcigale author list
+pcigale authors list
 ====================
 
-This document lists the various authors who wrote pcigale code with their
-current email address and affiliation.
+This document lists alphabetically the various authors who wrote the pcigale
+code with their current email address and affiliation.
 
-* Yannick Roehlly <yannick@iaora.eu>
-* Laure Ciesla <ciesla@physics.uoc.gr>,
-  University of Crete, Department of Physics
-* Médéric Boquien <mboquien@ast.cam.ac.uk>,
-  University of Cambridge, Institute of Astronomy
+* Médéric Boquien <mederic.boquien@uantof.cl>,
+  Universidad de Antofagasta, Chile
 * Denis Burgarella <denis.burgarella@lam.fr>,
-  Laboratoire d'Astrophysique de Marseille
+  Laboratoire d'Astrophysique de Marseille, France
+* Laure Ciesla <ciesla@lam.fr>,
+  Laboratoire d'Astrophysique de Marseille, France
+* Yannick Roehlly <yannick@iaora.eu>
