@@ -26,13 +26,11 @@ reduced χ²) is given for each observation.
 """
 
 from collections import OrderedDict
-import ctypes
 import multiprocessing as mp
 import time
 
 import numpy as np
 
-from ...utils import read_table
 from .. import AnalysisModule
 from .workers import sed as worker_sed
 from .workers import init_sed as init_worker_sed

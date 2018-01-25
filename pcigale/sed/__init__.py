@@ -31,7 +31,7 @@ Such SED is characterised by:
 
 import numpy as np
 from numpy.core.multiarray import interp # Compiled version
-from scipy.constants import c, parsec
+from scipy.constants import parsec
 
 from . import utils
 from .io.vo import save_sed_to_vo

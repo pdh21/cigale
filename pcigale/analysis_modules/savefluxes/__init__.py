@@ -16,7 +16,6 @@ The data file is used only to get the list of fluxes to be computed.
 """
 
 from collections import OrderedDict
-import ctypes
 import multiprocessing as mp
 import time
 

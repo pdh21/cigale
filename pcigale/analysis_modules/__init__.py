@@ -9,8 +9,6 @@ from importlib import import_module
 import os
 import shutil
 
-import numpy as np
-from astropy.table import Column
 
 class AnalysisModule(object):
     """Abstract class, the pCigale analysis modules are based on.

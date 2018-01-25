@@ -9,7 +9,7 @@ import itertools
 import numpy as np
 
 from ..utils import read_table
-from ..warehouse import SedWarehouse
+
 
 class ParametersManager(object):
     """Class to abstract the call to the relevant parameters manager depending
