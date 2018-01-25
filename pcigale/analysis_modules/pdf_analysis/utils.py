@@ -9,7 +9,6 @@ from functools import lru_cache
 
 from astropy import log
 from astropy.cosmology import WMAP7 as cosmo
-from astropy.table import Table, Column
 import numpy as np
 from scipy import optimize
 from scipy.special import erf
