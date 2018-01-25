@@ -201,9 +201,10 @@ def compute_chi2(model_fluxes, obs_fluxes, obs_errors, lim_flag):
     if limits == True:
         for i, obs_error in enumerate(obs_errors):
             if obs_error < 0.:
-                chi2 += -2. * np.log(np.sqrt(np.pi/2.) * (-obs_errors[i]) * (
-                        1.+erf((obs_fluxes[i] - model_fluxes[i, :]*scaling) /
-                            (np.sqrt(2)*(-obs_errors[i])))))
+                chi2 -= 2. * np.log(.5 *
+                                    (1. + erf(((obs_fluxes[i] -
+                                                model_fluxes[i, :] * scaling) /
+                                               (-np.sqrt(2.)*obs_errors[i])))))
 
     return chi2, scaling
 
