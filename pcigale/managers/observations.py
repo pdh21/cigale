@@ -142,6 +142,7 @@ class ObservationsManagerPassbands(object):
             w = np.where((self.table[band] < threshold) |
                          (self.table[banderr] < threshold))
             self.table[band][w] = np.nan
+            self.table[banderr][w] = np.nan
             if upperlimits is False:
                 w = np.where(self.table[banderr] <= 0.)
                 self.table[band][w] = np.nan
