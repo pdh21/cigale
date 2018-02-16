@@ -10,6 +10,7 @@
 - The integrated stellar luminosity is now provided as `stellar.lum`. (Médéric Boquien)
 - The high resolution BC03 models have been added. They can be activated when building the database by adding `--bc03res=hr` to the build command. In that case the low resolution models are not built. (Médéric Boquien)
 - Dust templates generated with THEMIS (Jones et al. 2017) have been contributed by the DustPedia team (Davis et al. 2017). Special acknowledgement to Angelos Nersesian and Frédéric Galliano for creating the dust templates and writing the code. (Dustpedia team)
+- The Herschel SPIRE filters for extended sources have been added. (Médéric Boquien)
 
 ### Changed
 - Make the timestamp more readable when moving the out/ directory. (Médéric Boquien)
