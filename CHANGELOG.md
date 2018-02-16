@@ -35,6 +35,7 @@
 - For some reason the wavelengths of the SCUBA 450 μm filter were a factor 10 too small. (Médéric Boquien)
 - Ensure that the computation of the continuum level is correct when determining the equivalent width, in particular when the line width is very narrow. (Médéric Boquien)
 - When using different line widths during a single run, ensure that the fluxes and other quantities are always computed correctly. (Médéric Boquien, special thanks to Genoveva Micheva)
+- Compute Dn4000 more rigorously by integrating properly over Fν. (Médéric Boquien)
 
 ### Optimised
 - The cache architecture has been simplified, making it somewhat faster. It speeds up the model generation by ~1%. (Médéric Boquien)

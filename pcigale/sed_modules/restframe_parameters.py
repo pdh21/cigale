@@ -109,7 +109,7 @@ class RestframeParam(SedModule):
 
     def D4000(self, sed):
         wl = sed.wavelength_grid
-        lumin = sed.luminosity
+        fnu = sed.fnu
 
         # Strength of the D_4000 break using Balogh et al. (1999, ApJ 527, 54),
         # i.e., ratio of the flux in the red continuum to that in the blue
@@ -129,7 +129,8 @@ class RestframeParam(SedModule):
             self.w_D4000blue[key] = w_D4000blue
             self.w_D4000red[key] = w_D4000red
 
-        return np.mean(lumin[w_D4000red]) / np.mean(lumin[w_D4000blue])
+        return (np.trapz(fnu[w_D4000red], x=wl[w_D4000red]) /
+                np.trapz(fnu[w_D4000blue], x=wl[w_D4000blue]))
 
     def EW(self, sed):
         wl = sed.wavelength_grid
