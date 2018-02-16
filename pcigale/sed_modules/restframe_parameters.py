@@ -144,7 +144,7 @@ class RestframeParam(SedModule):
             key = (wl_line.size, line[0], 0.)
             EW[line] = (flux_trapz(lumin_line[w_line], wl_line, key) /
                         flux_trapz(lumin_cont[w_line], wl_line, key) *
-                        line[1] * 2.)
+                        (wl_line[-1]-wl_line[0]))
 
         return EW
 

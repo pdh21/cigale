@@ -33,6 +33,7 @@
 - An erroneous warning was displayed when using the `restframe\_parameters` module. (Médéric Boquien)
 - The formula from Sawicki et al. (2012) used to compute the χ² in the presence of upper limits was not correct. This led the χ² to depend directly on the absolute value of the upper limit. The formula has been rederived and corrected. (Médéric Boquien & Denis Burgarella)
 - For some reason the wavelengths of the SCUBA 450 μm filter were a factor 10 too small. (Médéric Boquien)
+- Ensure that the computation of the continuum level is correct when determining the equivalent width, in particular when the line width is very narrow. (Médéric Boquien)
 
 ### Optimised
 - The cache architecture has been simplified, making it somewhat faster. It speeds up the model generation by ~1%. (Médéric Boquien)
