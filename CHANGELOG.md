@@ -1,5 +1,11 @@
 # Change Log
 
+## Unreleased
+### Added
+### Changed
+### Fixed
+### Optimised
+
 ## 0.12.0 (2018-02-19)
 ### Added
 - Provide the possibility not to store a given module in cache. This can be useful on computers with a limited amount of memory. The downside is that when not caching the model generation will be slower. (Médéric Boquien)
