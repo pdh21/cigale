@@ -6,327 +6,262 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Yannick Roehlly, Médéric Boquien & Denis Burgarella
 
+from copy import deepcopy
 import time
 
-from astropy.cosmology import WMAP7 as cosmology
 import numpy as np
-import scipy.stats as st
 
 from ..utils import nothread
-from .utils import (save_best_sed, save_pdf, save_chi2, compute_chi2,
-                    weighted_param)
+from .utils import save_chi2, compute_corr_dz, compute_chi2, weighted_param
 from ...warehouse import SedWarehouse
 
 
-def init_sed(params, filters, analysed, fluxes, variables, t_begin, n_computed):
-    """Initializer of the pool of processes. It is mostly used to convert
-    RawArrays into numpy arrays. The latter are defined as global variables to
-    be accessible from the workers.
+def init_sed(models, t0, ncomputed):
+    """Initializer of the pool of processes to share variables between workers.
 
     Parameters
     ----------
-    params: ParametersHandler
-        Handles the parameters from a 1D index.
-    filters: List
-        Contains the names of the filters to compute the fluxes.
-    analysed: list
-        Variable names to be analysed.
-    fluxes: RawArray and tuple containing the shape
-        Fluxes of individual models. Shared among workers.
-    variables: RawArray and tuple containing the shape
-        Values of the analysed variables. Shared among workers.
-    n_computed: Value
-        Number of computed models. Shared among workers.
-    t_begin: float
+    models: ModelsManagers
+        Manages the storage of the computed models (fluxes and properties).
+    t0: float
         Time of the beginning of the computation.
+    ncomputed: Value
+        Number of computed models. Shared among workers.
 
     """
-    global gbl_model_fluxes, gbl_model_variables, gbl_n_computed, gbl_t_begin
-    global gbl_params, gbl_previous_idx, gbl_filters, gbl_analysed_variables
-    global gbl_warehouse
+    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_obs
+    global gbl_properties, gbl_t0, gbl_ncomputed
 
     # Limit the number of threads to 1 if we use MKL in order to limit the
     # oversubscription of the CPU/RAM.
     nothread()
 
-    gbl_model_fluxes = np.ctypeslib.as_array(fluxes[0])
-    gbl_model_fluxes = gbl_model_fluxes.reshape(fluxes[1])
-
-    gbl_model_variables = np.ctypeslib.as_array(variables[0])
-    gbl_model_variables = gbl_model_variables.reshape(variables[1])
-
-    gbl_n_computed = n_computed
-    gbl_t_begin = t_begin
-
-    gbl_params = params
-
     gbl_previous_idx = -1
-
-    gbl_filters = filters
-    gbl_analysed_variables = analysed
-
     gbl_warehouse = SedWarehouse()
 
+    gbl_models = models
+    gbl_obs = models.obs
+    gbl_properties = [prop[:-4] if prop.endswith('_log') else prop for prop in
+                      models.propertiesnames]
+    gbl_t0 = t0
+    gbl_ncomputed = ncomputed
 
-def init_analysis(params, filters, analysed, z, fluxes, variables,
-                  t_begin, n_computed, analysed_averages, analysed_std,
-                  best_fluxes, best_parameters, best_chi2, best_chi2_red, save,
-                  lim_flag, n_obs):
-    """Initializer of the pool of processes. It is mostly used to convert
-    RawArrays into numpy arrays. The latter are defined as global variables to
-    be accessible from the workers.
+def init_analysis(models, results, t0, ncomputed):
+    """Initializer of the pool of processes to share variables between workers.
 
     Parameters
     ----------
-    params: ParametersHandler
-        Handles the parameters from a 1D index.
-    filters: list
-        Contains filters to compute the fluxes.
-    analysed: list
-        Variable names to be analysed
-    z: RawArray and tuple containing the shape.
-        Redshifts of individual models. Shared among workers.
-    fluxes: RawArray
-        Fluxes of individual models. Shared among workers.
-    variables: RawArray and tuple containing the shape
-        Values of the analysed variables. Shared among workers.
-    t_begin: float
+    models: ModelsManagers
+        Manages the storage of the computed models (fluxes and properties).
+    results: ResultsManager
+        Contains the estimates and errors on the properties.
+    t0: float
         Time of the beginning of the computation.
-    n_computed: Value
+    ncomputed: Value
         Number of computed models. Shared among workers.
-    analysed_averages: RawArray
-        Analysed values for each observation.
-    analysed_std: RawArray
-        Standard devriation values for each observation.
-    best_fluxes: RawArray
-        Best fluxes for each observation.
-    best_parameters: RawArray
-        Best parameters for each observation.
-    best_chi2: RawArray
-        Best χ² for each observation.
-    best_chi2_red: RawArray
-        Best reduced χ² for each observation.
-    save: dictionary
-        Contains booleans indicating whether we need to save some data related
-        to given models.
-    n_obs: int
-        Number of observations.
 
     """
-    init_sed(params, filters, analysed, fluxes, variables, t_begin, n_computed)
-    global gbl_z, gbl_analysed_averages, gbl_analysed_std
-    global gbl_best_fluxes, gbl_best_parameters, gbl_best_chi2
-    global gbl_best_chi2_red, gbl_save, gbl_n_obs, gbl_lim_flag, gbl_keys
+    global gbl_models, gbl_results, gbl_t0, gbl_ncomputed
 
-    gbl_analysed_averages = np.ctypeslib.as_array(analysed_averages[0])
-    gbl_analysed_averages = gbl_analysed_averages.reshape(analysed_averages[1])
-
-    gbl_analysed_std = np.ctypeslib.as_array(analysed_std[0])
-    gbl_analysed_std = gbl_analysed_std.reshape(analysed_std[1])
-
-    gbl_best_fluxes = np.ctypeslib.as_array(best_fluxes[0])
-    gbl_best_fluxes = gbl_best_fluxes.reshape(best_fluxes[1])
-
-    gbl_best_parameters = np.ctypeslib.as_array(best_parameters[0])
-    gbl_best_parameters = gbl_best_parameters.reshape(best_parameters[1])
-
-    gbl_best_chi2 = np.ctypeslib.as_array(best_chi2[0])
-
-    gbl_best_chi2_red = np.ctypeslib.as_array(best_chi2_red[0])
-
-    gbl_z = z
-
-    gbl_save = save
-    gbl_lim_flag = lim_flag
-
-    gbl_n_obs = n_obs
-    gbl_keys = None
+    gbl_models = models
+    gbl_results = results
+    gbl_t0 = t0
+    gbl_ncomputed = ncomputed
 
 
-def sed(idx):
-    """Worker process to retrieve a SED and affect the relevant data to shared
-    RawArrays.
+def init_bestfit(conf, params, observations, results, t0, ncomputed):
+    """Initializer of the pool of processes to share variables between workers.
+
+    Parameters
+    ----------
+    conf: dict
+        Contains the pcigale.ini configuration.
+    params: ParametersManager
+        Manages the parameters from a 1D index.
+    observations: astropy.Table
+        Contains the observations including the filter names.
+    ncomputed: Value
+        Number of computed models. Shared among workers.
+    t0: float
+        Time of the beginning of the computation.
+    results: ResultsManager
+        Contains the estimates and errors on the properties.
+    offset: integer
+        Offset of the block to retrieve the global model index.
+
+    """
+    global gbl_previous_idx, gbl_warehouse, gbl_conf, gbl_params, gbl_obs
+    global gbl_results, gbl_t0, gbl_ncomputed
+
+    gbl_previous_idx = -1
+    gbl_warehouse = SedWarehouse()
+
+    gbl_conf = conf
+    gbl_params = params
+    gbl_obs = observations
+    gbl_results = results
+    gbl_t0 = t0
+    gbl_ncomputed = ncomputed
+
+def sed(idx, midx):
+    """Worker process to retrieve a SED and affect the relevant data to an
+    instance of ModelsManager.
 
     Parameters
     ----------
     idx: int
-        Index of the model to retrieve its parameters from the global variable
+        Index of the model within the current block of models.
+    midx: int
+        Global index of the model.
 
     """
     global gbl_previous_idx
     if gbl_previous_idx > -1:
         gbl_warehouse.partial_clear_cache(
-            gbl_params.index_module_changed(gbl_previous_idx, idx))
-    gbl_previous_idx = idx
-
-    sed = gbl_warehouse.get_sed(gbl_params.modules,
-                                gbl_params.from_index(idx))
+            gbl_models.params.index_module_changed(gbl_previous_idx, midx))
+    gbl_previous_idx = midx
+    sed = gbl_warehouse.get_sed(gbl_models.params.modules,
+                                gbl_models.params.from_index(midx))
 
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
-        gbl_model_fluxes[:, idx] = np.full(len(gbl_filters), np.nan)
-        gbl_model_variables[:, idx] = np.full(len(gbl_analysed_variables),
-                                              np.nan)
+        gbl_models.fluxes[:, idx] = np.full(len(gbl_obs.bands), np.nan)
+        gbl_models.properties[:, idx] = np.full(len(gbl_properties), np.nan)
     else:
-        gbl_model_fluxes[:, idx] = np.array([sed.compute_fnu(filter_) for
-                                             filter_ in gbl_filters])
-        gbl_model_variables[:, idx] = np.array([sed.info[name]
-                                                for name in
-                                                gbl_analysed_variables])
+        gbl_models.fluxes[:, idx] = [sed.compute_fnu(filter_)
+                                     for filter_ in gbl_obs.bands]
+        gbl_models.properties[:, idx] = [sed.info[name]
+                                         for name in gbl_properties]
 
-    with gbl_n_computed.get_lock():
-        gbl_n_computed.value += 1
-        n_computed = gbl_n_computed.value
-    if n_computed % 250 == 0 or n_computed == gbl_params.size:
-        t_elapsed = time.time() - gbl_t_begin
-        print("{}/{} models computed in {} seconds ({} models/s)".
-              format(n_computed, gbl_params.size,
-                     np.around(t_elapsed, decimals=1),
-                     np.around(n_computed/t_elapsed, decimals=1)),
-              end="\n" if n_computed == gbl_params.size else "\r")
-
+    with gbl_ncomputed.get_lock():
+        gbl_ncomputed.value += 1
+        ncomputed = gbl_ncomputed.value
+    nmodels = len(gbl_models.block)
+    if ncomputed % 250 == 0 or ncomputed == nmodels:
+        dt = time.time() - gbl_t0
+        print("{}/{} models computed in {:.1f} seconds ({:.1f} models/s)".
+              format(ncomputed, nmodels, dt, ncomputed/dt),
+              end="\n" if ncomputed == nmodels else "\r")
 
 def analysis(idx, obs):
-    """Worker process to analyse the PDF and estimate parameters values
+    """Worker process to analyse the PDF and estimate parameters values and
+    store them in an instance of ResultsManager.
 
     Parameters
     ----------
     idx: int
         Index of the observation. This is necessary to put the computed values
-        at the right location in RawArrays
+        at the right location in the ResultsManager.
     obs: row
         Input data for an individual object
 
     """
     np.seterr(invalid='ignore')
 
-    obs_fluxes = np.array([obs[name] for name in gbl_filters])
-    obs_errors = np.array([obs[name + "_err"] for name in gbl_filters])
-    obs_z = obs['redshift']
-    nobs = np.where(np.isfinite(obs_fluxes))[0].size
-
-    if obs_z >= 0.:
+    if obs['redshift'] >= 0.:
         # We pick the the models with the closest redshift using a slice to
         # work on views of the arrays and not on copies to save on RAM.
-        idx_z = np.abs(obs_z - gbl_z).argmin()
-        model_z = gbl_z[idx_z]
-        wz = slice(idx_z, None, gbl_z.size)
-
-        # The mass-dependent physical properties are computed assuming the
-        # redshift of the model. However because we round the observed redshifts
-        # to two decimals, there can be a difference of 0.005 in redshift
-        # between the models and the actual observation. At low redshift, this
-        # can cause a discrepancy in the mass-dependent physical properties:
-        # ~0.35 dex at z=0.010 vs 0.015 for instance. Therefore we correct these
-        # physical quantities by multiplying them by corr_dz.
-        if model_z == obs_z:
-            corr_dz = 1.
-        else:
-            if model_z > 0.:
-                corr_dz = (cosmology.luminosity_distance(obs_z).value /
-                           cosmology.luminosity_distance(model_z).value)**2.
-            else:
-                corr_dz = (cosmology.luminosity_distance(obs_z).value * 1e5)**2.
+        z = np.array(gbl_models.conf['sed_modules_params']['redshifting']['redshift'])
+        wz = slice(np.abs(obs['redshift']-z).argmin(), None, z.size)
+        corr_dz = compute_corr_dz(z[wz.start], obs['redshift'])
     else:  # We do not know the redshift so we use the full grid
         wz = slice(0, None, 1)
         corr_dz = 1.
 
-    chi2, scaling = compute_chi2(gbl_model_fluxes[:, wz], obs_fluxes,
-                                 obs_errors, gbl_lim_flag)
+    obs_fluxes = np.array([obs[name] for name in gbl_models.obs.bands])
+    obs_errors = np.array([obs[name + "_err"] for name in
+                           gbl_models.obs.bands])
+    chi2, scaling = compute_chi2(gbl_models.fluxes[:, wz], obs_fluxes,
+                                 obs_errors, gbl_models.conf['analysis_params']['lim_flag'])
 
-    ##################################################################
-    # Variable analysis                                              #
-    ##################################################################
-
-    # We select only models that have at least 0.1% of the probability of
-    # the best model to reproduce the observations. It helps eliminating
-    # very bad models.
-    maxchi2 = st.chi2.isf(st.chi2.sf(np.nanmin(chi2), nobs-1) * 1e-3, nobs-1)
-    wlikely = np.where(chi2 < maxchi2)
-
-    if wlikely[0].size == 0:
-        # It sometimes happen because models are older than the Universe's age
-        print("No suitable model found for the object {}. One possible origin "
-              "is that models are older than the Universe.".format(obs['id']))
-        gbl_analysed_averages[idx, :] = np.nan
-        gbl_analysed_std[idx, :] = np.nan
-        gbl_best_fluxes[idx, :] = np.nan
-        gbl_best_parameters[idx, :] = np.nan
-        gbl_best_chi2[idx] = np.nan
-        gbl_best_chi2_red[idx] = np.nan
-    else:
+    if np.any(np.isfinite(chi2)):
         # We use the exponential probability associated with the χ² as
         # likelihood function.
-        likelihood = np.exp(-chi2[wlikely]/2)
-
-        # We define the best fitting model for each observation as the one
-        # with the least χ².
-        best_index_z = np.nanargmin(chi2)  # index for models at given z
-        best_index = wz.start + best_index_z * wz.step  # index for all models
-
-        # We compute once again the best sed to obtain its info
-        global gbl_previous_idx
-        if gbl_previous_idx > -1:
-            gbl_warehouse.partial_clear_cache(
-                gbl_params.index_module_changed(gbl_previous_idx,
-                                                best_index))
-        gbl_previous_idx = best_index
-
-        sed = gbl_warehouse.get_sed(gbl_params.modules,
-                                    gbl_params.from_index(best_index))
-
-        # We correct the mass-dependent parameters
-        for key in sed.mass_proportional_info:
-            sed.info[key] *= scaling[best_index_z] * corr_dz
+        likelihood = np.exp(-chi2 / 2.)
+        gbl_results.bayes.weights[idx] = np.nansum(likelihood)
 
         # We compute the weighted average and standard deviation using the
         # likelihood as weight.
-        for i, variable in enumerate(gbl_analysed_variables):
+        for i, variable in enumerate(gbl_results.bayes.propertiesnames):
             if variable.endswith('_log'):
                 variable = variable[:-4]
                 _ = np.log10
-                maxstd = lambda mean, std: max(0.02, std)
             else:
                 _ = lambda x: x
-                maxstd = lambda mean, std: max(0.05 * mean, std)
 
-            if variable in sed.mass_proportional_info:
-                mean, std = weighted_param(_(gbl_model_variables[i, wz][wlikely]
-                                           * scaling[wlikely] * corr_dz),
-                                           likelihood)
+            if variable in gbl_results.bayes.massproportional:
+                values = _(gbl_models.properties[i, wz] * scaling * corr_dz)
             else:
-                mean, std = weighted_param(_(gbl_model_variables[i, wz][wlikely]),
-                                           likelihood)
+                values = _(gbl_models.properties[i, wz])
 
-            gbl_analysed_averages[idx, i] = mean
-            gbl_analysed_std[idx, i] = maxstd(mean, std)
+            mean, std = weighted_param(values, likelihood)
+            gbl_results.bayes.means[idx, i] = mean
+            gbl_results.bayes.errors[idx, i] = std
+            if gbl_models.conf['analysis_params']['save_chi2'] is True:
+                save_chi2(obs, variable, gbl_models, chi2, values)
+        best_idx_z = np.nanargmin(chi2)
+        gbl_results.best.chi2[idx] = chi2[best_idx_z]
+        gbl_results.best.index[idx] = (wz.start + best_idx_z*wz.step +
+                                       gbl_models.block.start)
+    else:
+        # It sometimes happens because models are older than the Universe's age
+        print("No suitable model found for the object {}. One possible origin "
+              "is that models are older than the Universe.".format(obs['id']))
 
-        gbl_best_fluxes[idx, :] = gbl_model_fluxes[:, best_index] \
-            * scaling[best_index_z]
+    with gbl_ncomputed.get_lock():
+        gbl_ncomputed.value += 1
+        ncomputed = gbl_ncomputed.value
+    dt = time.time() - gbl_t0
+    print("{}/{} objects analysed in {:.1f} seconds ({:.2f} objects/s)".
+          format(ncomputed, len(gbl_models.obs), dt, ncomputed/dt),
+          end="\n" if ncomputed == len(gbl_models.obs) else "\r")
 
-        global gbl_keys
-        if gbl_keys is None:
-            gbl_keys = list(sed.info.keys())
-            gbl_keys.sort()
-        gbl_best_parameters[idx, :] = np.array([sed.info[k] for k in gbl_keys])
-        gbl_best_chi2[idx] = chi2[best_index_z]
-        gbl_best_chi2_red[idx] = chi2[best_index_z] / (nobs - 1)
+def bestfit(oidx, obs):
+    """Worker process to compute and save the best fit.
 
-        if gbl_save['best_sed']:
-            save_best_sed(obs['id'], sed, scaling[best_index_z])
-        if gbl_save['chi2']:
-            save_chi2(obs['id'], gbl_analysed_variables,
-                      sed.mass_proportional_info, gbl_model_variables[:, wz],
-                      scaling * corr_dz, chi2 / (nobs - 1))
-        if gbl_save['pdf']:
-            save_pdf(obs['id'], gbl_analysed_variables,
-                     sed.mass_proportional_info, gbl_model_variables[:, wz],
-                     scaling * corr_dz, likelihood, wlikely)
+    Parameters
+    ----------
+    oidx: int
+        Index of the observation. This is necessary to put the computed values
+        at the right location in the ResultsManager.
+    obs: row
+        Input data for an individual object
 
-    with gbl_n_computed.get_lock():
-        gbl_n_computed.value += 1
-        n_computed = gbl_n_computed.value
-    t_elapsed = time.time() - gbl_t_begin
-    print("{}/{} objects analysed in {} seconds ({} objects/s)".
-          format(n_computed, gbl_n_obs, np.around(t_elapsed, decimals=1),
-                 np.around(n_computed/t_elapsed, decimals=2)),
-          end="\n" if n_computed == gbl_n_obs else "\r")
+    """
+    np.seterr(invalid='ignore')
+
+    best_index = int(gbl_results.best.index[oidx])
+    global gbl_previous_idx
+    if gbl_previous_idx > -1:
+        gbl_warehouse.partial_clear_cache(
+            gbl_params.index_module_changed(gbl_previous_idx, best_index))
+    gbl_previous_idx = best_index
+
+    # We compute the model at the exact redshift not to have to correct for the
+    # difference between the object and the grid redshifts.
+    params = deepcopy(gbl_params.from_index(best_index))
+    params[-1]['redshift'] = obs['redshift']
+    sed = gbl_warehouse.get_sed(gbl_params.modules, params)
+
+    fluxes = np.array([sed.compute_fnu(filt) for filt in gbl_obs.bands])
+    obs_fluxes = np.array([obs[name] for name in gbl_obs.bands])
+    obs_errors = np.array([obs[name + '_err'] for name in gbl_obs.bands])
+    _, scaling = compute_chi2(fluxes[:, None], obs_fluxes, obs_errors,
+                              gbl_conf['analysis_params']['lim_flag'])
+
+    gbl_results.best.properties[oidx, :] = [sed.info[k] for k in
+                                            gbl_results.best.propertiesnames]
+    iprop = [i for i, k in enumerate(gbl_results.best.propertiesnames)
+             if k in gbl_results.best.massproportional]
+    gbl_results.best.properties[oidx, iprop] *= scaling
+    gbl_results.best.fluxes[oidx, :] = fluxes * scaling
+
+    if gbl_conf['analysis_params']["save_best_sed"]:
+        sed.to_fits('out/{}'.format(obs['id']), scaling)
+
+    with gbl_ncomputed.get_lock():
+        gbl_ncomputed.value += 1
+        ncomputed = gbl_ncomputed.value
+    dt = time.time() - gbl_t0
+    print("{}/{} best fit spectra computed in {:.1f} seconds ({:.2f} objects/s)".
+          format(ncomputed, len(gbl_obs), dt, ncomputed/dt), end="\n" if
+          ncomputed == len(gbl_obs) else "\r")

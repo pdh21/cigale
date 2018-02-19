@@ -14,17 +14,13 @@ from glob import glob  # To allow the use of glob() in "eval..."
 import numpy as np
 import validate
 
-from ..handlers.parameters_handler import ParametersHandler
+from ..managers.parameters import ParametersManager
 from ..data import Database
 from ..utils import read_table
 from .. import sed_modules
 from .. import analysis_modules
 from ..warehouse import SedWarehouse
 from . import validation
-
-
-# Limit the redshift to this number of decimals
-REDSHIFT_DECIMALS = 2
 
 
 class Configuration(object):
@@ -100,9 +96,10 @@ class Configuration(object):
             ["Nebular emission: nebular"] +
             ["Dust attenuation: dustatt_calzleit, dustatt_powerlaw, "
              "dustatt_2powerlaws"] +
-            ["Dust emission: casey2012, dale2014, dl2007, dl2014"] +
+            ["Dust emission: casey2012, dale2014, dl2007, dl2014, themis"] +
             ["AGN: dale2014, fritz2006"] +
             ["Radio: radio"] +
+            ["Restframe parameters: restframe_parameters"] +
             ["Redshift: redshifting (mandatory!)"])
         self.spec['sed_modules'] = "cigale_string_list()"
 
@@ -140,8 +137,12 @@ class Configuration(object):
         if self.config['data_file'] != '':
             obs_table = read_table(self.config['data_file'])
 
-            # Check that the id and redshift columns are present in the input
-            # file
+            # Check that the the file was correctly read and that the id and
+            # redshift columns are present in the input file
+            if 'col1' in obs_table.columns:
+                raise Exception("The input could not be read properly. Verify "
+                                "its format and that it does not have two "
+                                "columns with the same name.")
             if 'id' not in obs_table.columns:
                 raise Exception("Column id not present in input file")
             if 'redshift' not in obs_table.columns:
@@ -265,10 +266,12 @@ class Configuration(object):
                                                      'dustatt_powerlaw',
                                                      'dustatt_2powerlaws']),
                                ('dust emission', ['casey2012', 'dale2014',
-                                                  'dl2007', 'dl2014']),
+                                                  'dl2007', 'dl2014',
+                                                  'themis']),
                                ('AGN', ['dale2014', 'fritz2006']),
                                ('radio', ['radio']),
-                               ('restframe parameters', ['restframe_params']),
+                               ('restframe_parameters',
+                                ['restframe_parameters']),
                                ('redshift', ['redshifting'])))
 
         comments = {'SFH': "ERROR! Choosing one SFH module is mandatory.",
@@ -280,7 +283,7 @@ class Configuration(object):
                     'dust emission': "No dust emission module found.",
                     'AGN': "No AGN module found.",
                     'radio': "No radio module found.",
-                    'restframe parameters': "No restframe parameters module "
+                    'restframe_parameters': "No restframe parameters module "
                                             "found",
                     'redshift': "ERROR! No redshifting module found."}
 
@@ -299,8 +302,15 @@ class Configuration(object):
         if type(z_mod) is str and not z_mod:
             if self.config['data_file']:
                 obs_table = read_table(self.config['data_file'])
-                z = list(np.unique(np.around(obs_table['redshift'],
-                                        decimals=REDSHIFT_DECIMALS)))
+                if 'redshift_decimals' in self.config['analysis_params']:
+                    decimals = self.config['analysis_params']['redshift_decimals']
+                    if decimals < 0:
+                        z = list(np.unique(obs_table['redshift']))
+                    else:
+                        z = list(np.unique(np.around(obs_table['redshift'],
+                                                     decimals=decimals)))
+                else:
+                    z = list(np.unique(obs_table['redshift']))
                 self.config['sed_modules_params']['redshifting']['redshift'] = z
             elif self.config['parameters_file']:
                 # The entry will be ignored anyway. Just pass a dummy list
@@ -314,7 +324,7 @@ class Configuration(object):
         configuration file and must be extracted from a dummy run."""
         if not self.config['analysis_params']['variables']:
             warehouse = SedWarehouse()
-            params = ParametersHandler(self.config.dict())
+            params = ParametersManager(self.config.dict())
             sed = warehouse.get_sed(params.modules, params.from_index(0))
             info = list(sed.info.keys())
             info.sort()

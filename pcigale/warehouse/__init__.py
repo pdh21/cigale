@@ -16,29 +16,33 @@ class SedWarehouse(object):
     cache or a database.
     """
 
-    def __init__(self, cache_type="memory"):
-        """Instantiate a SED warehouse
+    def __init__(self, nocache=None):
+        """Instantiate an SED warehouse
 
         Parameters
         ----------
-        cache_type: string
-            Type of cache used. For now, only in memory caching.
+        nocache: list
+            SED module or list of the SED modules that are not to be cached,
+        trading CPU for memory.
+
         """
-        if cache_type == "memory":
-            from .store.memory import SedStore
-        elif cache_type == "shelf":
-            from .store.shelf import SedStore
+        if nocache is None:
+            self.nocache = []
+        elif isinstance(nocache, list) is True:
+            self.nocache = nocache
+        elif isinstance(nocache, str) is True:
+            self.nocache = [nocache]
+        else:
+            raise TypeError("The nocache argument must be a list or an str.")
 
-        self.storage = SedStore()
-
-        # Cache for modules
+        self.sed_cache = {}
         self.module_cache = {}
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        pass
 
     def get_module_cached(self, name, **kwargs):
         """Get the SED module using the internal cache.
@@ -55,27 +59,29 @@ class SedWarehouse(object):
         a pcigale.sed_modules.Module instance
 
         """
-        # Marshal a tuple (name, parameters) to be used as a key for storing
-        # the module in the cache.
-        module_key = marshal.dumps((name, kwargs))
-
-        if module_key in self.module_cache:
-            module = self.module_cache[module_key]
-        else:
+        if name in self.nocache:
             module = sed_modules.get_module(name, **kwargs)
-            self.module_cache[module_key] = module
+        else:
+            # Marshal a tuple (name, parameters) to be used as a key for
+            # storing the module in the cache.
+            module_key = marshal.dumps((name, kwargs))
+            if module_key in self.module_cache:
+                module = self.module_cache[module_key]
+            else:
+                module = sed_modules.get_module(name, **kwargs)
+                self.module_cache[module_key] = module
 
         return module
 
     def partial_clear_cache(self, n_modules_max):
         """Clear the cache of SEDs that are not relevant anymore
 
-        To do partial clearing of the cache, we go through the entire cache and
-        delete the SEDs that have more than a given number of modules. This is
-        done by computing the index of the module that has a changed parameter.
-        This means that SEDs with this number of modules or more are not needed
-        anymore to compute new models and we can discard them. Passing 0 as an
-        argument empties the cache completely.
+        To do partial clearing of the cache, we go through the entire cache
+        and delete the SEDs that have more than a given number of modules.
+        This is done by computing the index of the module that has a changed
+        parameter. This means that SEDs with this number of modules or more
+        are not needed anymore to compute new models and we can discard them.
+        Passing 0 as an argument empties the cache completely.
 
         Parameters
         ----------
@@ -85,10 +91,9 @@ class SedWarehouse(object):
 
         """
         if n_modules_max > -1:
-            for k in list(self.storage.dictionary.keys()):
-                list_modules = marshal.loads(k)[0]
-                if len(list_modules) > n_modules_max:
-                    self.storage.delete(k)
+            for k in list(self.sed_cache.keys()):
+                if len(marshal.loads(k)[0]) > n_modules_max:
+                    del self.sed_cache[k]
 
     def get_sed(self, module_list, parameter_list):
         """Get the SED corresponding to the module and parameter lists
@@ -115,13 +120,12 @@ class SedWarehouse(object):
         module_list = list(module_list)
         parameter_list = list(parameter_list)
 
-        # Marshal a tuple (module_list, parameter_list) to be used as a key for
-        # storing the SED in the cache.
-        sed_key = marshal.dumps((module_list, parameter_list))
+        # Marshal a tuple (module_list, parameter_list) to be used as a key
+        # for storing the SED in the cache.
+        key = marshal.dumps((module_list, parameter_list))
 
-        sed = self.storage.get(sed_key)
-
-        if not sed:
+        sed = self.sed_cache.get(key)
+        if sed is None:
             mod = self.get_module_cached(module_list.pop(),
                                          **parameter_list.pop())
 
@@ -131,18 +135,6 @@ class SedWarehouse(object):
                 sed = self.get_sed(module_list, parameter_list)
 
             mod.process(sed)
-            self.storage.add(sed_key, sed)
+            self.sed_cache[key] = sed
 
-        return sed
-
-    def sed_generator(self, module_list, list_of_parameter_list):
-        """Generator to yield SED corresponding to a module list and a list
-        of parameter lists, one at a time.
-
-        """
-        for parameter_list in list_of_parameter_list:
-            yield self.get_sed(module_list, parameter_list)
-
-    def close(self):
-        """ Close the underlying storage if needed """
-        self.storage.close()
+        return sed.copy()

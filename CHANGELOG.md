@@ -1,16 +1,56 @@
 # Change Log
 
+## 0.12.0 (2018-02-19)
+### Added
+- Provide the possibility not to store a given module in cache. This can be useful on computers with a limited amount of memory. The downside is that when not caching the model generation will be slower. (Médéric Boquien)
+- An option `redshift\_decimals` is now provided in `pdf\_analysis` to indicate the number of decimals to round the observed redshifts to compute the grid of models. By default the model redshifts are rounded to two decimals but this can be insufficient at low z and/or when using narrow-band filters for instance. This only applies to the grid. The physical properties are still computed for the redshift at full precision. (Médéric Boquien)
+- Bands with negative fluxes are now considered valid and are fitted as any other band. (Médéric Boquien)
+- Allow the models to be computed by blocks in `savefluxes`. This can be useful when computing a very large grid and/or to split the results file into various smaller files as large files can be difficult to handle. The number of blocks is set with the `blocks` parameters in the pcigale.ini. (Médéric Boquien)
+- Allow the observations to be analysed by blocks of models in `pdf\_analysis`. This is useful when computing a very large grid of models that would not fit in memory. The number of blocks is set with the `blocks` parameters in the pcigale.ini. (Médéric Boquien)
+- The integrated stellar luminosity is now provided as `stellar.lum`. (Médéric Boquien)
+- The high resolution BC03 models have been added. They can be activated when building the database by adding `--bc03res=hr` to the build command. In that case the low resolution models are not built. (Médéric Boquien)
+- Dust templates generated with THEMIS (Jones et al. 2017) have been contributed by the DustPedia team (Davis et al. 2017). Special acknowledgement to Angelos Nersesian and Frédéric Galliano for creating the dust templates and writing the code. (Dustpedia team)
+- The Herschel SPIRE filters for extended sources have been added. (Médéric Boquien)
+
+### Changed
+- Make the timestamp more readable when moving the out/ directory. (Médéric Boquien)
+- To accommodate the analysis of the observations by blocks, all models are now included in the estimation of the physical properties and no cut in chi² is done anymore. (Médéric Boquien)
+- To accommodate the analysis of the observations by blocks, the `save_pdf` option has been eliminated. To plot PDF one needs to set `save_chi2` to True and then run `pcigale-plots pdf`. (Médéric Boquien)
+- In order to capture rapid evolutionary phases, we assume that in a given period of 1 Myr, 10 small episodes of star formation occurred every 0.1 Myr, rather than one episode every 1 Myr.
+- When computing the attenuation curve, the bump is now added so that its relative strength does not depend on δ. (Médéric Boquien, issue reported by Samir Salim)
+- Fν was computed by calculating Fλ and then converting to Fν, which led to typical differences in fluxes of typically 1-2% and a bit more for a handful of pathological filters. Now Fν is computed directly and a bit faster. (Médéric Boquien, issue reported by Yannick Roehlly and Wouter Dobbels)
+
+### Fixed
+- Corrected a typo that prevented `restframe\_parameters` from being listed among the available modules. (Médéric Boquien)
+- The filters in the residual plot of `pcigale-plots sed` are now drawn in order of increasing wavelength so that the line joining all the filters does not make loops. (Médéric Boquien)
+- In the absence of a nebular component `restframe\_parameters` would crash when attempting to compute the equivalent widths of the lines listed in `EW_lines`. Now they are simply ignored. (Médéric Boquien)
+- The luminosity spectrum of the best fit was saved assuming the distance corresponding to the redshift rounded to two decimals. This was an issue in particular at very low redshift as a difference of 0.005 in redshift can translate to a large difference on the luminosity distance. Now the exact luminosity distance of the object is used to compute the spectrum luminosity. (Médéric Boquien, reported by Jorge Melnick)
+- When using the `parameters\_file` option, the indices of the models now correspond to the line number of the input file. (Médéric Boquien)
+- When using the `parameters\_file` option, the list of modules is read from `sed\_modules` rather than being inferred from the input file. (Médéric Boquien)
+- The computation of the upper limits would only work for the first few models, reverting back to regular fits for the others. (Médéric Boquien)
+- A more explicit message is now given when the flux table cannot be read properly. (Médéric Boquien)
+- Make sure that we do not try to fit data that have an error bar of 0 mJy. (Médéric Boquien)
+- An erroneous warning was displayed when using the `restframe\_parameters` module. (Médéric Boquien)
+- The formula from Sawicki et al. (2012) used to compute the χ² in the presence of upper limits was not correct. This led the χ² to depend directly on the absolute value of the upper limit. The formula has been rederived and corrected. (Médéric Boquien & Denis Burgarella)
+- For some reason the wavelengths of the SCUBA 450 μm filter were a factor 10 too small. (Médéric Boquien)
+- Ensure that the computation of the continuum level is correct when determining the equivalent width, in particular when the line width is very narrow. (Médéric Boquien)
+- When using different line widths during a single run, ensure that the fluxes and other quantities are always computed correctly. (Médéric Boquien, special thanks to Genoveva Micheva)
+- Compute Dn4000 more rigorously by integrating properly over Fν. (Médéric Boquien)
+
+### Optimised
+- The cache architecture has been simplified, making it somewhat faster. It speeds up the model generation by ~1%. (Médéric Boquien)
+
 ## 0.11.0 (2017-02-10)
 ### Added
 - The stellar mass-weighted age is now provided. This is a much more usual measure of the age than the age of the oldest star. This is accessible with the `stellar.age_m_star` keyword in the `bc03` module with with the `stellar.age_mass` keyword in the `m2005` module. (Médéric Boquien)
 - The nebular models have been expanded from log U=-3 to log U=-4. (Médéric Boquien & Akio Inoue)
 - The nebular models are now sampled in steps of 0.1 dex in log U rather than 1.0 dex steps. (Médéric Boquien & Akio Inoue)
 - A new set of filters from GAZPAR has been added. The pattern of the filter name is "telescope.instrument.filter", e.g. "hst.wfc3.F160W". If the telescope has one instrument, it is skipped, e.g. "galex.FUV". For now the original set of filters is still provided. (Médéric Boquien & Olivier Ilbert)
-- A brand new module `restframe\_param` has been added to compute rest frame parameters: UV slope β (Calzetti et al. 1994), Dn4000 (Balogh et al. 1999), IRX, emission lines equivalent widths at any wavelength, luminosity in any filter, colour in any pair of filters. This module has to be inserted right before the redshifting module. (Médéric Boquien)
+- A brand new module `restframe\_parameters` has been added to compute rest frame parameters: UV slope β (Calzetti et al. 1994), Dn4000 (Balogh et al. 1999), IRX, emission lines equivalent widths at any wavelength, luminosity in any filter, colour in any pair of filters. This module has to be inserted right before the redshifting module. (Médéric Boquien)
 
 ### Changed
 - We do not output the break strength from the `bc03` module anymore as these were not computed properly. (Médéric Boquien)
-- The new `restframe\_param` module replaces the unofficial `param` module, which has now been trimmed to only compute fluxes in the observed frame as the rest of its functionalities have been transferred to the much more efficient `restframe\_param` module. To reflect this, it has been renamed `fluxes`. (Médéric Boquien)
+- The new `restframe\_parameters` module replaces the unofficial `param` module, which has now been trimmed to only compute fluxes in the observed frame as the rest of its functionalities have been transferred to the much more efficient `restframe\_parameters` module. To reflect this, it has been renamed `fluxes`. (Médéric Boquien)
 - We now make use of new features available in Python 3.5. Previous versions are henceforth unsupported. However Python 3.6 or later is recommended for better performance. (Médéric Boquien)
 
 ### Fixed

@@ -5,238 +5,52 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Yannick Roehlly & Médéric Boquien
 
+from functools import lru_cache
+
 from astropy import log
-from astropy.table import Table, Column
+from astropy.cosmology import WMAP7 as cosmo
 import numpy as np
 from scipy import optimize
 from scipy.special import erf
 
-from ..utils import OUT_DIR
-
 log.setLevel('ERROR')
 
+def save_chi2(obs, variable, models, chi2, values):
+    """Save the chi² and the associated physocal properties
 
-def save_best_sed(obsid, sed, norm):
-    """Save the best SED to a VO table.
+    """
+    fname = 'out/{}_{}_chi2-block-{}.npy'.format(obs['id'], variable,
+                                                 models.iblock)
+    data = np.memmap(fname, dtype=np.float64, mode='w+',
+                     shape=(2, chi2.size))
+    data[0, :] = chi2
+    data[1, :] = values
+
+
+@lru_cache(maxsize=None)
+def compute_corr_dz(model_z, obs_z):
+    """The mass-dependent physical properties are computed assuming the
+    redshift of the model. However because we round the observed redshifts to
+    two decimals, there can be a difference of 0.005 in redshift between the
+    models and the actual observation. At low redshift, this can cause a
+    discrepancy in the mass-dependent physical properties: ~0.35 dex at z=0.010
+    vs 0.015 for instance. Therefore we correct these physical quantities by
+    multiplying them by corr_dz.
 
     Parameters
     ----------
-    obsid: string
-        Name of the object. Used to prepend the output file name
-    sed: SED object
-        Best SED
-    norm: float
-        Normalisation factor to scale the scale to the observations
+    model_z: float
+        Redshift of the model.
+    obs_z: float
+        Redshift of the observed object.
 
     """
-    sed.to_fits(OUT_DIR + "{}".format(obsid), mass=norm)
-
-
-def _save_pdf(obsid, name, model_variable, likelihood):
-    """Compute and save the PDF to a FITS file
-
-    We estimate the probability density functions (PDF) of the parameter from
-    a likelihood-weighted histogram.
-
-    Parameters
-    ----------
-    obsid: string
-        Name of the object. Used to prepend the output file name
-    name: string
-        Analysed variable name
-    model_variable: array
-        Values of the model variable
-    likelihood: 1D array
-        Likelihood of the "likely" models
-
-    """
-
-    # We check how many unique parameter values are analysed and if
-    # less than Npdf (= 100), the PDF is initally built assuming a
-    # number of bins equal to the number of unique values for a given
-    # parameter
-    Npdf = 100
-    min_hist = np.min(model_variable)
-    max_hist = np.max(model_variable)
-    Nhist = min(Npdf, len(np.unique(model_variable)))
-
-    if min_hist == max_hist:
-        pdf_grid = np.array([min_hist, max_hist])
-        pdf_prob = np.array([1., 1.])
-    else:
-        pdf_prob, pdf_grid = np.histogram(model_variable, Nhist,
-                                          (min_hist, max_hist),
-                                          weights=likelihood, density=True)
-        pdf_x = (pdf_grid[1:]+pdf_grid[:-1]) / 2.
-
-        pdf_grid = np.linspace(min_hist, max_hist, Npdf)
-        pdf_prob = np.interp(pdf_grid, pdf_x, pdf_prob)
-
-    if pdf_prob is None:
-        print("Can not compute PDF for observation <{}> and variable <{}>."
-              "".format(obsid, name))
-    else:
-        table = Table((
-            Column(pdf_grid, name=name),
-            Column(pdf_prob, name="probability density")
-        ))
-        table.write(OUT_DIR + "{}_{}_pdf.fits".format(obsid, name))
-
-
-def save_pdf(obsid, names, mass_proportional, model_variables, scaling,
-             likelihood, wlikely):
-    """Compute and save the PDF of analysed variables
-
-    Parameters
-    ----------
-    obsid: string
-        Name of the object. Used to prepend the output file name
-    names: list of strings
-        Analysed variables names
-    model_variables: array
-        Values of the model variables
-    likelihood: 1D array
-        Likelihood of the "likely" models
-
-    """
-    for i, name in enumerate(names):
-        if name.endswith('_log'):
-            if name[:-4] in mass_proportional:
-                model_variable = np.log10(model_variables[i, :][wlikely] *
-                                          scaling[wlikely])
-            else:
-                model_variable = np.log10(model_variables[i, :][wlikely])
-        else:
-            if name in mass_proportional:
-                model_variable = (model_variables[i, :][wlikely] *
-                                  scaling[wlikely])
-            else:
-                model_variable = model_variables[i, :][wlikely]
-
-        _save_pdf(obsid, name, model_variable, likelihood)
-
-
-def _save_chi2(obsid, name, model_variable, chi2):
-    """Save the best reduced χ² versus an analysed variable
-
-    Parameters
-    ----------
-    obsid: string
-        Name of the object. Used to prepend the output file name
-    name: string
-        Analysed variable name
-    model_variable: array
-        Values of the model variable
-    chi2:
-        Reduced χ²
-
-    """
-    table = Table((Column(model_variable, name=name),
-                   Column(chi2, name="chi2")))
-    table.write(OUT_DIR + "{}_{}_chi2.fits".format(obsid, name))
-
-
-def save_chi2(obsid, names, mass_proportional, model_variables, scaling, chi2):
-    """Save the best reduced χ² versus analysed variables
-
-    Parameters
-    ----------
-    obsid: string
-        Name of the object. Used to prepend the output file name
-    name: list of strings
-        Analysed variables names
-    model_variables: array
-        Values of the model variables
-    scaling: array
-        Scaling factors of the models
-    chi2:
-        Reduced χ²
-    """
-    for i, name in enumerate(names):
-        if name.endswith('_log'):
-            if name[:-4] in mass_proportional:
-                model_variable = np.log10(model_variables[i, :] * scaling)
-            else:
-                model_variable = np.log10(model_variables[i, :])
-        else:
-            if name in mass_proportional:
-                model_variable = model_variables[i, :] * scaling
-            else:
-                model_variable = model_variables[i, :]
-
-        _save_chi2(obsid, name, model_variable, chi2)
-
-
-def save_results(filename, obsid, bayes_variables, bayes_mean, bayes_std, chi2,
-                 chi2_red, best, fluxes, filters, info_keys):
-    """Save the estimated values derived from the analysis of the PDF and the
-    parameters associated with the best fit. An simple text file and a FITS
-    file are generated.
-
-    Parameters
-    ----------
-    filename: string
-        Name of the output file without the extension
-    obsid: table column
-        Names of the objects
-    bayes_variables: list
-        Analysed variable names
-    bayes_mean: RawArray
-        Analysed variables values estimates
-    bayes_std: RawArray
-        Analysed variables errors estimates
-    chi2: RawArray
-        Best χ² for each object
-    chi2_red: RawArray
-        Best reduced χ² for each object
-    best: RawArray
-        All variables corresponding to the best SED
-    fluxes: RawArray
-        Fluxes in all bands for the best SED
-    filters: list
-        Filters used to compute the fluxes
-    info_keys: list
-        Parameters names
-
-    """
-    np_bayes_mean = np.ctypeslib.as_array(bayes_mean[0])
-    np_bayes_mean = np_bayes_mean.reshape(bayes_mean[1])
-
-    np_bayes_std = np.ctypeslib.as_array(bayes_std[0])
-    np_bayes_std = np_bayes_std.reshape(bayes_std[1])
-
-    np_fluxes = np.ctypeslib.as_array(fluxes[0])
-    np_fluxes = np_fluxes.reshape(fluxes[1])
-
-    np_best = np.ctypeslib.as_array(best[0])
-    np_best = np_best.reshape(best[1])
-
-    np_chi2 = np.ctypeslib.as_array(chi2[0])
-
-    np_chi2_red = np.ctypeslib.as_array(chi2_red[0])
-
-    table = Table()
-
-    table.add_column(Column(obsid.data, name="id"))
-
-    for idx, name in enumerate(bayes_variables):
-        table.add_column(Column(np_bayes_mean[:, idx], name="bayes."+name))
-        table.add_column(Column(np_bayes_std[:, idx],
-                         name="bayes."+name+"_err"))
-
-    table.add_column(Column(np_chi2, name="best.chi_square"))
-    table.add_column(Column(np_chi2_red, name="best.reduced_chi_square"))
-
-    for idx, name in enumerate(info_keys):
-        table.add_column(Column(np_best[:, idx], name="best."+name))
-
-    for idx, name in enumerate(filters):
-        table.add_column(Column(np_fluxes[:, idx], name="best."+name,
-                                unit='mJy'))
-
-    table.write(OUT_DIR+filename+".txt", format='ascii.fixed_width',
-                delimiter=None)
-    table.write(OUT_DIR+filename+".fits", format='fits')
+    if model_z == obs_z:
+        return 1.
+    if model_z > 0.:
+        return (cosmo.luminosity_distance(obs_z).value /
+                cosmo.luminosity_distance(model_z).value)**2.
+    return (cosmo.luminosity_distance(obs_z).value * 1e5)**2.
 
 
 def dchi2_over_ds2(s, obs_fluxes, obs_errors, mod_fluxes):
@@ -306,24 +120,6 @@ def dchi2_over_ds2(s, obs_fluxes, obs_errors, mod_fluxes):
     return func
 
 
-def analyse_chi2(chi2):
-    """Function to analyse the best chi^2 and find out whether what fraction of
-    objects seem to be overconstrainted.
-
-    Parameters
-    ----------
-    chi2: RawArray
-        Contains the reduced chi^2
-
-    """
-    chi2_red = np.ctypeslib.as_array(chi2[0])
-    # If low values of reduced chi^2, it means that the data are overfitted
-    # Errors might be under-estimated or not enough valid data.
-    print("\n{}% of the objects have chi^2_red~0 and {}% chi^2_red<0.5"
-          .format(np.round((chi2_red < 1e-12).sum()/chi2_red.size, 1),
-                  np.round((chi2_red < 0.5).sum()/chi2_red.size, 1)))
-
-
 def _compute_scaling(model_fluxes, obs_fluxes, obs_errors):
     """Compute the scaling factor to be applied to the model fluxes to best fit
     the observations. Note that we look over the bands to avoid the creation of
@@ -347,7 +143,7 @@ def _compute_scaling(model_fluxes, obs_fluxes, obs_errors):
     num = np.zeros(model_fluxes.shape[1])
     denom = np.zeros(model_fluxes.shape[1])
     for i in range(obs_fluxes.size):
-        if np.isfinite(obs_fluxes[i]):
+        if np.isfinite(obs_fluxes[i]) and obs_errors[i] > 0.:
             num += model_fluxes[i, :] * (obs_fluxes[i] / (obs_errors[i] *
                                                           obs_errors[i]))
             denom += np.square(model_fluxes[i, :] * (1./obs_errors[i]))
@@ -384,10 +180,11 @@ def compute_chi2(model_fluxes, obs_fluxes, obs_errors, lim_flag):
     limits = lim_flag and np.any(obs_errors <= 0.)
 
     scaling = _compute_scaling(model_fluxes, obs_fluxes, obs_errors)
+
     # Some observations may not have flux values in some filter(s), but
     # they can have upper limit(s).
     if limits == True:
-        for imod in range(len(model_fluxes)):
+        for imod in range(scaling.size):
             scaling[imod] = optimize.root(dchi2_over_ds2, scaling[imod],
                                           args=(obs_fluxes, obs_errors,
                                                 model_fluxes[:, imod])).x
@@ -404,9 +201,10 @@ def compute_chi2(model_fluxes, obs_fluxes, obs_errors, lim_flag):
     if limits == True:
         for i, obs_error in enumerate(obs_errors):
             if obs_error < 0.:
-                chi2 += -2. * np.log(np.sqrt(np.pi/2.) * (-obs_errors[i]) * (
-                        1.+erf((obs_fluxes[i] - model_fluxes[i, :]*scaling) /
-                            (np.sqrt(2)*(-obs_errors[i])))))
+                chi2 -= 2. * np.log(.5 *
+                                    (1. + erf(((obs_fluxes[i] -
+                                                model_fluxes[i, :] * scaling) /
+                                               (-np.sqrt(2.)*obs_errors[i])))))
 
     return chi2, scaling
 

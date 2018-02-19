@@ -81,8 +81,11 @@ class BC03(SedModule):
         # compute the energy absorbed by the dust before ionising gas.
         wave = self.ssp.wavelength_grid
         w = np.where(wave <= 91.1)
-        lum_lyc_young = np.trapz(spec_young[w], wave[w])
-        lum_lyc_old = np.trapz(spec_old[w], wave[w])
+        lum_lyc_young, lum_lyc_old = np.trapz([spec_young[w], spec_old[w]],
+                                              wave[w])
+
+        # We do similarly for the total stellar luminosity
+        lum_young, lum_old = np.trapz([spec_young, spec_old], wave)
 
         sed.add_module(self.name, self.parameters)
 
@@ -94,16 +97,19 @@ class BC03(SedModule):
         sed.add_info("stellar.m_gas_young", info_young["m_gas"], True)
         sed.add_info("stellar.n_ly_young", info_young["n_ly"], True)
         sed.add_info("stellar.lum_ly_young", lum_lyc_young, True)
+        sed.add_info("stellar.lum_young", lum_young, True)
 
         sed.add_info("stellar.m_star_old", info_old["m_star"], True)
         sed.add_info("stellar.m_gas_old", info_old["m_gas"], True)
         sed.add_info("stellar.n_ly_old", info_old["n_ly"], True)
         sed.add_info("stellar.lum_ly_old", lum_lyc_old, True)
+        sed.add_info("stellar.lum_old", lum_old, True)
 
         sed.add_info("stellar.m_star", info_all["m_star"], True)
         sed.add_info("stellar.m_gas", info_all["m_gas"], True)
         sed.add_info("stellar.n_ly", info_all["n_ly"], True)
         sed.add_info("stellar.lum_ly", lum_lyc_young + lum_lyc_old, True)
+        sed.add_info("stellar.lum", lum_young + lum_old, True)
         sed.add_info("stellar.age_m_star", info_all["age_mass"])
 
         sed.add_contribution("stellar.old", wave, spec_old)

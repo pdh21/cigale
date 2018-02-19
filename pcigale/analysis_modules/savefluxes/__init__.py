@@ -16,16 +16,15 @@ The data file is used only to get the list of fluxes to be computed.
 """
 
 from collections import OrderedDict
-import ctypes
 import multiprocessing as mp
-from multiprocessing.sharedctypes import RawArray
 import time
 
 from .. import AnalysisModule
-from ..utils import backup_dir, save_fluxes
 from .workers import init_fluxes as init_worker_fluxes
 from .workers import fluxes as worker_fluxes
-from ...handlers.parameters_handler import ParametersHandler
+from ...managers.models import ModelsManager
+from ...managers.observations import ObservationsManager
+from ...managers.parameters import ParametersManager
 
 
 class SaveFluxes(AnalysisModule):
@@ -48,8 +47,42 @@ class SaveFluxes(AnalysisModule):
             "boolean()",
             "If True, save the generated spectrum for each model.",
             False
+        )),
+        ("blocks", (
+            "integer(min=1)",
+            "Number of blocks to compute the models. Having a number of blocks"
+            " larger than 1 can be useful when computing a very large number "
+            "of models or to split the result file into smaller files.",
+            1
         ))
     ])
+
+    @staticmethod
+    def _parallel_job(worker, items, initargs, initializer, ncores):
+        if ncores == 1:  # Do not create a new process
+            initializer(*initargs)
+            for idx, item in enumerate(items):
+                worker(idx, item)
+        else:  # run in parallel
+            with mp.Pool(processes=ncores, initializer=initializer,
+                         initargs=initargs) as pool:
+                pool.starmap(worker, enumerate(items))
+
+    def _compute_models(self, conf, obs, params):
+        nblocks = len(params.blocks)
+        for iblock in range(nblocks):
+            print('Computing models for block {}/{}...'.format(iblock + 1,
+                                                               nblocks))
+
+            models = ModelsManager(conf, obs, params, iblock)
+
+            initargs = (models, time.time(), mp.Value('i', 0))
+            self._parallel_job(worker_fluxes, params.blocks[iblock], initargs,
+                               init_worker_fluxes, conf['cores'])
+
+            print("Saving the models ....")
+            models.save('models-block-{}'.format(iblock))
+
 
     def process(self, conf):
         """Process with the savedfluxes analysis.
@@ -65,41 +98,20 @@ class SaveFluxes(AnalysisModule):
         """
 
         # Rename the output directory if it exists
-        backup_dir()
-        save_sed = conf['analysis_params']['save_sed']
+        self.prepare_dirs()
 
-        filters = [name for name in conf['bands'] if not
-                   name.endswith('_err')]
-        n_filters = len(filters)
+        # Read the observations information in order to retrieve the list of
+        # bands to compute the fluxes.
+        observations = ObservationsManager(conf)
 
-        # The parameters handler allows us to retrieve the models parameters
+        # The parameters manager allows us to retrieve the models parameters
         # from a 1D index. This is useful in that we do not have to create
         # a list of parameters as they are computed on-the-fly. It also has
         # nice goodies such as finding the index of the first parameter to
         # have changed between two indices or the number of models.
-        params = ParametersHandler(conf)
-        n_params = params.size
+        params = ParametersManager(conf)
 
-        info = conf['analysis_params']['variables']
-        n_info = len(info)
-        model_fluxes = (RawArray(ctypes.c_double, n_params * n_filters),
-                        (n_params, n_filters))
-        model_parameters = (RawArray(ctypes.c_double, n_params * n_info),
-                            (n_params, n_info))
-
-        initargs = (params, filters, save_sed, info, model_fluxes,
-                    model_parameters, time.time(), mp.Value('i', 0))
-        if conf['cores'] == 1:  # Do not create a new process
-            init_worker_fluxes(*initargs)
-            for idx in range(n_params):
-                worker_fluxes(idx)
-        else:  # Analyse observations in parallel
-            with mp.Pool(processes=conf['cores'],
-                         initializer=init_worker_fluxes,
-                         initargs=initargs) as pool:
-                pool.map(worker_fluxes, range(n_params))
-
-        save_fluxes(model_fluxes, model_parameters, filters, info)
+        self._compute_models(conf, observations, params)
 
 
 # AnalysisModule to be returned by get_module

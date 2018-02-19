@@ -22,7 +22,7 @@ import scipy.constants as cst
 from astropy.table import Table
 from pcigale.data import (Database, Filter, M2005, BC03, Fritz2006,
                           Dale2014, DL2007, DL2014, NebularLines,
-                          NebularContinuum, Schreiber2016)
+                          NebularContinuum, Schreiber2016, THEMIS)
 
 
 def read_bc03_ssp(filename):
@@ -165,13 +165,13 @@ def build_filters(base):
 
         new_filter = Filter(filter_name, filter_description, filter_table)
 
-        # We normalise the filter and compute the effective wavelength.
-        # If the filter is a pseudo-filter used to compute line fluxes, it
-        # should not be normalised.
+        # We normalise the filter and compute the pivot wavelength. If the
+        # filter is a pseudo-filter used to compute line fluxes, it should not
+        # be normalised.
         if not filter_name.startswith('PSEUDO'):
             new_filter.normalise()
         else:
-            new_filter.effective_wavelength = np.mean(
+            new_filter.pivot_wavelength = np.mean(
                 filter_table[0][filter_table[1] > 0]
             )
         filters.append(new_filter)
@@ -211,13 +211,13 @@ def build_filters_gazpar(base):
 
         new_filter = Filter(filter_name, filter_desc, filter_table)
 
-        # We normalise the filter and compute the effective wavelength.
-        # If the filter is a pseudo-filter used to compute line fluxes, it
-        # should not be normalised.
+        # We normalise the filter and compute the pivot wavelength. If the
+        # filter is a pseudo-filter used to compute line fluxes, it should not
+        # be normalised.
         if not filter_name.startswith('PSEUDO'):
             new_filter.normalise()
         else:
-            new_filter.effective_wavelength = np.mean(
+            new_filter.pivot_wavelength = np.mean(
                 filter_table[0][filter_table[1] > 0]
             )
         filters.append(new_filter)
@@ -228,7 +228,8 @@ def build_m2005(base):
     m2005_dir = os.path.join(os.path.dirname(__file__), 'maraston2005/')
 
     # Age grid (1 Myr to 13.7 Gyr with 1 Myr step)
-    age_grid = np.arange(1, 13701)
+    time_grid = np.arange(1, 13701)
+    fine_time_grid = np.linspace(0.1, 13700, 137000)
 
     # Transpose the table to have access to each value vector on the first
     # axis
@@ -258,50 +259,57 @@ def build_m2005(base):
         # populations.
         mass_table = mass_table[1:7, mass_table[0] == metallicity]
 
-        # Interpolate the mass table over the new age grid. We multiply per
-        # 1000 because the time in Maraston files is given in Gyr.
-        mass_table = interpolate.interp1d(mass_table[0] * 1000,
-                                          mass_table)(age_grid)
+        # Regrid the SSP data to the evenly spaced time grid. In doing so we
+        # assume 10 bursts every 0.1 Myr over a period of 1 Myr in order to
+        # capture short evolutionary phases.
+        # The time grid starts after 0.1 Myr, so we assume the value is the same
+        # as the first actual time step.
+        mass_table = interpolate.interp1d(mass_table[0] * 1e3, mass_table[1:],
+                                          assume_sorted=True)(fine_time_grid)
+        mass_table = np.mean(mass_table.reshape(5, -1, 10), axis=-1)
 
-        # Remove the age column from the mass table
-        mass_table = np.delete(mass_table, 0, 0)
+        # Extract the age and convert from Gyr to Myr
+        ssp_time = np.unique(spec_table[0]) * 1e3
+        spec_table = spec_table[1:]
 
         # Remove the metallicity column from the spec table
-        spec_table = np.delete(spec_table, 1, 0)
+        spec_table = spec_table[1:]
 
-        # Convert the wavelength from Å to nm
-        spec_table[1] = spec_table[1] * 0.1
+        # Extract the wavelength and convert from Å to nm
+        ssp_wave = spec_table[0][:1221] * 0.1
+        spec_table = spec_table[1:]
 
-        # For all ages, the lambda grid is the same.
-        lambda_grid = np.unique(spec_table[1])
+        # Extra the fluxes and convert from erg/s/Å to W/nm
+        ssp_lumin = spec_table[0].reshape(ssp_time.size, ssp_wave.size).T
+        ssp_lumin *= 10 * 1e-7
 
-        # Creation of the age vs lambda flux table
-        tmp_list = []
-        for wavelength in lambda_grid:
-            [age_grid_orig, lambda_grid_orig, flux_orig] = \
-                spec_table[:, spec_table[1, :] == wavelength]
-            flux_orig = flux_orig * 10 * 1.e-7  # From erg/s^-1/Å to W/nm
-            age_grid_orig *= 1000  # Gyr to Myr
-            flux_regrid = interpolate.interp1d(age_grid_orig,
-                                               flux_orig)(age_grid)
-
-            tmp_list.append(flux_regrid)
-        flux_age = np.array(tmp_list)
+        # We have to do the interpolation-averaging in several blocks as it is
+        # a bit RAM intensive
+        ssp_lumin_interp = np.empty((ssp_wave.size, time_grid.size))
+        for i in range(0, ssp_wave.size, 100):
+            fill_value = (ssp_lumin[i:i+100, 0], ssp_lumin[i:i+100, -1])
+            ssp_interp = interpolate.interp1d(ssp_time, ssp_lumin[i:i+100, :],
+                                              fill_value=fill_value,
+                                              bounds_error=False,
+                                              assume_sorted=True)(fine_time_grid)
+            ssp_interp = ssp_interp.reshape(ssp_interp.shape[0], -1, 10)
+            ssp_lumin_interp[i:i+100, :] = np.mean(ssp_interp, axis=-1)
 
         # To avoid the creation of waves when interpolating, we refine the grid
         # beyond 10 μm following a log scale in wavelength. The interpolation
         # is also done in log space as the spectrum is power-law-like
-        lambda_grid_resamp = np.around(np.logspace(np.log10(10000),
+        ssp_wave_resamp = np.around(np.logspace(np.log10(10000),
                                                    np.log10(160000), 50))
-        argmin = np.argmin(10000.-lambda_grid > 0)-1
-        flux_age_resamp = 10.**interpolate.interp1d(
-                                    np.log10(lambda_grid[argmin:]),
-                                    np.log10(flux_age[argmin:, :]),
+        argmin = np.argmin(10000.-ssp_wave > 0)-1
+        ssp_lumin_resamp = 10.**interpolate.interp1d(
+                                    np.log10(ssp_wave[argmin:]),
+                                    np.log10(ssp_lumin_interp[argmin:, :]),
                                     assume_sorted=True,
-                                    axis=0)(np.log10(lambda_grid_resamp))
+                                    axis=0)(np.log10(ssp_wave_resamp))
 
-        lambda_grid = np.hstack([lambda_grid[:argmin+1], lambda_grid_resamp])
-        flux_age = np.vstack([flux_age[:argmin+1, :], flux_age_resamp])
+        ssp_wave = np.hstack([ssp_wave[:argmin+1], ssp_wave_resamp])
+        ssp_lumin = np.vstack([ssp_lumin_interp[:argmin+1, :],
+                               ssp_lumin_resamp])
 
         # Use Z value for metallicity, not log([Z/H])
         metallicity = {-1.35: 0.001,
@@ -309,15 +317,16 @@ def build_m2005(base):
                        0.0: 0.02,
                        0.35: 0.04}[metallicity]
 
-        base.add_m2005(M2005(imf, metallicity, age_grid, lambda_grid,
-                             mass_table, flux_age))
+        base.add_m2005(M2005(imf, metallicity, time_grid, ssp_wave,
+                             mass_table, ssp_lumin))
 
 
-def build_bc2003(base):
-    bc03_dir = os.path.join(os.path.dirname(__file__), 'bc03//')
+def build_bc2003(base, res):
+    bc03_dir = os.path.join(os.path.dirname(__file__), 'bc03/')
 
     # Time grid (1 Myr to 14 Gyr with 1 Myr step)
     time_grid = np.arange(1, 14000)
+    fine_time_grid = np.linspace(0.1, 13999, 139990)
 
     # Metallicities associated to each key
     metallicity = {
@@ -330,12 +339,14 @@ def build_bc2003(base):
     }
 
     for key, imf in itertools.product(metallicity, ["salp", "chab"]):
-        base_filename = bc03_dir + "bc2003_lr_" + key + "_" + imf + "_ssp"
-        ssp_filename = base_filename + ".ised_ASCII"
-        color3_filename = base_filename + ".3color"
-        color4_filename = base_filename + ".4color"
+        ssp_filename = "{}bc2003_{}_{}_{}_ssp.ised_ASCII".format(bc03_dir, res,
+                                                                 key, imf)
+        color3_filename = "{}bc2003_lr_{}_{}_ssp.3color".format(bc03_dir, key,
+                                                                imf)
+        color4_filename = "{}bc2003_lr_{}_{}_ssp.4color".format(bc03_dir, key,
+                                                                imf)
 
-        print("Importing %s..." % base_filename)
+        print("Importing {}...".format(ssp_filename))
 
         # Read the desired information from the color files
         color_table = []
@@ -344,19 +355,34 @@ def build_bc2003(base):
         color_table.append(color4_table[6])        # Mstar
         color_table.append(color4_table[7])        # Mgas
         color_table.append(10 ** color3_table[5])  # NLy
-        color_table.append(color3_table[1])        # B4000
-        color_table.append(color3_table[2])        # B4_VN
-        color_table.append(color3_table[3])        # B4_SDSS
-        color_table.append(color3_table[4])        # B(912)
 
         color_table = np.array(color_table)
 
         ssp_time, ssp_wave, ssp_lumin = read_bc03_ssp(ssp_filename)
 
-        # Regrid the SSP data to the evenly spaced time grid.
-        color_table = interpolate.interp1d(ssp_time, color_table)(time_grid)
-        ssp_lumin = interpolate.interp1d(ssp_time,
-                                         ssp_lumin)(time_grid)
+        # Regrid the SSP data to the evenly spaced time grid. In doing so we
+        # assume 10 bursts every 0.1 Myr over a period of 1 Myr in order to
+        # capture short evolutionary phases.
+        # The time grid starts after 0.1 Myr, so we assume the value is the same
+        # as the first actual time step.
+        fill_value = (color_table[:, 0], color_table[:, -1])
+        color_table = interpolate.interp1d(ssp_time, color_table,
+                                           fill_value=fill_value,
+                                           bounds_error=False,
+                                           assume_sorted=True)(fine_time_grid)
+        color_table = np.mean(color_table.reshape(3, -1, 10), axis=-1)
+
+        # We have to do the interpolation-averaging in several blocks as it is
+        # a bit RAM intensive
+        ssp_lumin_interp = np.empty((ssp_wave.size, time_grid.size))
+        for i in range(0, ssp_wave.size, 100):
+            fill_value = (ssp_lumin[i:i+100, 0], ssp_lumin[i:i+100, -1])
+            ssp_interp = interpolate.interp1d(ssp_time, ssp_lumin[i:i+100, :],
+                                              fill_value=fill_value,
+                                              bounds_error=False,
+                                              assume_sorted=True)(fine_time_grid)
+            ssp_interp = ssp_interp.reshape(ssp_interp.shape[0], -1, 10)
+            ssp_lumin_interp[i:i+100, :] = np.mean(ssp_interp, axis=-1)
 
         # To avoid the creation of waves when interpolating, we refine the grid
         # beyond 10 μm following a log scale in wavelength. The interpolation
@@ -366,12 +392,13 @@ def build_bc2003(base):
         argmin = np.argmin(10000.-ssp_wave > 0)-1
         ssp_lumin_resamp = 10.**interpolate.interp1d(
                                     np.log10(ssp_wave[argmin:]),
-                                    np.log10(ssp_lumin[argmin:, :]),
+                                    np.log10(ssp_lumin_interp[argmin:, :]),
                                     assume_sorted=True,
                                     axis=0)(np.log10(ssp_wave_resamp))
 
         ssp_wave = np.hstack([ssp_wave[:argmin+1], ssp_wave_resamp])
-        ssp_lumin = np.vstack([ssp_lumin[:argmin+1, :], ssp_lumin_resamp])
+        ssp_lumin = np.vstack([ssp_lumin_interp[:argmin+1, :],
+                               ssp_lumin_resamp])
 
         base.add_bc03(BC03(
             imf,
@@ -742,7 +769,77 @@ def build_schreiber2016(base):
     base.add_schreiber2016(models)
 
 
-def build_base():
+def build_themis(base):
+    models = []
+    themis_dir = os.path.join(os.path.dirname(__file__), 'themis/')
+
+    # Mass fraction of hydrocarbon solids i.e., a-C(:H) smaller than 1.5 nm,
+    # also known as HAC
+    qhac = {"000": 0.02, "010": 0.06, "020": 0.10, "030": 0.14, "040": 0.17,
+            "050": 0.20, "060": 0.24, "070": 0.28, "080": 0.32, "090": 0.36,
+            "100": 0.40}
+
+    uminimum = ["0.100", "0.120", "0.150", "0.170", "0.200", "0.250", "0.300",
+                "0.350", "0.400", "0.500", "0.600", "0.700", "0.800", "1.000",
+                "1.200", "1.500", "1.700", "2.000", "2.500", "3.000", "3.500",
+                "4.000", "5.000", "6.000", "7.000", "8.000", "10.00", "12.00",
+                "15.00", "17.00", "20.00", "25.00", "30.00", "35.00", "40.00",
+                "50.00", "80.00"]
+
+    alpha = ["1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8",
+             "1.9", "2.0", "2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7",
+             "2.8", "2.9", "3.0"]
+
+    # Mdust/MH used to retrieve the dust mass as models as given per atom of H
+    MdMH = {"000": 7.4e-3, "010": 7.4e-3, "020": 7.4e-3, "030": 7.4e-3,
+            "040": 7.4e-3, "050": 7.4e-3, "060": 7.4e-3, "070": 7.4e-3,
+            "080": 7.4e-3, "090": 7.4e-3, "100": 7.4e-3}
+
+    # Here we obtain the wavelength beforehand to avoid reading it each time.
+    datafile = open(themis_dir + "U{}_{}_MW3.1_{}/spec_1.0.dat"
+                    .format(uminimum[0], uminimum[0], "000"))
+
+    data = "".join(datafile.readlines()[-576:])
+    datafile.close()
+
+    wave = np.genfromtxt(io.BytesIO(data.encode()), usecols=(0))
+
+    # We convert wavelengths from μm to nm
+    wave *= 1000.
+
+    # Conversion factor from Jy cm² sr¯¹ H¯¹ to W nm¯¹ (kg of H)¯¹
+    conv = 4. * np.pi * 1e-30 / (cst.m_p+cst.m_e) * cst.c / (wave*wave) * 1e9
+
+    for model in sorted(qhac.keys()):
+        for umin in uminimum:
+            filename = (themis_dir + "U{}_{}_MW3.1_{}/spec_1.0.dat"
+                        .format(umin, umin, model))
+            print("Importing {}...".format(filename))
+            with open(filename) as datafile:
+                data = "".join(datafile.readlines()[-576:])
+            lumin = np.genfromtxt(io.BytesIO(data.encode()), usecols=(2))
+
+            # Conversion from Jy cm² sr¯¹ H¯¹to W nm¯¹ (kg of dust)¯¹
+            lumin *= conv / MdMH[model]
+
+            models.append(THEMIS(qhac[model], umin, umin, 1.0, wave, lumin))
+            for al in alpha:
+                filename = (themis_dir + "U{}_1e7_MW3.1_{}/spec_{}.dat"
+                            .format(umin, model, al))
+                print("Importing {}...".format(filename))
+                with open(filename) as datafile:
+                    data = "".join(datafile.readlines()[-576:])
+                lumin = np.genfromtxt(io.BytesIO(data.encode()), usecols=(2))
+
+                # Conversion from Jy cm² sr¯¹ H¯¹to W nm¯¹ (kg of dust)¯¹
+                lumin *= conv/MdMH[model]
+
+                models.append(THEMIS(qhac[model], umin, 1e7, al, wave, lumin))
+
+    base.add_themis(models)
+
+
+def build_base(bc03res='lr'):
     base = Database(writable=True)
     base.upgrade_base()
 
@@ -759,7 +856,7 @@ def build_base():
     print('#' * 78)
 
     print("3- Importing Bruzual and Charlot 2003 SSP\n")
-    build_bc2003(base)
+    build_bc2003(base, bc03res)
     print("\nDONE\n")
     print('#' * 78)
 
@@ -792,7 +889,12 @@ def build_base():
     build_schreiber2016(base)
     print("\nDONE\n")
     print('#' * 78)
-    
+
+    print("10- Importing Jones et al (2017) models)\n")
+    build_themis(base)
+    print("\nDONE\n")
+    print('#' * 78)
+
     base.session.close_all()
 
 

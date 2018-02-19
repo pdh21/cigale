@@ -9,7 +9,7 @@ import sys
 
 from .session.configuration import Configuration
 from .analysis_modules import get_module
-from .handlers.parameters_handler import ParametersHandler
+from .managers.parameters import ParametersManager
 
 __version__ = "0.10.0"
 
@@ -40,7 +40,7 @@ def check(config):
 
     if configuration:
         print("With this configuration cigale will compute {} "
-              "models.".format(ParametersHandler(configuration).size))
+              "models.".format(ParametersManager(configuration).size))
 
 
 def run(config):
@@ -57,7 +57,7 @@ def main():
     if sys.version_info[:2] < (3, 5):
         raise Exception("Python {}.{} is unsupported. Please upgrade to "
                         "Python 3.5 or later.".format(*sys.version_info[:2]))
-    if sys.version_info[:2] < (3,6):
+    if sys.version_info[:2] < (3, 6):
         print("Python {}.{} detected. For better performance we recommend "
               "Python 3.6 or later.".format(*sys.version_info[:2]))
 

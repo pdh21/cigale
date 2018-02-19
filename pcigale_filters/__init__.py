@@ -27,14 +27,14 @@ def list_filters():
     name = Column(data=[filters[f].name for f in filters], name='Name')
     description = Column(data=[filters[f].description for f in filters],
                          name='Description')
-    wl = Column(data=[filters[f].effective_wavelength for f in filters],
-                name='Effective Wavelength', unit=u.nm, format='%d')
+    wl = Column(data=[filters[f].pivot_wavelength for f in filters],
+                name='Pivot Wavelength', unit=u.nm, format='%d')
     samples = Column(data=[filters[f].trans_table[0].size for f in filters],
                      name="Points")
 
     t = Table()
     t.add_columns([name, description, wl, samples])
-    t.sort(['Effective Wavelength'])
+    t.sort(['Pivot Wavelength'])
     t.pprint(max_lines=-1, max_width=-1)
 
 
@@ -67,13 +67,13 @@ def add_filters(fnames):
 
             new_filter = Filter(filter_name, filter_description, filter_table)
 
-            # We normalise the filter and compute the effective wavelength.
-            # If the filter is a pseudo-filter used to compute line fluxes, it
-            # should not be normalised.
+            # We normalise the filter and compute the pivot wavelength. If the
+            # filter is a pseudo-filter used to compute line fluxes, it should
+            # not be normalised.
             if not filter_name.startswith('PSEUDO'):
                 new_filter.normalise()
             else:
-                new_filter.effective_wavelength = np.mean(
+                new_filter.pivot_wavelength = np.mean(
                     filter_table[0][filter_table[1] > 0]
                 )
 

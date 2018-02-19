@@ -82,8 +82,13 @@ class RestframeParam(SedModule):
         # Attenuated (observed) UV slopes beta as defined in Calzetti et al.
         # (1994, ApJ 429, 582, Tab. 2) that excludes the 217.5 nm bump
         # wavelength range and other spectral features
-        if wl.size in self.w_calz94:
-            w_calz94 = self.w_calz94[wl.size]
+        if 'nebular.lines_width' in sed.info:
+            key = (wl.size, sed.info['nebular.lines_width'])
+        else:
+            key = (wl.size, )
+
+        if key in self.w_calz94:
+            w_calz94 = self.w_calz94[key]
         else:
             calz_wl = [(126.8, 128.4), (130.9, 131.6), (134.2, 137.1),
                        (140.7, 151.5), (156.2, 158.3), (167.7, 174.0),
@@ -92,7 +97,7 @@ class RestframeParam(SedModule):
             w_calz94 = np.where(np.any([(wl >= wlseg[0]) & (wl <= wlseg[1])
                                         for wlseg in calz_wl], axis=0))
 
-            self.w_calz94[wl.size] = w_calz94
+            self.w_calz94[key] = w_calz94
 
         # We compute the regression directly from the covariance matrix as the
         # numpy/scipy regression routines are quite slow.
@@ -104,33 +109,40 @@ class RestframeParam(SedModule):
 
     def D4000(self, sed):
         wl = sed.wavelength_grid
-        lumin = sed.luminosity
+        fnu = sed.fnu
 
         # Strength of the D_4000 break using Balogh et al. (1999, ApJ 527, 54),
         # i.e., ratio of the flux in the red continuum to that in the blue
         # continuum: Blue continuum: 385.0-395.0 nm & red continuum:
         # 400.0-410.0 nm.
-        if wl.size in self.w_D4000blue:
-            w_D4000blue = self.w_D4000blue[wl.size]
-            w_D4000red = self.w_D4000red[wl.size]
+        if 'nebular.lines_width' in sed.info:
+            key = (wl.size, sed.info['nebular.lines_width'])
+        else:
+            key = (wl.size, )
+
+        if key in self.w_D4000blue:
+            w_D4000blue = self.w_D4000blue[key]
+            w_D4000red = self.w_D4000red[key]
         else:
             w_D4000blue = np.where((wl >= 385.0) & (wl <= 395.0))
             w_D4000red = np.where((wl >= 400.0) & (wl <= 410.0))
-            self.w_D4000blue[wl.size] = w_D4000blue
-            self.w_D4000red[wl.size] = w_D4000red
+            self.w_D4000blue[key] = w_D4000blue
+            self.w_D4000red[key] = w_D4000red
 
-        return np.mean(lumin[w_D4000red]) / np.mean(lumin[w_D4000blue])
+        return (np.trapz(fnu[w_D4000red], x=wl[w_D4000red]) /
+                np.trapz(fnu[w_D4000blue], x=wl[w_D4000blue]))
 
     def EW(self, sed):
         wl = sed.wavelength_grid
 
-        if wl.size in self.w_lines:
-            w_lines = self.w_lines[wl.size]
+        key = (wl.size, sed.info['nebular.lines_width'])
+        if key in self.w_lines:
+            w_lines = self.w_lines[key]
         else:
             w_lines = {line: np.where((wl >= line[0]-line[1]) &
                                       (wl <= line[0]+line[1]))
                        for line in self.lines}
-            self.w_lines[wl.size] = w_lines
+            self.w_lines[key] = w_lines
 
         lumin_line = np.sum([sed.get_lumin_contribution(name)
                              for name in sed.contribution_names
@@ -141,10 +153,10 @@ class RestframeParam(SedModule):
         for line in self.lines:
             w_line = w_lines[line]
             wl_line = wl[w_line]
-            key = (wl_line.size, line[0], 0.)
+            key = (wl_line.size, sed.info['nebular.lines_width'], line[0], 0.)
             EW[line] = (flux_trapz(lumin_line[w_line], wl_line, key) /
                         flux_trapz(lumin_cont[w_line], wl_line, key) *
-                        line[1] * 2.)
+                        (wl_line[-1]-wl_line[0]))
 
         return EW
 
@@ -206,8 +218,9 @@ class RestframeParam(SedModule):
             sed.add_info("param.IRX", np.log10(sed.info['dust.luminosity'] /
                          (fluxes['FUV'] * self.to_lumin * c / 154e-9)))
 
-        for line, EW in self.EW(sed).items():
-            sed.add_info("param.EW({}/{})".format(*line), EW)
+        if 'nebular.lines_young' in sed.contribution_names:
+            for line, EW in self.EW(sed).items():
+                sed.add_info("param.EW({}/{})".format(*line), EW)
 
         for filt in self.lumin_filters:
             sed.add_info("param.restframe_Lnu({})".format(filt),

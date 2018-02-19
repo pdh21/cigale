@@ -86,7 +86,7 @@ class SfhBuat08(SedModule):
 
         # Main SFR
         t = (time_grid+1) / 1000  # The time is in Gyr in the formulae
-        self.sfr = 10.**(a + b * np.log10(t) + c * t**.5) / 1.e9
+        self.sfr = 10.**(a + b * np.log10(t) + c * t**.5 - 9)
 
         # Compute the galaxy mass and normalise the SFH to 1 solar mass
         # produced if asked to.
