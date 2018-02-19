@@ -211,7 +211,7 @@ class PdfAnalysis(AnalysisModule):
             results = self._compute(conf, obs, params)
 
             print("\nSaving the mock analysis results...")
-            results.save("mock_results")
+            results.save("results_mock")
 
         print("Run completed!")
 
