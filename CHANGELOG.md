@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 0.12.0 (2018-02-19)
 ### Added
 - Provide the possibility not to store a given module in cache. This can be useful on computers with a limited amount of memory. The downside is that when not caching the model generation will be slower. (Médéric Boquien)
 - An option `redshift\_decimals` is now provided in `pdf\_analysis` to indicate the number of decimals to round the observed redshifts to compute the grid of models. By default the model redshifts are rounded to two decimals but this can be insufficient at low z and/or when using narrow-band filters for instance. This only applies to the grid. The physical properties are still computed for the redshift at full precision. (Médéric Boquien)
@@ -9,12 +9,16 @@
 - Allow the observations to be analysed by blocks of models in `pdf\_analysis`. This is useful when computing a very large grid of models that would not fit in memory. The number of blocks is set with the `blocks` parameters in the pcigale.ini. (Médéric Boquien)
 - The integrated stellar luminosity is now provided as `stellar.lum`. (Médéric Boquien)
 - The high resolution BC03 models have been added. They can be activated when building the database by adding `--bc03res=hr` to the build command. In that case the low resolution models are not built. (Médéric Boquien)
+- Dust templates generated with THEMIS (Jones et al. 2017) have been contributed by the DustPedia team (Davis et al. 2017). Special acknowledgement to Angelos Nersesian and Frédéric Galliano for creating the dust templates and writing the code. (Dustpedia team)
+- The Herschel SPIRE filters for extended sources have been added. (Médéric Boquien)
 
 ### Changed
 - Make the timestamp more readable when moving the out/ directory. (Médéric Boquien)
 - To accommodate the analysis of the observations by blocks, all models are now included in the estimation of the physical properties and no cut in chi² is done anymore. (Médéric Boquien)
 - To accommodate the analysis of the observations by blocks, the `save_pdf` option has been eliminated. To plot PDF one needs to set `save_chi2` to True and then run `pcigale-plots pdf`. (Médéric Boquien)
 - In order to capture rapid evolutionary phases, we assume that in a given period of 1 Myr, 10 small episodes of star formation occurred every 0.1 Myr, rather than one episode every 1 Myr.
+- When computing the attenuation curve, the bump is now added so that its relative strength does not depend on δ. (Médéric Boquien, issue reported by Samir Salim)
+- Fν was computed by calculating Fλ and then converting to Fν, which led to typical differences in fluxes of typically 1-2% and a bit more for a handful of pathological filters. Now Fν is computed directly and a bit faster. (Médéric Boquien, issue reported by Yannick Roehlly and Wouter Dobbels)
 
 ### Fixed
 - Corrected a typo that prevented `restframe\_parameters` from being listed among the available modules. (Médéric Boquien)
@@ -24,6 +28,14 @@
 - When using the `parameters\_file` option, the indices of the models now correspond to the line number of the input file. (Médéric Boquien)
 - When using the `parameters\_file` option, the list of modules is read from `sed\_modules` rather than being inferred from the input file. (Médéric Boquien)
 - The computation of the upper limits would only work for the first few models, reverting back to regular fits for the others. (Médéric Boquien)
+- A more explicit message is now given when the flux table cannot be read properly. (Médéric Boquien)
+- Make sure that we do not try to fit data that have an error bar of 0 mJy. (Médéric Boquien)
+- An erroneous warning was displayed when using the `restframe\_parameters` module. (Médéric Boquien)
+- The formula from Sawicki et al. (2012) used to compute the χ² in the presence of upper limits was not correct. This led the χ² to depend directly on the absolute value of the upper limit. The formula has been rederived and corrected. (Médéric Boquien & Denis Burgarella)
+- For some reason the wavelengths of the SCUBA 450 μm filter were a factor 10 too small. (Médéric Boquien)
+- Ensure that the computation of the continuum level is correct when determining the equivalent width, in particular when the line width is very narrow. (Médéric Boquien)
+- When using different line widths during a single run, ensure that the fluxes and other quantities are always computed correctly. (Médéric Boquien, special thanks to Genoveva Micheva)
+- Compute Dn4000 more rigorously by integrating properly over Fν. (Médéric Boquien)
 
 ### Optimised
 - The cache architecture has been simplified, making it somewhat faster. It speeds up the model generation by ~1%. (Médéric Boquien)

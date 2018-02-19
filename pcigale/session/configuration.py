@@ -96,7 +96,7 @@ class Configuration(object):
             ["Nebular emission: nebular"] +
             ["Dust attenuation: dustatt_calzleit, dustatt_powerlaw, "
              "dustatt_2powerlaws"] +
-            ["Dust emission: casey2012, dale2014, dl2007, dl2014"] +
+            ["Dust emission: casey2012, dale2014, dl2007, dl2014, themis"] +
             ["AGN: dale2014, fritz2006"] +
             ["Radio: radio"] +
             ["Restframe parameters: restframe_parameters"] +
@@ -137,8 +137,12 @@ class Configuration(object):
         if self.config['data_file'] != '':
             obs_table = read_table(self.config['data_file'])
 
-            # Check that the id and redshift columns are present in the input
-            # file
+            # Check that the the file was correctly read and that the id and
+            # redshift columns are present in the input file
+            if 'col1' in obs_table.columns:
+                raise Exception("The input could not be read properly. Verify "
+                                "its format and that it does not have two "
+                                "columns with the same name.")
             if 'id' not in obs_table.columns:
                 raise Exception("Column id not present in input file")
             if 'redshift' not in obs_table.columns:
@@ -262,10 +266,12 @@ class Configuration(object):
                                                      'dustatt_powerlaw',
                                                      'dustatt_2powerlaws']),
                                ('dust emission', ['casey2012', 'dale2014',
-                                                  'dl2007', 'dl2014']),
+                                                  'dl2007', 'dl2014',
+                                                  'themis']),
                                ('AGN', ['dale2014', 'fritz2006']),
                                ('radio', ['radio']),
-                               ('restframe_parameters', ['restframe_params']),
+                               ('restframe_parameters',
+                                ['restframe_parameters']),
                                ('redshift', ['redshifting'])))
 
         comments = {'SFH': "ERROR! Choosing one SFH module is mandatory.",

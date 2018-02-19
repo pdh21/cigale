@@ -30,6 +30,7 @@ class ModelsManager(object):
         self.conf = conf
         self.obs = obs
         self.params = params
+        self.iblock = iblock
         self.block = params.blocks[iblock]
 
         self.propertiesnames = conf['analysis_params']['variables']

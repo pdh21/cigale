@@ -7,6 +7,7 @@
 # Author: Yannick Roehlly, Médéric Boquien & Denis Burgarella
 
 import argparse
+import glob
 from itertools import product, repeat
 from collections import OrderedDict
 import sys
@@ -49,23 +50,22 @@ def _chi2_worker(obj_name, var_name):
         Name of the analysed variable..
 
     """
-    fname = "out/{}_{}_chi2.npy".format(obj_name, var_name)
-    if os.path.isfile(fname):
+    figure = plt.figure()
+    ax = figure.add_subplot(111)
+
+    fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name, var_name))
+    for fname in fnames:
         data = np.memmap(fname, dtype=np.float64)
         data = np.memmap(fname, dtype=np.float64, shape=(2, data.size // 2))
-        figure = plt.figure()
-        ax = figure.add_subplot(111)
         ax.scatter(data[1, :], data[0, :], color='k', s=.1)
-        ax.set_xlabel(var_name)
-        ax.set_ylabel("Reduced $\chi^2$")
-        ax.set_ylim(0., )
-        ax.minorticks_on()
-        figure.suptitle("Reduced $\chi^2$ distribution of {} for {}."
-                        .format(var_name, obj_name))
-        figure.savefig("out/{}_{}_chi2.pdf".format(obj_name, var_name))
-        plt.close(figure)
-    else:
-        print("No chi² found for {}. No plot created.".format(obj_name))
+    ax.set_xlabel(var_name)
+    ax.set_ylabel("Reduced $\chi^2$")
+    ax.set_ylim(0., )
+    ax.minorticks_on()
+    figure.suptitle("Reduced $\chi^2$ distribution of {} for {}."
+                    .format(var_name, obj_name))
+    figure.savefig("out/{}_{}_chi2.pdf".format(obj_name, var_name))
+    plt.close(figure)
 
 
 def _pdf_worker(obj_name, var_name):
@@ -79,43 +79,46 @@ def _pdf_worker(obj_name, var_name):
         Name of the analysed variable..
 
     """
-    fname = "out/{}_{}_chi2.npy".format(obj_name, var_name)
-    if os.path.isfile(fname):
+
+    fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name, var_name))
+    likelihood = []
+    model_variable = []
+    for fname in fnames:
         data = np.memmap(fname, dtype=np.float64)
         data = np.memmap(fname, dtype=np.float64, shape=(2, data.size // 2))
 
-        likelihood = np.exp(-data[0, :] / 2.)
-        model_variable = data[1, :]
+        likelihood.append(np.exp(-data[0, :] / 2.))
+        model_variable.append(data[1, :])
+    likelihood = np.concatenate(likelihood)
+    model_variable = np.concatenate(model_variable)
 
-        Npdf = 100
-        min_hist = np.min(model_variable)
-        max_hist = np.max(model_variable)
-        Nhist = min(Npdf, len(np.unique(model_variable)))
+    Npdf = 100
+    min_hist = np.min(model_variable)
+    max_hist = np.max(model_variable)
+    Nhist = min(Npdf, len(np.unique(model_variable)))
 
-        if min_hist == max_hist:
-            pdf_grid = np.array([min_hist, max_hist])
-            pdf_prob = np.array([1., 1.])
-        else:
-            pdf_prob, pdf_grid = np.histogram(model_variable, Nhist,
-                                              (min_hist, max_hist),
-                                              weights=likelihood, density=True)
-            pdf_x = (pdf_grid[1:]+pdf_grid[:-1]) / 2.
-
-            pdf_grid = np.linspace(min_hist, max_hist, Npdf)
-            pdf_prob = np.interp(pdf_grid, pdf_x, pdf_prob)
-
-        figure = plt.figure()
-        ax = figure.add_subplot(111)
-        ax.plot(pdf_grid, pdf_prob, color='k')
-        ax.set_xlabel(var_name)
-        ax.set_ylabel("Probability density")
-        ax.minorticks_on()
-        figure.suptitle("Probability distribution function of {} for {}"
-                        .format(var_name, obj_name))
-        figure.savefig("out/{}_{}_pdf.pdf".format(obj_name, var_name))
-        plt.close(figure)
+    if min_hist == max_hist:
+        pdf_grid = np.array([min_hist, max_hist])
+        pdf_prob = np.array([1., 1.])
     else:
-        print("No PDF found for {}. No plot created.".format(obj_name))
+        pdf_prob, pdf_grid = np.histogram(model_variable, Nhist,
+                                          (min_hist, max_hist),
+                                          weights=likelihood, density=True)
+        pdf_x = (pdf_grid[1:]+pdf_grid[:-1]) / 2.
+
+        pdf_grid = np.linspace(min_hist, max_hist, Npdf)
+        pdf_prob = np.interp(pdf_grid, pdf_x, pdf_prob)
+
+    figure = plt.figure()
+    ax = figure.add_subplot(111)
+    ax.plot(pdf_grid, pdf_prob, color='k')
+    ax.set_xlabel(var_name)
+    ax.set_ylabel("Probability density")
+    ax.minorticks_on()
+    figure.suptitle("Probability distribution function of {} for {}"
+                    .format(var_name, obj_name))
+    figure.savefig("out/{}_{}_pdf.pdf".format(obj_name, var_name))
+    plt.close(figure)
 
 
 def _sed_worker(obs, mod, filters, sed_type, nologo):
@@ -141,7 +144,7 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
 
         sed = Table.read("out/{}_best_model.fits".format(obs['id']))
 
-        filters_wl = np.array([filt.effective_wavelength
+        filters_wl = np.array([filt.pivot_wavelength
                                for filt in filters.values()])
         wavelength_spec = sed['wavelength']
         obs_fluxes = np.array([obs[filt] for filt in filters.keys()])

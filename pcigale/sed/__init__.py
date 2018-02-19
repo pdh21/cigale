@@ -31,7 +31,7 @@ Such SED is characterised by:
 
 import numpy as np
 from numpy.core.multiarray import interp # Compiled version
-from scipy.constants import c, parsec
+from scipy.constants import parsec
 
 from . import utils
 from .io.vo import save_sed_to_vo
@@ -243,20 +243,10 @@ class SED(object):
         """
         Compute the Fν flux density in a given filter
 
-        As the SED stores the Lλ luminosity density, we first compute the Fλ
-        flux density. Fλ is the integration of the Lλ luminosity multiplied by
-        the filter transmission, normalised to this transmission and corrected
-        by the luminosity distance of the source.
-
-        Fλ is in W/m²/nm. At redshift 0, the flux is computed at 10 pc. Then,
-        to compute Fν, we make the approximation:
-
-        Fν = λeff / c . λeff . Fλ
-
-        Fν is computed in W/m²/Hz and then converted to mJy.
-
-        If the SED spectrum does not cover all the filter response table,
-        NaN is returned.
+        The filters are stored in the database in such a way that after
+        integration and conversion from luminosity to flux we directly get the
+        latter in units of mJy. If the SED spectrum does not cover all the
+        filter response table, NaN is returned.
 
         Parameters
         ----------
@@ -273,27 +263,36 @@ class SED(object):
         wavelength = self.wavelength_grid
 
         # First we try to fetch the filter's wavelength, transmission and
-        # effective wavelength from the cache. The two keys are the size of the
+        # pivot wavelength from the cache. The two keys are the size of the
         # spectrum wavelength grid and the name of the filter. The first key is
         # necessary because different spectra may have different sampling. To
         # avoid having the resample the filter every time on the optimal grid
         # (spectrum+filter), we store the resampled filter. That way we only
         # have to resample to spectrum.
         if 'universe.redshift' in self.info:
-            key = (wavelength.size, filter_name,
-                   self.info['universe.redshift'])
+            if 'nebular.lines_width' in self.info:
+                key = (wavelength.size, filter_name,
+                       self.info['nebular.lines_width'],
+                       self.info['universe.redshift'])
+            else:
+                key = (wavelength.size, filter_name,
+                       self.info['universe.redshift'])
             dist = self.info['universe.luminosity_distance']
         else:
-            key = (wavelength.size, filter_name, 0.)
+            if 'nebular.lines_width' in self.info:
+                key = (wavelength.size, filter_name,
+                       self.info['nebular.lines_width'], 0.)
+            else:
+                key = (wavelength.size, filter_name, 0.)
             dist = 10. * parsec
 
         if key in self.cache_filters:
-            wavelength_r, transmission_r, lambda_eff = self.cache_filters[key]
+            wavelength_r, transmission_r, lambda_piv = self.cache_filters[key]
         else:
             with Database() as db:
                 filter_ = db.get_filter(filter_name)
             trans_table = filter_.trans_table
-            lambda_eff = filter_.effective_wavelength
+            lambda_piv = filter_.pivot_wavelength
             lambda_min = filter_.trans_table[0][0]
             lambda_max = filter_.trans_table[0][-1]
 
@@ -313,17 +312,20 @@ class SED(object):
                                     trans_table[1])
 
             self.cache_filters[key] = (wavelength_r, transmission_r,
-                                       lambda_eff)
+                                       lambda_piv)
 
         l_lambda_r = interp(wavelength_r, wavelength, self.luminosity)
 
-        f_lambda = utils.luminosity_to_flux(
+        # We compute directly Fν from ∫T×Fλ×dλ/∫T×c/λ²×dλ. The filter bandpass
+        # in the database is already normalised so that we do not need to
+        # compute the denominator (it is a constant that does not depend on the
+        # spectrum) and the normalisation is such that the results we obtain
+        # are directly in mJy.
+        f_nu = utils.luminosity_to_flux(
             utils.flux_trapz(transmission_r * l_lambda_r, wavelength_r, key),
             dist)
 
-        # Return Fν in mJy. The 1e-9 factor is because λ is in nm and 1e29 for
-        # convert from W/m²/Hz to mJy.
-        return 1e-9 / c * 1e29 * lambda_eff * lambda_eff * f_lambda
+        return f_nu
 
     def to_votable(self, filename, mass=1.):
         """

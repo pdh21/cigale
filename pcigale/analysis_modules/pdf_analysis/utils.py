@@ -6,11 +6,9 @@
 # Author: Yannick Roehlly & Médéric Boquien
 
 from functools import lru_cache
-import os
 
 from astropy import log
 from astropy.cosmology import WMAP7 as cosmo
-from astropy.table import Table, Column
 import numpy as np
 from scipy import optimize
 from scipy.special import erf
@@ -21,15 +19,12 @@ def save_chi2(obs, variable, models, chi2, values):
     """Save the chi² and the associated physocal properties
 
     """
-    fname = 'out/{}_{}_chi2.npy'.format(obs['id'], variable)
-    if os.path.exists(fname):
-        data = np.memmap(fname, dtype=np.float64, mode='r+',
-                         shape=(2, models.params.size))
-    else:
-        data = np.memmap(fname, dtype=np.float64, mode='w+',
-                         shape=(2, models.params.size))
-    data[0, models.block] = chi2
-    data[1, models.block] = values
+    fname = 'out/{}_{}_chi2-block-{}.npy'.format(obs['id'], variable,
+                                                 models.iblock)
+    data = np.memmap(fname, dtype=np.float64, mode='w+',
+                     shape=(2, chi2.size))
+    data[0, :] = chi2
+    data[1, :] = values
 
 
 @lru_cache(maxsize=None)
@@ -148,7 +143,7 @@ def _compute_scaling(model_fluxes, obs_fluxes, obs_errors):
     num = np.zeros(model_fluxes.shape[1])
     denom = np.zeros(model_fluxes.shape[1])
     for i in range(obs_fluxes.size):
-        if np.isfinite(obs_fluxes[i]):
+        if np.isfinite(obs_fluxes[i]) and obs_errors[i] > 0.:
             num += model_fluxes[i, :] * (obs_fluxes[i] / (obs_errors[i] *
                                                           obs_errors[i]))
             denom += np.square(model_fluxes[i, :] * (1./obs_errors[i]))
@@ -206,9 +201,10 @@ def compute_chi2(model_fluxes, obs_fluxes, obs_errors, lim_flag):
     if limits == True:
         for i, obs_error in enumerate(obs_errors):
             if obs_error < 0.:
-                chi2 += -2. * np.log(np.sqrt(np.pi/2.) * (-obs_errors[i]) * (
-                        1.+erf((obs_fluxes[i] - model_fluxes[i, :]*scaling) /
-                            (np.sqrt(2)*(-obs_errors[i])))))
+                chi2 -= 2. * np.log(.5 *
+                                    (1. + erf(((obs_fluxes[i] -
+                                                model_fluxes[i, :] * scaling) /
+                                               (-np.sqrt(2.)*obs_errors[i])))))
 
     return chi2, scaling
 

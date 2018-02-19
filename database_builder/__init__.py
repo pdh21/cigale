@@ -22,7 +22,7 @@ import scipy.constants as cst
 from astropy.table import Table
 from pcigale.data import (Database, Filter, M2005, BC03, SB99, Fritz2006,
                           Dale2014, DL2007, DL2014, NebularLines,
-                          NebularContinuum, Schreiber2016)
+                          NebularContinuum, Schreiber2016, THEMIS)
 
 
 def read_bc03_ssp(filename):
@@ -165,13 +165,13 @@ def build_filters(base):
 
         new_filter = Filter(filter_name, filter_description, filter_table)
 
-        # We normalise the filter and compute the effective wavelength.
-        # If the filter is a pseudo-filter used to compute line fluxes, it
-        # should not be normalised.
+        # We normalise the filter and compute the pivot wavelength. If the
+        # filter is a pseudo-filter used to compute line fluxes, it should not
+        # be normalised.
         if not filter_name.startswith('PSEUDO'):
             new_filter.normalise()
         else:
-            new_filter.effective_wavelength = np.mean(
+            new_filter.pivot_wavelength = np.mean(
                 filter_table[0][filter_table[1] > 0]
             )
         filters.append(new_filter)
@@ -211,13 +211,13 @@ def build_filters_gazpar(base):
 
         new_filter = Filter(filter_name, filter_desc, filter_table)
 
-        # We normalise the filter and compute the effective wavelength.
-        # If the filter is a pseudo-filter used to compute line fluxes, it
-        # should not be normalised.
+        # We normalise the filter and compute the pivot wavelength. If the
+        # filter is a pseudo-filter used to compute line fluxes, it should not
+        # be normalised.
         if not filter_name.startswith('PSEUDO'):
             new_filter.normalise()
         else:
-            new_filter.effective_wavelength = np.mean(
+            new_filter.pivot_wavelength = np.mean(
                 filter_table[0][filter_table[1] > 0]
             )
         filters.append(new_filter)
@@ -856,6 +856,76 @@ def build_schreiber2016(base):
     base.add_schreiber2016(models)
 
 
+def build_themis(base):
+    models = []
+    themis_dir = os.path.join(os.path.dirname(__file__), 'themis/')
+
+    # Mass fraction of hydrocarbon solids i.e., a-C(:H) smaller than 1.5 nm,
+    # also known as HAC
+    qhac = {"000": 0.02, "010": 0.06, "020": 0.10, "030": 0.14, "040": 0.17,
+            "050": 0.20, "060": 0.24, "070": 0.28, "080": 0.32, "090": 0.36,
+            "100": 0.40}
+
+    uminimum = ["0.100", "0.120", "0.150", "0.170", "0.200", "0.250", "0.300",
+                "0.350", "0.400", "0.500", "0.600", "0.700", "0.800", "1.000",
+                "1.200", "1.500", "1.700", "2.000", "2.500", "3.000", "3.500",
+                "4.000", "5.000", "6.000", "7.000", "8.000", "10.00", "12.00",
+                "15.00", "17.00", "20.00", "25.00", "30.00", "35.00", "40.00",
+                "50.00", "80.00"]
+
+    alpha = ["1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8",
+             "1.9", "2.0", "2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7",
+             "2.8", "2.9", "3.0"]
+
+    # Mdust/MH used to retrieve the dust mass as models as given per atom of H
+    MdMH = {"000": 7.4e-3, "010": 7.4e-3, "020": 7.4e-3, "030": 7.4e-3,
+            "040": 7.4e-3, "050": 7.4e-3, "060": 7.4e-3, "070": 7.4e-3,
+            "080": 7.4e-3, "090": 7.4e-3, "100": 7.4e-3}
+
+    # Here we obtain the wavelength beforehand to avoid reading it each time.
+    datafile = open(themis_dir + "U{}_{}_MW3.1_{}/spec_1.0.dat"
+                    .format(uminimum[0], uminimum[0], "000"))
+
+    data = "".join(datafile.readlines()[-576:])
+    datafile.close()
+
+    wave = np.genfromtxt(io.BytesIO(data.encode()), usecols=(0))
+
+    # We convert wavelengths from μm to nm
+    wave *= 1000.
+
+    # Conversion factor from Jy cm² sr¯¹ H¯¹ to W nm¯¹ (kg of H)¯¹
+    conv = 4. * np.pi * 1e-30 / (cst.m_p+cst.m_e) * cst.c / (wave*wave) * 1e9
+
+    for model in sorted(qhac.keys()):
+        for umin in uminimum:
+            filename = (themis_dir + "U{}_{}_MW3.1_{}/spec_1.0.dat"
+                        .format(umin, umin, model))
+            print("Importing {}...".format(filename))
+            with open(filename) as datafile:
+                data = "".join(datafile.readlines()[-576:])
+            lumin = np.genfromtxt(io.BytesIO(data.encode()), usecols=(2))
+
+            # Conversion from Jy cm² sr¯¹ H¯¹to W nm¯¹ (kg of dust)¯¹
+            lumin *= conv / MdMH[model]
+
+            models.append(THEMIS(qhac[model], umin, umin, 1.0, wave, lumin))
+            for al in alpha:
+                filename = (themis_dir + "U{}_1e7_MW3.1_{}/spec_{}.dat"
+                            .format(umin, model, al))
+                print("Importing {}...".format(filename))
+                with open(filename) as datafile:
+                    data = "".join(datafile.readlines()[-576:])
+                lumin = np.genfromtxt(io.BytesIO(data.encode()), usecols=(2))
+
+                # Conversion from Jy cm² sr¯¹ H¯¹to W nm¯¹ (kg of dust)¯¹
+                lumin *= conv/MdMH[model]
+
+                models.append(THEMIS(qhac[model], umin, 1e7, al, wave, lumin))
+
+    base.add_themis(models)
+
+
 def build_base(bc03res='lr'):
     base = Database(writable=True)
     base.upgrade_base()
@@ -911,7 +981,12 @@ def build_base(bc03res='lr'):
     build_schreiber2016(base)
     print("\nDONE\n")
     print('#' * 78)
-    
+
+    print("10- Importing Jones et al (2017) models)\n")
+    build_themis(base)
+    print("\nDONE\n")
+    print('#' * 78)
+
     base.session.close_all()
 
 
