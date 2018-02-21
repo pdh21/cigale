@@ -25,6 +25,23 @@ class ObservationsManager(object):
             return ObservationsManagerVirtual(config, **kwargs)
 
 
+class Observation(object):
+    """Class to take one row of the observations table and extract the list of
+    fluxes, intensive properties, extensive properties and their errors, that
+    are going to be considered in the fit.
+    """
+    def __init__(self, row, cls):
+        self.redshift = row['redshift']
+        self.fluxes = np.array([row[band] for band in cls.bands])
+        self.fluxes_err = np.array([row[band + '_err'] for band in cls.bands])
+        self.intprops = np.array([row[prop] for prop in cls.intprops])
+        self.intprops_err = np.array([row[prop + '_err'] for prop in
+                                      cls.intprops])
+        self.extprops = np.array([row[prop] for prop in cls.extprops])
+        self.extprops_err = np.array([row[prop + '_err'] for prop in
+                                      cls.extprops])
+
+
 class ObservationsManagerPassbands(object):
     """Class to generate a manager for data files providing fluxes in
     passbands.
