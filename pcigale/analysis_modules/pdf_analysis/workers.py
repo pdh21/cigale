@@ -126,12 +126,18 @@ def sed(idx, midx):
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
         gbl_models.fluxes[:, idx] = np.full(len(gbl_obs.bands), np.nan)
         gbl_models.properties[:, idx] = np.full(len(gbl_properties), np.nan)
+        gbl_models.intprops[:, idx] = np.full(len(gbl_obs.intprops), np.nan)
+        gbl_models.extprops[:, idx] = np.full(len(gbl_obs.extprops), np.nan)
+
     else:
         gbl_models.fluxes[:, idx] = [sed.compute_fnu(filter_)
                                      for filter_ in gbl_obs.bands]
         gbl_models.properties[:, idx] = [sed.info[name]
                                          for name in gbl_properties]
-
+        gbl_models.intprops[:, idx] = [sed.info[name]
+                                       for name in gbl_obs.intprops]
+        gbl_models.extprops[:, idx] = [sed.info[name]
+                                       for name in gbl_obs.extprops]
     with gbl_ncomputed.get_lock():
         gbl_ncomputed.value += 1
         ncomputed = gbl_ncomputed.value
@@ -157,21 +163,22 @@ def analysis(idx, obs):
     """
     np.seterr(invalid='ignore')
 
-    if obs['redshift'] >= 0.:
+    if obs.redshift >= 0.:
         # We pick the the models with the closest redshift using a slice to
         # work on views of the arrays and not on copies to save on RAM.
-        z = np.array(gbl_models.conf['sed_modules_params']['redshifting']['redshift'])
-        wz = slice(np.abs(obs['redshift']-z).argmin(), None, z.size)
-        corr_dz = compute_corr_dz(z[wz.start], obs['redshift'])
+        z = np.array(
+            gbl_models.conf['sed_modules_params']['redshifting']['redshift'])
+        wz = slice(np.abs(obs.redshift-z).argmin(), None, z.size)
+        corr_dz = compute_corr_dz(z[wz.start], obs.redshift)
     else:  # We do not know the redshift so we use the full grid
         wz = slice(0, None, 1)
         corr_dz = 1.
 
-    obs_fluxes = np.array([obs[name] for name in gbl_models.obs.bands])
-    obs_errors = np.array([obs[name + "_err"] for name in
-                           gbl_models.obs.bands])
-    chi2, scaling = compute_chi2(gbl_models.fluxes[:, wz], obs_fluxes,
-                                 obs_errors, gbl_models.conf['analysis_params']['lim_flag'])
+    observation = gbl_obs.observations[idx]
+    chi2, scaling = compute_chi2(gbl_models.fluxes[:, wz],
+                                 gbl_models.intprops[:, wz],
+                                 gbl_models.extprops[:, wz], observation,
+                                 gbl_models.conf['analysis_params']['lim_flag'])
 
     if np.any(np.isfinite(chi2)):
         # We use the exponential probability associated with the χ² as
@@ -239,13 +246,15 @@ def bestfit(oidx, obs):
     # We compute the model at the exact redshift not to have to correct for the
     # difference between the object and the grid redshifts.
     params = deepcopy(gbl_params.from_index(best_index))
-    params[-1]['redshift'] = obs['redshift']
+    params[-1]['redshift'] = obs.redshift
     sed = gbl_warehouse.get_sed(gbl_params.modules, params)
 
     fluxes = np.array([sed.compute_fnu(filt) for filt in gbl_obs.bands])
-    obs_fluxes = np.array([obs[name] for name in gbl_obs.bands])
-    obs_errors = np.array([obs[name + '_err'] for name in gbl_obs.bands])
-    _, scaling = compute_chi2(fluxes[:, None], obs_fluxes, obs_errors,
+    intprops = np.array([sed.info[prop] for prop in gbl_obs.intprops])
+    extprops = np.array([sed.info[prop] for prop in gbl_obs.extprops])
+
+    _, scaling = compute_chi2(fluxes[:, None], intprops[:, None],
+                              extprops[:, None],  obs,
                               gbl_conf['analysis_params']['lim_flag'])
 
     gbl_results.best.properties[oidx, :] = [sed.info[k] for k in

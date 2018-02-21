@@ -81,18 +81,20 @@ class ObservationsManagerPassbands(object):
                             threshold)
         self._add_model_error(modelerror)
 
+        self.observations = list([Observation(row, self) for row in self.table])
+
     def __len__(self):
-        return len(self.table)
+        return len(self.observations)
 
     def __iter__(self):
         self.idx = 0
-        self.max = len(self.table)
+        self.max = len(self.observations)
 
         return self
 
     def __next__(self):
         if self.idx < self.max:
-            obs = self.table[self.idx]
+            obs = self.observations[self.idx]
             self.idx += 1
             return obs
         raise StopIteration
