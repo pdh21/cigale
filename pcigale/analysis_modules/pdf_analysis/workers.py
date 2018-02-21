@@ -46,6 +46,7 @@ def init_sed(models, t0, ncomputed):
     gbl_t0 = t0
     gbl_ncomputed = ncomputed
 
+
 def init_analysis(models, results, t0, ncomputed):
     """Initializer of the pool of processes to share variables between workers.
 
@@ -103,6 +104,7 @@ def init_bestfit(conf, params, observations, results, t0, ncomputed):
     gbl_t0 = t0
     gbl_ncomputed = ncomputed
 
+
 def sed(idx, midx):
     """Worker process to retrieve a SED and affect the relevant data to an
     instance of ModelsManager.
@@ -147,6 +149,7 @@ def sed(idx, midx):
         print("{}/{} models computed in {:.1f} seconds ({:.1f} models/s)".
               format(ncomputed, nmodels, dt, ncomputed/dt),
               end="\n" if ncomputed == nmodels else "\r")
+
 
 def analysis(idx, obs):
     """Worker process to analyse the PDF and estimate parameters values and
@@ -221,6 +224,7 @@ def analysis(idx, obs):
     print("{}/{} objects analysed in {:.1f} seconds ({:.2f} objects/s)".
           format(ncomputed, len(gbl_models.obs), dt, ncomputed/dt),
           end="\n" if ncomputed == len(gbl_models.obs) else "\r")
+
 
 def bestfit(oidx, obs):
     """Worker process to compute and save the best fit.

@@ -31,7 +31,7 @@ class BayesResultsManager(object):
         self.nobs = len(models.obs)
         self.propertiesnames = models.propertiesnames
         self.massproportional = models.massproportional.\
-                                   intersection(models.propertiesnames)
+            intersection(models.propertiesnames)
         self.nproperties = len(models.propertiesnames)
 
         # Arrays where we store the data related to the models. For memory

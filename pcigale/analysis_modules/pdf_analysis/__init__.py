@@ -95,7 +95,6 @@ class PdfAnalysis(AnalysisModule):
         ))
     ])
 
-
     def _compute_models(self, conf, obs, params, iblock):
         models = ModelsManager(conf, obs, params, iblock)
 

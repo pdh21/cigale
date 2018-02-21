@@ -15,6 +15,7 @@ from scipy.special import erf
 
 log.setLevel('ERROR')
 
+
 def save_chi2(obs, variable, models, chi2, values):
     """Save the chi² and the associated physocal properties
 
