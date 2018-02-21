@@ -171,6 +171,10 @@ class Configuration(object):
             "indicated with the _err suffix. For instance: FUV, FUV_err.")
         self.spec['bands'] = "cigale_string_list()"
 
+        self.config['properties'] = ''
+        self.config.comments['properties'] = [""] + wrap("Properties to be considered.")
+        self.spec['properties'] = "cigale_string_list()"
+
         # SED creation modules configurations. For each module, we generate
         # the configuration section from its parameter list.
         self.config['sed_modules_params'] = {}
