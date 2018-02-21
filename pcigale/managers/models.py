@@ -31,7 +31,7 @@ class ModelsManager(object):
         self.block = params.blocks[iblock]
 
         self.propertiesnames = conf['analysis_params']['variables']
-        self.allpropertiesnames, self.massproportional = self._get_info()
+        self.allpropertiesnames, self.massproportional = get_info(self)
 
         self._fluxes = SharedArray((len(self.obs.bands), len(self.block)))
         self._properties = SharedArray((len(self.propertiesnames),
@@ -57,14 +57,17 @@ class ModelsManager(object):
         """
         return self._properties.data
 
-    def _get_info(self):
-        warehouse = SedWarehouse()
-        sed = warehouse.get_sed(self.conf['sed_modules'],
-                                self.params.from_index(0))
-        info = list(sed.info.keys())
-        info.sort()
+    @property
+    def intprops(self):
+        """Returns a shared array containing the intensive properties to fit.
+        """
+        return self._intprops.data
 
-        return (info, sed.mass_proportional_info)
+    @property
+    def extprops(self):
+        """Returns a shared array containing the extensive properties to fit.
+        """
+        return self._extprops.data
 
     def save(self, filename):
         """Save the fluxes and properties of all the models into a table.
