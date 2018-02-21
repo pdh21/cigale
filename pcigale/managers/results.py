@@ -221,7 +221,7 @@ class BestResultsManager(object):
          objects seems to be overconstrainted.
 
         """
-        obs = [self.obs.table[obs].data for obs in self.obs.bands]
+        obs = [self.obs.table[obs].data for obs in self.obs.tofit]
         nobs = np.count_nonzero(np.isfinite(obs), axis=0)
         chi2_red = self.chi2 / (nobs - 1)
         # If low values of reduced chi^2, it means that the data are overfitted
@@ -287,7 +287,7 @@ class ResultsManager(object):
                                     name="bayes."+name+"_err"))
 
         table.add_column(Column(self.best.chi2, name="best.chi_square"))
-        obs = [self.obs.table[obs].data for obs in self.obs.bands]
+        obs = [self.obs.table[obs].data for obs in self.obs.tofit]
         nobs = np.count_nonzero(np.isfinite(obs), axis=0)
         table.add_column(Column(self.best.chi2 / (nobs - 1),
                                 name="best.reduced_chi_square"))
