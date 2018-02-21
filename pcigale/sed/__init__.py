@@ -270,11 +270,20 @@ class SED(object):
         # (spectrum+filter), we store the resampled filter. That way we only
         # have to resample to spectrum.
         if 'universe.redshift' in self.info:
-            key = (wavelength.size, filter_name,
-                   self.info['universe.redshift'])
+            if 'nebular.lines_width' in self.info:
+                key = (wavelength.size, filter_name,
+                       self.info['nebular.lines_width'],
+                       self.info['universe.redshift'])
+            else:
+                key = (wavelength.size, filter_name,
+                       self.info['universe.redshift'])
             dist = self.info['universe.luminosity_distance']
         else:
-            key = (wavelength.size, filter_name, 0.)
+            if 'nebular.lines_width' in self.info:
+                key = (wavelength.size, filter_name,
+                       self.info['nebular.lines_width'], 0.)
+            else:
+                key = (wavelength.size, filter_name, 0.)
             dist = 10. * parsec
 
         if key in self.cache_filters:

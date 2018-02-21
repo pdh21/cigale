@@ -2,6 +2,12 @@
 
 ## Unreleased
 ### Added
+### Changed
+### Fixed
+### Optimised
+
+## 0.12.0 (2018-02-19)
+### Added
 - Provide the possibility not to store a given module in cache. This can be useful on computers with a limited amount of memory. The downside is that when not caching the model generation will be slower. (Médéric Boquien)
 - An option `redshift\_decimals` is now provided in `pdf\_analysis` to indicate the number of decimals to round the observed redshifts to compute the grid of models. By default the model redshifts are rounded to two decimals but this can be insufficient at low z and/or when using narrow-band filters for instance. This only applies to the grid. The physical properties are still computed for the redshift at full precision. (Médéric Boquien)
 - Bands with negative fluxes are now considered valid and are fitted as any other band. (Médéric Boquien)
@@ -9,7 +15,8 @@
 - Allow the observations to be analysed by blocks of models in `pdf\_analysis`. This is useful when computing a very large grid of models that would not fit in memory. The number of blocks is set with the `blocks` parameters in the pcigale.ini. (Médéric Boquien)
 - The integrated stellar luminosity is now provided as `stellar.lum`. (Médéric Boquien)
 - The high resolution BC03 models have been added. They can be activated when building the database by adding `--bc03res=hr` to the build command. In that case the low resolution models are not built. (Médéric Boquien)
-- Dust templates generated with THEMIS (Jones et al. 2017) have been contributed by the DustPedia team (Davis et al. 2017). Special acknowledgement to Angelos Nersesian and Frédéric Galliano for creating the dust templates and writing the code. (Dustpedia team)
+- Dust templates generated with THEMIS (Jones et al. 2017) have been contributed by the DustPedia team (Davies et al. 2017). Special acknowledgement to Angelos Nersesian and Frédéric Galliano for creating the dust templates and writing the code. (Dustpedia team)
+- The Herschel SPIRE filters for extended sources have been added. (Médéric Boquien)
 
 ### Changed
 - Make the timestamp more readable when moving the out/ directory. (Médéric Boquien)
@@ -31,6 +38,10 @@
 - Make sure that we do not try to fit data that have an error bar of 0 mJy. (Médéric Boquien)
 - An erroneous warning was displayed when using the `restframe\_parameters` module. (Médéric Boquien)
 - The formula from Sawicki et al. (2012) used to compute the χ² in the presence of upper limits was not correct. This led the χ² to depend directly on the absolute value of the upper limit. The formula has been rederived and corrected. (Médéric Boquien & Denis Burgarella)
+- For some reason the wavelengths of the SCUBA 450 μm filter were a factor 10 too small. (Médéric Boquien)
+- Ensure that the computation of the continuum level is correct when determining the equivalent width, in particular when the line width is very narrow. (Médéric Boquien)
+- When using different line widths during a single run, ensure that the fluxes and other quantities are always computed correctly. (Médéric Boquien, special thanks to Genoveva Micheva)
+- Compute Dn4000 more rigorously by integrating properly over Fν. (Médéric Boquien)
 
 ### Optimised
 - The cache architecture has been simplified, making it somewhat faster. It speeds up the model generation by ~1%. (Médéric Boquien)
