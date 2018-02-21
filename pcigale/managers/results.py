@@ -11,17 +11,10 @@ etc. Each of these classes contain a merge() method that allows to combine
 results of the analysis with different blocks of models.
 """
 
-import ctypes
-from multiprocessing.sharedctypes import RawArray
-
 from astropy.table import Table, Column
 import numpy as np
 
-
-def shared_array(shape):
-    """Create a shared array that can be read/written by parallel processes
-    """
-    return RawArray(ctypes.c_double, int(np.product(shape)))
+from .utils import SharedArray
 
 
 class BayesResultsManager(object):
@@ -46,9 +39,9 @@ class BayesResultsManager(object):
         # to the pool. Each worker will fill a part of the RawArrays. It is
         # important that there is no conflict and that two different workers do
         # not write on the same section.
-        self._means = shared_array((self.nobs, self.nproperties))
-        self._errors = shared_array((self.nobs, self.nproperties))
-        self._weights = shared_array((self.nobs))
+        self._means = SharedArray((self.nobs, self.nproperties))
+        self._errors = SharedArray((self.nobs, self.nproperties))
+        self._weights = SharedArray((self.nobs))
 
     @staticmethod
     def merge(results):
@@ -71,8 +64,8 @@ class BayesResultsManager(object):
         weights = np.array([result.weights for result in results])[..., None]
 
         merged = results[0]
-        merged._means = shared_array((merged.nobs, merged.nproperties))
-        merged._errors = shared_array((merged.nobs, merged.nproperties))
+        merged._means = SharedArray((merged.nobs, merged.nproperties))
+        merged._errors = SharedArray((merged.nobs, merged.nproperties))
         merged._weights = None
 
         sumweights = np.sum(weights, axis=0)
@@ -102,8 +95,7 @@ class BayesResultsManager(object):
         physical property and each observation.
 
         """
-        return np.ctypeslib.as_array(self._means).reshape((self.nobs,
-                                                           self.nproperties))
+        return self._means.data
 
     @property
     def errors(self):
@@ -111,8 +103,7 @@ class BayesResultsManager(object):
          for each physical property and each observation.
 
         """
-        return np.ctypeslib.as_array(self._errors).reshape((self.nobs,
-                                                            self.nproperties))
+        return self._errors.data
 
     @property
     def weights(self):
@@ -120,7 +111,7 @@ class BayesResultsManager(object):
         each observation.
 
         """
-        return np.ctypeslib.as_array(self._weights)
+        return self._weights.data
 
 
 class BestResultsManager(object):
@@ -148,11 +139,11 @@ class BestResultsManager(object):
         # to the pool. Each worker will fill a part of the RawArrays. It is
         # important that there is no conflict and that two different workers do
         # not write on the same section.
-        self._fluxes = shared_array(self._fluxes_shape)
-        self._properties = shared_array(self._properties_shape)
-        self._chi2 = shared_array(self.nobs)
+        self._fluxes = SharedArray(self._fluxes_shape)
+        self._properties = SharedArray(self._properties_shape)
+        self._chi2 = SharedArray(self.nobs)
         # We store the index as a float to work around python issue #10746
-        self._index = shared_array(self.nobs)
+        self._index = SharedArray(self.nobs)
 
     @property
     def fluxes(self):
@@ -160,7 +151,7 @@ class BestResultsManager(object):
         each observation.
 
         """
-        return np.ctypeslib.as_array(self._fluxes).reshape(self._fluxes_shape)
+        return self._fluxes.data
 
     @property
     def properties(self):
@@ -168,8 +159,7 @@ class BestResultsManager(object):
         best fit for each observation.
 
         """
-        return np.ctypeslib.as_array(self._properties)\
-                   .reshape(self._properties_shape)
+        return self._properties.data
 
     @property
     def chi2(self):
@@ -177,7 +167,7 @@ class BestResultsManager(object):
         each observation.
 
         """
-        return np.ctypeslib.as_array(self._chi2)
+        return self._chi2.data
 
     @property
     def index(self):
@@ -185,7 +175,7 @@ class BestResultsManager(object):
         observation.
 
         """
-        return np.ctypeslib.as_array(self._index)
+        return self._index.data
 
     @staticmethod
     def merge(results):
@@ -212,11 +202,11 @@ class BestResultsManager(object):
         index = np.array([result.index for result in results])
 
         merged = results[0]
-        merged._fluxes = shared_array((merged.nobs, merged.nbands))
-        merged._properties = shared_array((merged.nobs, merged.nproperties))
-        merged._chi2 = shared_array(merged.nobs)
+        merged._fluxes = SharedArray((merged.nobs, merged.nbands))
+        merged._properties = SharedArray((merged.nobs, merged.nproperties))
+        merged._chi2 = SharedArray(merged.nobs)
         # We store the index as a float to work around python issue #10746
-        merged._index = shared_array(merged.nobs)
+        merged._index = SharedArray(merged.nobs)
 
         for iobs, bestidx in enumerate(np.argmin(chi2, axis=0)):
             merged.fluxes[iobs, :] = fluxes[bestidx, iobs, :]
