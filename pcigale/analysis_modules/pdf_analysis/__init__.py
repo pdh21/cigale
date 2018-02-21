@@ -181,15 +181,15 @@ class PdfAnalysis(AnalysisModule):
         # Rename the output directory if it exists
         self.prepare_dirs()
 
+        # Store the grid of parameters in a manager to facilitate the
+        # computation of the models
+
+        params = ParametersManager(conf)
         # Store the observations in a manager which sanitises the data, checks
         # all the required fluxes are present, adding errors if needed,
         # discarding invalid fluxes, etc.
-        obs = ObservationsManager(conf)
+        obs = ObservationsManager(conf, params)
         obs.save('observations')
-
-        # Store the grid of parameters in a manager to facilitate the
-        # computation of the models
-        params = ParametersManager(conf)
 
         results = self._compute(conf, obs, params)
         results.best.analyse_chi2()

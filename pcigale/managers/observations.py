@@ -7,6 +7,8 @@ from astropy.table import Column
 import numpy as np
 
 from ..utils import read_table
+from .utils import get_info
+
 
 class ObservationsManager(object):
     """Class to abstract the handling of the observations and provide a
@@ -16,9 +18,9 @@ class ObservationsManager(object):
     check the consistency of the data, replace invalid values with NaN, etc.
 
     """
-    def __new__(cls, config, **kwargs):
+    def __new__(cls, config, params=None, **kwargs):
         if config['data_file']:
-            return ObservationsManagerPassbands(config, **kwargs)
+            return ObservationsManagerPassbands(config, params, **kwargs)
         else:
             return ObservationsManagerVirtual(config, **kwargs)
 
@@ -31,14 +33,27 @@ class ObservationsManagerPassbands(object):
     at each iteration.
     """
 
-    def __init__(self, config, defaulterror=0.1, modelerror=0.1,
+    def __init__(self, config, params, defaulterror=0.1, modelerror=0.1,
                  threshold=-9990.):
 
+        self.conf = config
+        self.params = params
+        self.allpropertiesnames, self.massproportional = get_info(self)
         self.table = read_table(config['data_file'])
         self.bands = [band for band in config['bands'] if not
                       band.endswith('_err')]
         self.errors = [band for band in config['bands'] if
                        band.endswith('_err')]
+        self.intprops = [prop for prop in config['properties'] if (prop not in
+                         self.massproportional and not prop.endswith('_err'))]
+        self.intprops_err = [prop for prop in config['properties'] if
+                             (prop.endswith('_err') and prop[:-4] not in
+                             self.massproportional)]
+        self.extprops = [prop for prop in config['properties'] if (prop in
+                         self.massproportional and not prop.endswith('_err'))]
+        self.extprops_err = [prop for prop in config['properties'] if
+                             (prop.endswith('_err') and prop[:-4] in
+                             self.massproportional)]
 
         # Sanitise the input
         self._check_filters()
