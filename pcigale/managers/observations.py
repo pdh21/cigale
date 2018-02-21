@@ -100,26 +100,26 @@ class ObservationsManagerPassbands(object):
         raise StopIteration
 
     def _check_filters(self):
-        """Check whether the list of filters makes sense.
+        """Check whether the list of filters and poperties makes sense.
 
         Two situations are checked:
-        * If a filter to be included in the fit is missing from the data file,
-        an exception is raised.
-        * If a filter is given in the input file but is not to be included in
-        the fit, a warning is displayed
+        * If a filter or property to be included in the fit is missing from
+        the data file, an exception is raised.
+        * If a filter or property is given in the input file but is not to be
+        included in the fit, a warning is displayed
 
         """
-        for band in self.tofit + self.tofit_err:
-            if band not in self.table.colnames:
+        for item in self.tofit + self.tofit_err:
+            if item not in self.table.colnames:
                 raise Exception("{} to be taken in the fit but not present "
-                                "in the observation table.".format(band))
+                                "in the observation table.".format(item))
 
-        for band in self.table.colnames:
-            if (band != 'id' and band != 'redshift' and band not in self.tofit +
+        for item in self.table.colnames:
+            if (item != 'id' and item != 'redshift' and item not in self.tofit +
                 self.tofit_err):
-                self.table.remove_column(band)
+                self.table.remove_column(item)
                 print("Warning: {} in the input file but not to be taken into"
-                      "account in the fit.".format(band))
+                      "account in the fit.".format(item))
 
     def _check_errors(self, defaulterror=0.1):
         """Check whether the error columns are present. If not, add them.
