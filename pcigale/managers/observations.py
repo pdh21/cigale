@@ -147,7 +147,7 @@ class ObservationsManagerPassbands(object):
             error = item + '_err'
             if item in self.intprops:
                 if error not in self.intprops_err or error not in self.table.colnames:
-                    raise ValueError("Instensive properties errors must be in input file.")
+                    raise ValueError("Intensive properties errors must be in input file.")
             elif error not in self.tofit_err or error not in self.table.colnames:
                 colerr = Column(data=np.fabs(self.table[item] * defaulterror),
                                 name=error)
@@ -215,7 +215,7 @@ class ObservationsManagerPassbands(object):
         if modelerror < 0.:
             raise ValueError("The relative model error must be positive.")
 
-        for item in self.tofit:
+        for item in self.bands + self.extprops:
             error = item + '_err'
             w = np.where(self.table[error] >= 0.)
             self.table[error][w] = np.sqrt(self.table[error][w]**2. + (
