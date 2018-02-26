@@ -185,8 +185,10 @@ def a_vs_ebv(wavelength, bump_wave, bump_width, bump_ampl, power_slope):
 class CalzLeit(SedModule):
     """Calzetti + Leitherer attenuation module
 
-    This module computes the dust attenuation using the
-    formulae from Calzetti et al. (2000) and Leitherer et al. (2002).
+    This module computes the dust attenuation using the formulae from
+    Calzetti et al. (2000) and Leitherer et al. (2002). Note that both the
+    stars and the gas are attenuated with the same curve as opposed to Calzetti
+    et al. (2000) where the gas is attenuated with a Milky Way curve.
 
     The attenuation can be computed on the whole spectrum or on a specific
     contribution and is added to the SED as a negative contribution.
@@ -204,7 +206,7 @@ class CalzLeit(SedModule):
             "cigale_list(minvalue=0., maxvalue=1.)",
             "Reduction factor for the E(B-V)* of the old population compared "
             "to the young one (<1).",
-            0.44
+            1.0
         )),
         ("uv_bump_wavelength", (
             "cigale_list(minvalue=0.)",
