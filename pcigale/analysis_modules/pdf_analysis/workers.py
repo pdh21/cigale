@@ -62,9 +62,10 @@ def init_analysis(models, results, t0, ncomputed):
         Number of computed models. Shared among workers.
 
     """
-    global gbl_models, gbl_results, gbl_t0, gbl_ncomputed
+    global gbl_models, gbl_obs, gbl_results, gbl_t0, gbl_ncomputed
 
     gbl_models = models
+    gbl_obs = models.obs
     gbl_results = results
     gbl_t0 = t0
     gbl_ncomputed = ncomputed
