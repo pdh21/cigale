@@ -5,6 +5,7 @@
 ### Changed
 ### Fixed
 - The best fit could not be computed in photo-z mode because the redshift was negative. (Médéric Boquien)
+- The bayesian estimates could not be computed when some models were older than the age of the universe. (Médéric Boquien)
 
 ### Optimised
 
