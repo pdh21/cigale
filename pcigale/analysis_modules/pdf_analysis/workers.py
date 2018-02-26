@@ -239,7 +239,8 @@ def bestfit(oidx, obs):
     # We compute the model at the exact redshift not to have to correct for the
     # difference between the object and the grid redshifts.
     params = deepcopy(gbl_params.from_index(best_index))
-    params[-1]['redshift'] = obs['redshift']
+    if obs['redshift'] >= 0.:
+        params[-1]['redshift'] = obs['redshift']
     sed = gbl_warehouse.get_sed(gbl_params.modules, params)
 
     fluxes = np.array([sed.compute_fnu(filt) for filt in gbl_obs.bands])

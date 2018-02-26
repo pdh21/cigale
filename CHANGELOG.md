@@ -4,6 +4,8 @@
 ### Added
 ### Changed
 ### Fixed
+- The best fit could not be computed in photo-z mode because the redshift was negative. (Médéric Boquien)
+
 ### Optimised
 
 ## 0.12.0 (2018-02-19)
