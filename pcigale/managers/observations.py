@@ -32,6 +32,7 @@ class Observation(object):
     """
     def __init__(self, row, cls):
         self.redshift = row['redshift']
+        self.id = row['id']
         self.fluxes = np.array([row[band] for band in cls.bands])
         self.fluxes_err = np.array([row[band + '_err'] for band in cls.bands])
         self.intprops = np.array([row[prop] for prop in cls.intprops])

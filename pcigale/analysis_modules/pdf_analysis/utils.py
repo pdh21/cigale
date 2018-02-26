@@ -20,7 +20,7 @@ def save_chi2(obs, variable, models, chi2, values):
     """Save the chi² and the associated physocal properties
 
     """
-    fname = 'out/{}_{}_chi2-block-{}.npy'.format(obs['id'], variable,
+    fname = 'out/{}_{}_chi2-block-{}.npy'.format(obs.id, variable.replace('/', '\/'),
                                                  models.iblock)
     data = np.memmap(fname, dtype=np.float64, mode='w+',
                      shape=(2, chi2.size))

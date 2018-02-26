@@ -216,7 +216,7 @@ def analysis(idx, obs):
     else:
         # It sometimes happens because models are older than the Universe's age
         print("No suitable model found for the object {}. One possible origin "
-              "is that models are older than the Universe.".format(obs['id']))
+              "is that models are older than the Universe.".format(obs.id))
 
     with gbl_ncomputed.get_lock():
         gbl_ncomputed.value += 1
