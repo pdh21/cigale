@@ -7,6 +7,7 @@
 - The best fit could not be computed in photo-z mode because the redshift was negative. (Médéric Boquien)
 - The bayesian estimates could not be computed when some models were older than the age of the universe. (Médéric Boquien)
 - The usage of `dustatt\_cazleit` causes some confusion regarding the reddening of the stars and of the gas. We have clarified that they are both attenuated with the same law and switched the differential reddening to 1 by default. (Médéric Boquien & Véronique Buat)
+- When some models were invalid, it was not possible to plot the PDF. (Médéric Boquien & Denis Burgarella)
 
 ### Optimised
 
