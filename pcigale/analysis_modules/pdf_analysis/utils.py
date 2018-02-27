@@ -15,11 +15,12 @@ from scipy.special import erf
 
 log.setLevel('ERROR')
 
+
 def save_chi2(obs, variable, models, chi2, values):
     """Save the chi² and the associated physocal properties
 
     """
-    fname = 'out/{}_{}_chi2-block-{}.npy'.format(obs['id'], variable,
+    fname = 'out/{}_{}_chi2-block-{}.npy'.format(obs.id, variable.replace('/', '\/'),
                                                  models.iblock)
     data = np.memmap(fname, dtype=np.float64, mode='w+',
                      shape=(2, chi2.size))
@@ -53,7 +54,7 @@ def compute_corr_dz(model_z, obs_z):
     return (cosmo.luminosity_distance(obs_z).value * 1e5)**2.
 
 
-def dchi2_over_ds2(s, obs_fluxes, obs_errors, mod_fluxes):
+def dchi2_over_ds2(s, obs_values, obs_errors, mod_values):
     """Function used to estimate the normalization factor in the SED fitting
     process when upper limits are included in the dataset to fit (from Eq. A11
     in Sawicki M. 2012, PASA, 124, 1008).
@@ -63,12 +64,13 @@ def dchi2_over_ds2(s, obs_fluxes, obs_errors, mod_fluxes):
     s: Float
         Contains value onto which we perform minimization = normalization
         factor
-    obs_fluxes: RawArray
-        Contains observed fluxes for each filter.
+    obs_value: RawArray
+        Contains observed fluxes for each filter and obseved extensive
+        properties.
     obs_errors: RawArray
-        Contains observed errors for each filter.
-    model_fluxes: RawArray
-        Contains modeled fluxes for each filter.
+        Contains observed errors for each filter and extensive properties.
+    model_values: RawArray
+        Contains modeled fluxes for each filter and extensive properties.
     lim_flag: Boolean
         Tell whether we use upper limits (True) or not (False).
 
@@ -88,28 +90,28 @@ def dchi2_over_ds2(s, obs_fluxes, obs_errors, mod_fluxes):
     wlim = np.where(np.isfinite(obs_errors) & (obs_errors < 0.))
     wdata = np.where(obs_errors >= 0.)
 
-    mod_fluxes_data = mod_fluxes[wdata]
-    mod_fluxes_lim = mod_fluxes[wlim]
+    mod_value_data = mod_value[wdata]
+    mod_value_lim = mod_value[wlim]
 
-    obs_fluxes_data = obs_fluxes[wdata]
-    obs_fluxes_lim = obs_fluxes[wlim]
+    obs_value_data = obs_value[wdata]
+    obs_value_lim = obs_value[wlim]
 
     obs_errors_data = obs_errors[wdata]
     obs_errors_lim = -obs_errors[wlim]
 
     dchi2_over_ds_data = np.sum(
-        (obs_fluxes_data-s*mod_fluxes_data) *
-        mod_fluxes_data/(obs_errors_data*obs_errors_data))
+        (obs_value_data-s*mod_value_data) *
+        mod_value_data/(obs_errors_data*obs_errors_data))
 
     dchi2_over_ds_lim = np.sqrt(2./np.pi)*np.sum(
-        mod_fluxes_lim*np.exp(
+        mod_value_lim*np.exp(
             -np.square(
-                (obs_fluxes_lim-s*mod_fluxes_lim)/(np.sqrt(2)*obs_errors_lim)
+                (obs_value_lim-s*mod_value_lim)/(np.sqrt(2)*obs_errors_lim)
                       )
                              )/(
             obs_errors_lim*(
                 1.+erf(
-                   (obs_fluxes_lim-s*mod_fluxes_lim)/(np.sqrt(2)*obs_errors_lim)
+                  (obs_fluxes_lim-s*mod_value_lim)/(np.sqrt(2)*obs_errors_lim)
                       )
                            )
                                )
@@ -120,7 +122,7 @@ def dchi2_over_ds2(s, obs_fluxes, obs_errors, mod_fluxes):
     return func
 
 
-def _compute_scaling(model_fluxes, obs_fluxes, obs_errors):
+def _compute_scaling(model_fluxes, model_propsmass, observation):
     """Compute the scaling factor to be applied to the model fluxes to best fit
     the observations. Note that we look over the bands to avoid the creation of
     an array of the same size as the model_fluxes array. Because we loop on the
@@ -130,28 +132,42 @@ def _compute_scaling(model_fluxes, obs_fluxes, obs_errors):
     ----------
     model_fluxes: array
         Fluxes of the models
-    obs_fluxes: array
-        Observed fluxes
-    obs_errors: array
-        Observed errors
-
+    model_propsmass: array
+        Extensive properties of the models to be fitted
+    observation: Class
+        Class instance containing the fluxes, intensive properties, extensive
+        properties and their errors, for a sigle observation.
     Returns
     -------
     scaling: array
         Scaling factors minimising the χ²
     """
+
+    obs_fluxes = observation.fluxes
+    obs_fluxes_err = observation.fluxes_err
+    obs_propsmass = observation.extprops
+    obs_propsmass_err = observation.extprops_err
+
     num = np.zeros(model_fluxes.shape[1])
     denom = np.zeros(model_fluxes.shape[1])
     for i in range(obs_fluxes.size):
-        if np.isfinite(obs_fluxes[i]) and obs_errors[i] > 0.:
-            num += model_fluxes[i, :] * (obs_fluxes[i] / (obs_errors[i] *
-                                                          obs_errors[i]))
-            denom += np.square(model_fluxes[i, :] * (1./obs_errors[i]))
+        if np.isfinite(obs_fluxes[i]) and obs_fluxes_err[i] > 0.:
+            num += model_fluxes[i, :] * (obs_fluxes[i] / (obs_fluxes_err[i] *
+                                                          obs_fluxes_err[i]))
+            denom += np.square(model_fluxes[i, :] * (1./obs_fluxes_err[i]))
+    for i in range(obs_propsmass.size):
+        if np.isfinite(obs_propsmass[i]) and obs_propsmass_err[i] > 0.:
+            num += model_propsmass[i, :] * (obs_propsmass[i] /
+                                            (obs_propsmass_err[i] *
+                                             obs_propsmass_err[i]))
+            denom += np.square(model_propsmass[i, :] *
+                               (1./obs_propsmass_err[i]))
 
     return num/denom
 
 
-def compute_chi2(model_fluxes, obs_fluxes, obs_errors, lim_flag):
+def compute_chi2(model_fluxes, model_props, model_propsmass, observation,
+                 lim_flag):
     """Compute the χ² of observed fluxes with respect to the grid of models. We
     take into account upper limits if need be. Note that we look over the bands
     to avoid the creation of an array of the same size as the model_fluxes
@@ -162,10 +178,13 @@ def compute_chi2(model_fluxes, obs_fluxes, obs_errors, lim_flag):
     ----------
     model_fluxes: array
         2D grid containing the fluxes of the models
-    obs_fluxes: array
-        Fluxes of the observed object
-    obs_errors: array
-        Uncertainties on the fluxes of the observed object
+    model_props: array
+        2D grid containing the intensive properties of the models
+    model_propsmass: array
+        2D grid containing the extensive properties of the models
+    observation: Class
+        Class instance containing the fluxes, intensive properties, extensive
+        properties and their errors, for a sigle observation.
     lim_flag: boolean
         Boolean indicating whether upper limits should be treated (True) or
         discarded (False)
@@ -177,34 +196,51 @@ def compute_chi2(model_fluxes, obs_fluxes, obs_errors, lim_flag):
     scaling: array
         scaling of the models to obtain the minimum χ²
     """
-    limits = lim_flag and np.any(obs_errors <= 0.)
+    limits = lim_flag and np.any(observation.fluxes_err +
+                                 observation.extprops_err <= 0.)
+    scaling = _compute_scaling(model_fluxes, model_propsmass, observation)
 
-    scaling = _compute_scaling(model_fluxes, obs_fluxes, obs_errors)
+    obs_fluxes = observation.fluxes
+    obs_fluxes_err = observation.fluxes_err
+    obs_props = observation.intprops
+    obs_props_err = observation.intprops_err
+    obs_propsmass = observation.extprops
+    obs_propsmass_err = observation.extprops_err
 
     # Some observations may not have flux values in some filter(s), but
     # they can have upper limit(s).
     if limits == True:
+        obs_values = np.concatenate((obs_fluxes, obs_propsmass))
+        obs_values_err = np.concatenate((obs_fluxes_err, obs_propsmass_err))
+        model_values =  np.concatenate((model_fluxes, model_propsmass))
         for imod in range(scaling.size):
             scaling[imod] = optimize.root(dchi2_over_ds2, scaling[imod],
-                                          args=(obs_fluxes, obs_errors,
-                                                model_fluxes[:, imod])).x
+                                          args=(obs_values, obs_values_err,
+                                                model_values[:, imod])).x
 
     # χ² of the comparison of each model to each observation.
     chi2 = np.zeros(model_fluxes.shape[1])
     for i in range(obs_fluxes.size):
-        if np.isfinite(obs_fluxes[i]) and obs_errors[i] > 0.:
-            chi2 += np.square(
-                (obs_fluxes[i] - model_fluxes[i, :] * scaling) * (1./obs_errors[i]))
+        if np.isfinite(obs_fluxes[i]) and obs_fluxes_err[i] > 0.:
+            chi2 += np.square((obs_fluxes[i] - model_fluxes[i, :] * scaling) *
+                              (1./obs_fluxes_err[i]))
+    for i in range(obs_propsmass.size):
+        if np.isfinite(obs_propsmass[i]):
+            chi2 += np.square((obs_propsmass[i] - model_propsmass[i, :] *
+                               scaling) * (1./obs_propsmass_err[i]))
 
-    # Some observations may not have flux values in some filter(s), but
+    for i in range(obs_props.size):
+        if np.isfinite(obs_props[i]):
+            chi2 += np.square((obs_props[i] - model_props[i, :]) *
+                              (1./obs_props_err[i]))
     # they can have upper limit(s).
     if limits == True:
-        for i, obs_error in enumerate(obs_errors):
+        for i, obs_error in enumerate(obs_fluxes_err):
             if obs_error < 0.:
                 chi2 -= 2. * np.log(.5 *
                                     (1. + erf(((obs_fluxes[i] -
-                                                model_fluxes[i, :] * scaling) /
-                                               (-np.sqrt(2.)*obs_errors[i])))))
+                                     model_fluxes[i, :] * scaling) /
+                                     (-np.sqrt(2.)*obs_fluxes_err[i])))))
 
     return chi2, scaling
 

@@ -9,13 +9,10 @@ compute them, such as the configuration, the observations, and the parameters
 of the models.
 """
 
-import ctypes
-from multiprocessing.sharedctypes import RawArray
-
 from astropy.table import Table, Column
 import numpy as np
 
-from ..warehouse import SedWarehouse
+from .utils import SharedArray, get_info
 
 
 class ModelsManager(object):
@@ -34,41 +31,43 @@ class ModelsManager(object):
         self.block = params.blocks[iblock]
 
         self.propertiesnames = conf['analysis_params']['variables']
-        self.allpropertiesnames, self.massproportional = self._get_info()
+        self.allpropertiesnames, self.massproportional = get_info(self)
 
-        self._fluxes_shape = (len(obs.bands), len(self.block))
-        self._props_shape = (len(self.propertiesnames), len(self.block))
+        self._fluxes = SharedArray((len(self.obs.bands), len(self.block)))
+        self._properties = SharedArray((len(self.propertiesnames),
+                                        len(self.block)))
 
-        # Arrays where we store the data related to the models. For memory
-        # efficiency reasons, we use RawArrays that will be passed in argument
-        # to the pool. Each worker will fill a part of the RawArrays. It is
-        # important that there is no conflict and that two different workers do
-        # not write on the same section.
-        self._fluxes = self._shared_array(self._fluxes_shape)
-        self._properties = self._shared_array(self._props_shape)
+        if conf['analysis_method'] == 'pdf_analysis':
+            self._intprops = SharedArray((len(self.obs.intprops),
+                                          len(self.block)))
+            self._extprops = SharedArray((len(self.obs.extprops),
+                                          len(self.block)))
 
     @property
     def fluxes(self):
         """Returns a shared array containing the fluxes of the models.
 
         """
-        return np.ctypeslib.as_array(self._fluxes).reshape(self._fluxes_shape)
+        return self._fluxes.data
 
     @property
     def properties(self):
         """Returns a shared array containing the properties of the models.
 
         """
-        return np.ctypeslib.as_array(self._properties).reshape(self._props_shape)
+        return self._properties.data
 
-    def _get_info(self):
-        warehouse = SedWarehouse()
-        sed = warehouse.get_sed(self.conf['sed_modules'],
-                                self.params.from_index(0))
-        info = list(sed.info.keys())
-        info.sort()
+    @property
+    def intprops(self):
+        """Returns a shared array containing the intensive properties to fit.
+        """
+        return self._intprops.data
 
-        return (info, sed.mass_proportional_info)
+    @property
+    def extprops(self):
+        """Returns a shared array containing the extensive properties to fit.
+        """
+        return self._extprops.data
 
     def save(self, filename):
         """Save the fluxes and properties of all the models into a table.
@@ -87,7 +86,3 @@ class ModelsManager(object):
         table.write("out/{}.fits".format(filename))
         table.write("out/{}.txt".format(filename), format='ascii.fixed_width',
                     delimiter=None)
-
-    @staticmethod
-    def _shared_array(shape):
-        return RawArray(ctypes.c_double, int(np.product(shape)))
