@@ -127,11 +127,15 @@ class BestResultsManager(object):
         self.obs = models.obs
         self.nbands = len(models.obs.bands)
         self.nobs = len(models.obs)
+        self.nintprops = len(models.obs.intprops)
+        self.nextprops = len(models.obs.extprops)
         self.propertiesnames = models.allpropertiesnames
         self.massproportional = models.massproportional
         self.nproperties = len(models.allpropertiesnames)
 
         self._fluxes_shape = (self.nobs, self.nbands)
+        self._intprops_shape = (self.nobs, self.nintprops)
+        self._extprops_shape = (self.nobs, self.nextprops)
         self._properties_shape = (self.nobs, self.nproperties)
 
         # Arrays where we store the data related to the models. For memory
@@ -140,6 +144,8 @@ class BestResultsManager(object):
         # important that there is no conflict and that two different workers do
         # not write on the same section.
         self._fluxes = SharedArray(self._fluxes_shape)
+        self._intprops = SharedArray(self._intprops_shape)
+        self._extprops = SharedArray(self._extprops_shape)
         self._properties = SharedArray(self._properties_shape)
         self._chi2 = SharedArray(self.nobs)
         # We store the index as a float to work around python issue #10746
@@ -152,6 +158,22 @@ class BestResultsManager(object):
 
         """
         return self._fluxes.data
+
+    @property
+    def intprops(self):
+        """Returns a shared array containing the fluxes of the best fit for
+        each observation.
+
+        """
+        return self._intprops.data
+
+    @property
+    def extprops(self):
+        """Returns a shared array containing the fluxes of the best fit for
+        each observation.
+
+        """
+        return self._extprops.data
 
     @property
     def properties(self):
