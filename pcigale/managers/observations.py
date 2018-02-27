@@ -120,7 +120,7 @@ class ObservationsManagerPassbands(object):
                 self.tofit_err):
                 self.table.remove_column(item)
                 print("Warning: {} in the input file but not to be taken into"
-                      "account in the fit.".format(item))
+                      " account in the fit.".format(item))
 
     def _check_errors(self, defaulterror=0.1):
         """Check whether the error columns are present. If not, add them.
