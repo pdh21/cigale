@@ -241,11 +241,13 @@ class ObservationsManagerPassbands(object):
                                                 np.fabs(self.table[err]))
         for idx, prop in enumerate(self.intprops):
             err = prop + '_err'
-            self.table[prop] = np.random.normal(fits.best.intprops[:, idx],
+            index = fits.best.propertiesnames.index(prop)
+            self.table[prop] = np.random.normal(fits.best.properties[:, index],
                                                 np.fabs(self.table[err]))
         for idx, prop in enumerate(self.extprops):
             err = prop + '_err'
-            self.table[prop] = np.random.normal(fits.best.extprops[:, idx],
+            index = fits.best.propertiesnames.index(prop)
+            self.table[prop] = np.random.normal(fits.best.properties[:, index],
                                                 np.fabs(self.table[err]))
 
     def save(self, filename):
