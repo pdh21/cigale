@@ -203,8 +203,9 @@ def analysis(idx, obs):
                 values = _(gbl_models.properties[i, wz] * scaling * corr_dz)
             else:
                 values = _(gbl_models.properties[i, wz])
-
-            mean, std = weighted_param(values, likelihood)
+                
+            wlikely = np.isfinite(likelihood)
+            mean, std = weighted_param(values[wlikely], likelihood[wlikely])
             gbl_results.bayes.means[idx, i] = mean
             gbl_results.bayes.errors[idx, i] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
