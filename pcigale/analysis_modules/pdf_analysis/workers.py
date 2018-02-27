@@ -272,7 +272,7 @@ def bestfit(oidx, obs):
     gbl_results.best.fluxes[oidx, :] = fluxes * scaling
 
     if gbl_conf['analysis_params']["save_best_sed"]:
-        sed.to_fits('out/{}'.format(obs['id']), scaling)
+        sed.to_fits('out/{}'.format(obs.id), scaling)
 
     with gbl_ncomputed.get_lock():
         gbl_ncomputed.value += 1
