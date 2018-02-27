@@ -93,8 +93,8 @@ def _pdf_worker(obj_name, var_name):
     model_variable = np.concatenate(model_variable)
 
     Npdf = 100
-    min_hist = np.min(model_variable)
-    max_hist = np.max(model_variable)
+    min_hist = np.nanmin(model_variable)
+    max_hist = np.nanmax(model_variable)
     Nhist = min(Npdf, len(np.unique(model_variable)))
 
     if min_hist == max_hist:

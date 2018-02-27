@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.12.1 (2018-02-27)
+### Fixed
+- The best fit could not be computed in photo-z mode because the redshift was negative. (Médéric Boquien)
+- The bayesian estimates could not be computed when some models were older than the age of the universe. (Médéric Boquien)
+- The usage of `dustatt\_cazleit` causes some confusion regarding the reddening of the stars and of the gas. We have clarified that they are both attenuated with the same law and switched the differential reddening to 1 by default. (Médéric Boquien & Véronique Buat)
+- When some models were invalid, it was not possible to plot the PDF. (Médéric Boquien & Denis Burgarella)
+
+
 ## 0.12.0 (2018-02-19)
 ### Added
 - Provide the possibility not to store a given module in cache. This can be useful on computers with a limited amount of memory. The downside is that when not caching the model generation will be slower. (Médéric Boquien)
@@ -9,7 +17,7 @@
 - Allow the observations to be analysed by blocks of models in `pdf\_analysis`. This is useful when computing a very large grid of models that would not fit in memory. The number of blocks is set with the `blocks` parameters in the pcigale.ini. (Médéric Boquien)
 - The integrated stellar luminosity is now provided as `stellar.lum`. (Médéric Boquien)
 - The high resolution BC03 models have been added. They can be activated when building the database by adding `--bc03res=hr` to the build command. In that case the low resolution models are not built. (Médéric Boquien)
-- Dust templates generated with THEMIS (Jones et al. 2017) have been contributed by the DustPedia team (Davis et al. 2017). Special acknowledgement to Angelos Nersesian and Frédéric Galliano for creating the dust templates and writing the code. (Dustpedia team)
+- Dust templates generated with THEMIS (Jones et al. 2017) have been contributed by the DustPedia team (Davies et al. 2017). Special acknowledgement to Angelos Nersesian and Frédéric Galliano for creating the dust templates and writing the code. (Dustpedia team)
 - The Herschel SPIRE filters for extended sources have been added. (Médéric Boquien)
 
 ### Changed
