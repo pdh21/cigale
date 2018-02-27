@@ -68,10 +68,12 @@ class Configuration(object):
         self.config.comments['data_file'] = wrap(
             "File containing the input data. The columns are 'id' (name of the"
             " object), 'redshift' (if 0 the distance is assumed to be 10 pc), "
-            "the filter names for the fluxes, and the filter names with the "
-            "'_err' suffix for the uncertainties. The fluxes and the "
-            "uncertainties must be in mJy. This file is optional to generate "
-            "the configuration file, in particular for the savefluxes module.")
+            "'distance' (Mpc, optional, if present it will be used in lieu "
+            "of the distance computed from the redshift), the filter names for"
+            " the fluxes, and the filter names with the '_err' suffix for the "
+            "uncertainties. The fluxes and the uncertainties must be in mJy. "
+            "This file is optional to generate the configuration file, in "
+            "particular for the savefluxes module.")
         self.spec['data_file'] = "string()"
 
         self.config['parameters_file'] = ""

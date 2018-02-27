@@ -173,7 +173,7 @@ def analysis(idx, obs):
         z = np.array(
             gbl_models.conf['sed_modules_params']['redshifting']['redshift'])
         wz = slice(np.abs(obs.redshift-z).argmin(), None, z.size)
-        corr_dz = compute_corr_dz(z[wz.start], obs.redshift)
+        corr_dz = compute_corr_dz(z[wz.start], obs.distance)
     else:  # We do not know the redshift so we use the full grid
         wz = slice(0, None, 1)
         corr_dz = 1.
@@ -263,12 +263,13 @@ def bestfit(oidx, obs):
     _, scaling = compute_chi2(fluxes[:, None], intprops[:, None],
                               extprops[:, None],  obs,
                               gbl_conf['analysis_params']['lim_flag'])
+    corr_dz = compute_corr_dz(obs.redshift, obs.distance)
 
     gbl_results.best.properties[oidx, :] = [sed.info[k] for k in
                                             gbl_results.best.propertiesnames]
     iprop = [i for i, k in enumerate(gbl_results.best.propertiesnames)
              if k in gbl_results.best.massproportional]
-    gbl_results.best.properties[oidx, iprop] *= scaling
+    gbl_results.best.properties[oidx, iprop] *= scaling * corr_dz
     gbl_results.best.fluxes[oidx, :] = fluxes * scaling
 
     if gbl_conf['analysis_params']["save_best_sed"]:

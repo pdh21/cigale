@@ -11,6 +11,7 @@ from astropy import log
 from astropy.cosmology import WMAP7 as cosmo
 import numpy as np
 from scipy import optimize
+from scipy.constants import parsec
 from scipy.special import erf
 
 log.setLevel('ERROR')
@@ -29,7 +30,7 @@ def save_chi2(obs, variable, models, chi2, values):
 
 
 @lru_cache(maxsize=None)
-def compute_corr_dz(model_z, obs_z):
+def compute_corr_dz(model_z, obs_dist):
     """The mass-dependent physical properties are computed assuming the
     redshift of the model. However because we round the observed redshifts to
     two decimals, there can be a difference of 0.005 in redshift between the
@@ -42,16 +43,13 @@ def compute_corr_dz(model_z, obs_z):
     ----------
     model_z: float
         Redshift of the model.
-    obs_z: float
-        Redshift of the observed object.
+    obs_dist: float
+        Luminosity distance of the observed object.
 
     """
-    if model_z == obs_z:
-        return 1.
-    if model_z > 0.:
-        return (cosmo.luminosity_distance(obs_z).value /
-                cosmo.luminosity_distance(model_z).value)**2.
-    return (cosmo.luminosity_distance(obs_z).value * 1e5)**2.
+    if model_z == 0.:
+        return (obs_dist / (10. * parsec))**2.
+    return (obs_dist / cosmo.luminosity_distance(model_z).value)**2.
 
 
 def dchi2_over_ds2(s, obs_values, obs_errors, mod_values):

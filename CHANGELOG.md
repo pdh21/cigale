@@ -2,6 +2,8 @@
 
 ## Unreleased
 ### Added
+- It is now possible to optionally indicate the distance in Mpc in the input file. If present it will be used in lieu of the distance computed from the redshift. This is especially useful in the nearby universe where the redshift is a very poor indicator of the actual distance. (Médéric Boquien)
+
 ### Changed
 ### Fixed
 ### Optimised

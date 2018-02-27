@@ -3,8 +3,10 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Médéric Boquien
 
+from astropy.cosmology import WMAP7 as cosmo
 from astropy.table import Column
 import numpy as np
+from scipy.constants import parsec
 
 from ..utils import read_table
 from .utils import get_info
@@ -33,6 +35,15 @@ class Observation(object):
     def __init__(self, row, cls):
         self.redshift = row['redshift']
         self.id = row['id']
+        if 'distance' in row.colnames and np.isfinite(row['distance']):
+            self.distance = row['distance'] * parsec * 1e6
+        else:
+            if self.redshift == 0.:
+                self.distance = 10. * parsec
+            elif self.redshift > 0:
+                self.distance = cosmo.luminosity_distance(self.redshift).value
+            else:
+                self.distance = np.nan
         self.fluxes = np.array([row[band] for band in cls.bands])
         self.fluxes_err = np.array([row[band + '_err'] for band in cls.bands])
         self.intprops = np.array([row[prop] for prop in cls.intprops])
@@ -82,6 +93,10 @@ class ObservationsManagerPassbands(object):
                             threshold)
         self._add_model_error(modelerror)
 
+        # Rebuild the quantities to fit after vetting them
+        self.tofit = self.bands + self.intprops + self.extprops
+        self.tofit_err = self.bands_err + self.intprops_err + self.extprops_err
+
         self.observations = list([Observation(row, self) for row in self.table])
 
     def __len__(self):
@@ -116,8 +131,8 @@ class ObservationsManagerPassbands(object):
                                 "in the observation table.".format(item))
 
         for item in self.table.colnames:
-            if (item != 'id' and item != 'redshift' and item not in self.tofit +
-                self.tofit_err):
+            if (item != 'id' and item != 'redshift' and item != 'distance' and
+                item not in self.tofit + self.tofit_err):
                 self.table.remove_column(item)
                 print("Warning: {} in the input file but not to be taken into"
                       " account in the fit.".format(item))
