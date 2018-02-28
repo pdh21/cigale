@@ -203,7 +203,7 @@ def analysis(idx, obs):
                 values = _(gbl_models.properties[i, wz] * scaling * corr_dz)
             else:
                 values = _(gbl_models.properties[i, wz])
-                
+
             wlikely = np.isfinite(likelihood)
             mean, std = weighted_param(values[wlikely], likelihood[wlikely])
             gbl_results.bayes.means[idx, i] = mean
@@ -271,7 +271,7 @@ def bestfit(oidx, obs):
     gbl_results.best.fluxes[oidx, :] = fluxes * scaling
 
     if gbl_conf['analysis_params']["save_best_sed"]:
-        sed.to_fits('out/{}'.format(obs['id']), scaling)
+        sed.to_fits('out/{}'.format(obs.id), scaling)
 
     with gbl_ncomputed.get_lock():
         gbl_ncomputed.value += 1
