@@ -73,7 +73,7 @@ class ParametersManagerGrid(object):
 
         """
         k = len(l) // nb
-        step = k + nz - k%nz
+        step = k + nz - k % nz
 
         return [l[i * step: (i+1) * step] for i in range(nb)]
 
@@ -222,7 +222,6 @@ class ParametersManagerFile(object):
 
         raise ValueError("The number of blocks must be no more than the number"
                          "of models.")
-
 
     def from_index(self, index):
         """Provides the parameters of a model given an index.

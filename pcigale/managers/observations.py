@@ -97,7 +97,8 @@ class ObservationsManagerPassbands(object):
         self.tofit = self.bands + self.intprops + self.extprops
         self.tofit_err = self.bands_err + self.intprops_err + self.extprops_err
 
-        self.observations = list([Observation(row, self) for row in self.table])
+        self.observations = list([Observation(row, self)
+                                  for row in self.table])
 
     def __len__(self):
         return len(self.observations)
@@ -162,9 +163,12 @@ class ObservationsManagerPassbands(object):
         for item in self.tofit:
             error = item + '_err'
             if item in self.intprops:
-                if error not in self.intprops_err or error not in self.table.colnames:
-                    raise ValueError("Intensive properties errors must be in input file.")
-            elif error not in self.tofit_err or error not in self.table.colnames:
+                if (error not in self.intprops_err or
+                    error not in self.table.colnames):
+                    raise ValueError("Intensive properties errors must be in "
+                                     "input file.")
+            elif (error not in self.tofit_err or
+                  error not in self.table.colnames):
                 colerr = Column(data=np.fabs(self.table[item] * defaulterror),
                                 name=error)
                 self.table.add_column(colerr,

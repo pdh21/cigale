@@ -13,6 +13,7 @@ import numpy as np
 from multiprocessing.sharedctypes import RawArray
 from ..warehouse import SedWarehouse
 
+
 def get_info(cls):
     warehouse = SedWarehouse()
     sed = warehouse.get_sed(cls.conf['sed_modules'],
@@ -21,6 +22,7 @@ def get_info(cls):
     info.sort()
 
     return (info, sed.mass_proportional_info)
+
 
 class SharedArray(object):
     """Class to Create a shared array that can be read/written by parallel
