@@ -88,28 +88,28 @@ def dchi2_over_ds2(s, obs_values, obs_errors, mod_values):
     wlim = np.where(np.isfinite(obs_errors) & (obs_errors < 0.))
     wdata = np.where(obs_errors >= 0.)
 
-    mod_value_data = mod_value[wdata]
-    mod_value_lim = mod_value[wlim]
+    mod_values_data = mod_values[wdata]
+    mod_values_lim = mod_values[wlim]
 
-    obs_value_data = obs_value[wdata]
-    obs_value_lim = obs_value[wlim]
+    obs_values_data = obs_values[wdata]
+    obs_values_lim = obs_values[wlim]
 
     obs_errors_data = obs_errors[wdata]
     obs_errors_lim = -obs_errors[wlim]
 
     dchi2_over_ds_data = np.sum(
-        (obs_value_data-s*mod_value_data) *
-        mod_value_data/(obs_errors_data*obs_errors_data))
+        (obs_values_data-s*mod_values_data) *
+        mod_values_data/(obs_errors_data*obs_errors_data))
 
     dchi2_over_ds_lim = np.sqrt(2./np.pi)*np.sum(
-        mod_value_lim*np.exp(
+        mod_values_lim*np.exp(
             -np.square(
-                (obs_value_lim-s*mod_value_lim)/(np.sqrt(2)*obs_errors_lim)
+                (obs_values_lim-s*mod_values_lim)/(np.sqrt(2)*obs_errors_lim)
                       )
                              )/(
             obs_errors_lim*(
                 1.+erf(
-                  (obs_fluxes_lim-s*mod_value_lim)/(np.sqrt(2)*obs_errors_lim)
+                  (obs_values_lim-s*mod_values_lim)/(np.sqrt(2)*obs_errors_lim)
                       )
                            )
                                )
