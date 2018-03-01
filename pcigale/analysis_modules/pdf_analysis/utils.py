@@ -21,8 +21,8 @@ def save_chi2(obs, variable, models, chi2, values):
     """Save the chi² and the associated physocal properties
 
     """
-    fname = 'out/{}_{}_chi2-block-{}.npy'.format(obs.id, variable.replace('/', '\/'),
-                                                 models.iblock)
+    fname = 'out/{}_{}_chi2-block-{}.npy'.format(obs.id, variable.replace('/',
+                                                 '\/'), models.iblock)
     data = np.memmap(fname, dtype=np.float64, mode='w+',
                      shape=(2, chi2.size))
     data[0, :] = chi2
@@ -212,7 +212,7 @@ def compute_chi2(model_fluxes, model_props, model_propsmass, observation,
     if limits == True:
         obs_values = np.concatenate((obs_fluxes, obs_propsmass))
         obs_values_err = np.concatenate((obs_fluxes_err, obs_propsmass_err))
-        model_values =  np.concatenate((model_fluxes, model_propsmass))
+        model_values = np.concatenate((model_fluxes, model_propsmass))
         for imod in range(scaling.size):
             scaling[imod] = optimize.root(dchi2_over_ds2, scaling[imod],
                                           args=(obs_values, obs_values_err,

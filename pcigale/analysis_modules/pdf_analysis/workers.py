@@ -264,7 +264,6 @@ def bestfit(oidx, obs):
                               extprops[:, None],  obs, corr_dz,
                               gbl_conf['analysis_params']['lim_flag'])
 
-
     gbl_results.best.properties[oidx, :] = [sed.info[k] for k in
                                             gbl_results.best.propertiesnames]
     iprop = [i for i, k in enumerate(gbl_results.best.propertiesnames)
