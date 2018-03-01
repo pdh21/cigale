@@ -165,7 +165,7 @@ def _compute_scaling(model_fluxes, model_propsmass, observation):
 
 
 def compute_chi2(model_fluxes, model_props, model_propsmass, observation,
-                 lim_flag):
+                 corr_dz, lim_flag):
     """Compute the χ² of observed fluxes with respect to the grid of models. We
     take into account upper limits if need be. Note that we look over the bands
     to avoid the creation of an array of the same size as the model_fluxes
@@ -183,6 +183,8 @@ def compute_chi2(model_fluxes, model_props, model_propsmass, observation,
     observation: Class
         Class instance containing the fluxes, intensive properties, extensive
         properties and their errors, for a sigle observation.
+    corr_dz: correction factor to scale the extensive properties to the right
+        distance
     lim_flag: boolean
         Boolean indicating whether upper limits should be treated (True) or
         discarded (False)
@@ -222,10 +224,12 @@ def compute_chi2(model_fluxes, model_props, model_propsmass, observation,
         if np.isfinite(obs_fluxes[i]) and obs_fluxes_err[i] > 0.:
             chi2 += np.square((obs_fluxes[i] - model_fluxes[i, :] * scaling) *
                               (1./obs_fluxes_err[i]))
+
     for i in range(obs_propsmass.size):
         if np.isfinite(obs_propsmass[i]):
-            chi2 += np.square((obs_propsmass[i] - model_propsmass[i, :] *
-                               scaling) * (1./obs_propsmass_err[i]))
+            chi2 += np.square((obs_propsmass[i] - corr_dz * (scaling *
+                               model_propsmass[i, :])) *
+                              (1./obs_propsmass_err[i]))
 
     for i in range(obs_props.size):
         if np.isfinite(obs_props[i]):

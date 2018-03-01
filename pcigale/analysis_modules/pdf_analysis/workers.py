@@ -178,10 +178,9 @@ def analysis(idx, obs):
         wz = slice(0, None, 1)
         corr_dz = 1.
 
-    observation = gbl_obs.observations[idx]
     chi2, scaling = compute_chi2(gbl_models.fluxes[:, wz],
                                  gbl_models.intprops[:, wz],
-                                 gbl_models.extprops[:, wz], observation,
+                                 gbl_models.extprops[:, wz], obs, corr_dz,
                                  gbl_models.conf['analysis_params']['lim_flag'])
 
     if np.any(np.isfinite(chi2)):
@@ -260,10 +259,11 @@ def bestfit(oidx, obs):
     intprops = np.array([sed.info[prop] for prop in gbl_obs.intprops])
     extprops = np.array([sed.info[prop] for prop in gbl_obs.extprops])
 
-    _, scaling = compute_chi2(fluxes[:, None], intprops[:, None],
-                              extprops[:, None],  obs,
-                              gbl_conf['analysis_params']['lim_flag'])
     corr_dz = compute_corr_dz(obs.redshift, obs.distance)
+    _, scaling = compute_chi2(fluxes[:, None], intprops[:, None],
+                              extprops[:, None],  obs, corr_dz,
+                              gbl_conf['analysis_params']['lim_flag'])
+
 
     gbl_results.best.properties[oidx, :] = [sed.info[k] for k in
                                             gbl_results.best.propertiesnames]
