@@ -252,7 +252,7 @@ def bestfit(oidx, obs):
     # difference between the object and the grid redshifts.
     params = deepcopy(gbl_params.from_index(best_index))
     if obs.redshift >= 0.:
-        params[-1]['redshift'] = obs.redshift
+        params[gbl_params.modules.index('redshifting')]['redshift'] = obs.redshift
     sed = gbl_warehouse.get_sed(gbl_params.modules, params)
 
     fluxes = np.array([sed.compute_fnu(filt) for filt in gbl_obs.bands])
