@@ -8,6 +8,7 @@
 ### Changed
 ### Fixed
 ### Optimised
+- The estimation of the physical properties is made a bit faster when all the models are valid. (Médéric Boquien)
 
 ## 0.12.1 (2018-02-27)
 ### Fixed

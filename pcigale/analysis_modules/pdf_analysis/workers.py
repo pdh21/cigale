@@ -187,6 +187,10 @@ def analysis(idx, obs):
         # We use the exponential probability associated with the χ² as
         # likelihood function.
         likelihood = np.exp(-chi2 / 2.)
+        wlikely = np.where(np.isfinite(likelihood))
+        # If all the models are valid, it is much more efficient to use a slice
+        if likelihood.size == wlikely[0].size:
+            wlikely = slice(None, None)
         gbl_results.bayes.weights[idx] = np.nansum(likelihood)
 
         # We compute the weighted average and standard deviation using the
@@ -203,7 +207,6 @@ def analysis(idx, obs):
             else:
                 values = _(gbl_models.properties[i, wz])
 
-            wlikely = np.where(np.isfinite(likelihood))
             mean, std = weighted_param(values[wlikely], likelihood[wlikely])
             gbl_results.bayes.means[idx, i] = mean
             gbl_results.bayes.errors[idx, i] = std
