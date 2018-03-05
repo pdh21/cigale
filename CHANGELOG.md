@@ -7,6 +7,7 @@
 
 ### Changed
 ### Fixed
+- The histogram bin width was not computed optimally when some models were invalid. (David Corre & Médéric Boquien)
 ### Optimised
 - The estimation of the physical properties is made a bit faster when all the models are valid. (Médéric Boquien)
 

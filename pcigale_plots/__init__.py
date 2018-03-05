@@ -91,10 +91,13 @@ def _pdf_worker(obj_name, var_name):
         model_variable.append(data[1, :])
     likelihood = np.concatenate(likelihood)
     model_variable = np.concatenate(model_variable)
+    w = np.where(np.isfinite(likelihood) & np.isfinite(model_variable))
+    likelihood = likelihood[w]
+    model_variable = model_variable[w]
 
     Npdf = 100
-    min_hist = np.nanmin(model_variable)
-    max_hist = np.nanmax(model_variable)
+    min_hist = np.min(model_variable)
+    max_hist = np.max(model_variable)
     Nhist = min(Npdf, len(np.unique(model_variable)))
 
     if min_hist == max_hist:
