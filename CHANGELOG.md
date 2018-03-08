@@ -8,6 +8,8 @@
 ### Changed
 ### Fixed
 - The histogram bin width was not computed optimally when some models were invalid. (David Corre & Médéric Boquien)
+- Missing import in the `m2005` module. (Médéric Boquien, reported by Dominika Wylezalek)
+
 ### Optimised
 - The estimation of the physical properties is made a bit faster when all the models are valid. (Médéric Boquien)
 

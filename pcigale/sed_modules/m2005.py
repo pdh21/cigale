@@ -13,6 +13,8 @@ This module implements the Maraston (2005) Single Stellar Populations.
 
 from collections import OrderedDict
 
+import numpy as np
+
 from . import SedModule
 from ..data import Database
 
