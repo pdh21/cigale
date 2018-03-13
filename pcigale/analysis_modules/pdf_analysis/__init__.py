@@ -182,8 +182,8 @@ class PdfAnalysis(AnalysisModule):
 
         # Store the grid of parameters in a manager to facilitate the
         # computation of the models
-
         params = ParametersManager(conf)
+
         # Store the observations in a manager which sanitises the data, checks
         # all the required fluxes are present, adding errors if needed,
         # discarding invalid fluxes, etc.
