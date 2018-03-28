@@ -6,6 +6,8 @@
 - It is now possible to fit any physical property indicated by the code (e.g. equivalent width, dust luminosity, etc.). For this the physical property needs to be given in the input file and the properties to be fitted must be given in the properties filed in pcigale.ini. (Héctor Salas & Médéric Boquien)
 
 ### Changed
+- The `sfhdelayed` module has been extended to optionally include an exponential burst to model the latest episode of star formation. (Médéric Boquien & Barbara Lo Faro)
+
 ### Fixed
 - The histogram bin width was not computed optimally when some models were invalid. (David Corre & Médéric Boquien)
 - Missing import in the `m2005` module. (Médéric Boquien, reported by Dominika Wylezalek)
