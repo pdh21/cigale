@@ -27,33 +27,6 @@ class ObservationsManager(object):
             return ObservationsManagerVirtual(config, **kwargs)
 
 
-class Observation(object):
-    """Class to take one row of the observations table and extract the list of
-    fluxes, intensive properties, extensive properties and their errors, that
-    are going to be considered in the fit.
-    """
-    def __init__(self, row, cls):
-        self.redshift = row['redshift']
-        self.id = row['id']
-        if 'distance' in row.colnames and np.isfinite(row['distance']):
-            self.distance = row['distance'] * parsec * 1e6
-        else:
-            if self.redshift == 0.:
-                self.distance = 10. * parsec
-            elif self.redshift > 0:
-                self.distance = cosmo.luminosity_distance(self.redshift).value
-            else:
-                self.distance = np.nan
-        self.fluxes = np.array([row[band] for band in cls.bands])
-        self.fluxes_err = np.array([row[band + '_err'] for band in cls.bands])
-        self.intprops = np.array([row[prop] for prop in cls.intprops])
-        self.intprops_err = np.array([row[prop + '_err'] for prop in
-                                      cls.intprops])
-        self.extprops = np.array([row[prop] for prop in cls.extprops])
-        self.extprops_err = np.array([row[prop + '_err'] for prop in
-                                      cls.extprops])
-
-
 class ObservationsManagerPassbands(object):
     """Class to generate a manager for data files providing fluxes in
     passbands.
@@ -309,3 +282,30 @@ class ObservationsManagerVirtual(object):
         """As there is no observed object the length is naturally 0.
         """
         return 0
+
+
+class Observation(object):
+    """Class to take one row of the observations table and extract the list of
+    fluxes, intensive properties, extensive properties and their errors, that
+    are going to be considered in the fit.
+    """
+    def __init__(self, row, cls):
+        self.redshift = row['redshift']
+        self.id = row['id']
+        if 'distance' in row.colnames and np.isfinite(row['distance']):
+            self.distance = row['distance'] * parsec * 1e6
+        else:
+            if self.redshift == 0.:
+                self.distance = 10. * parsec
+            elif self.redshift > 0:
+                self.distance = cosmo.luminosity_distance(self.redshift).value
+            else:
+                self.distance = np.nan
+        self.fluxes = np.array([row[band] for band in cls.bands])
+        self.fluxes_err = np.array([row[band + '_err'] for band in cls.bands])
+        self.intprops = np.array([row[prop] for prop in cls.intprops])
+        self.intprops_err = np.array([row[prop + '_err'] for prop in
+                                      cls.intprops])
+        self.extprops = np.array([row[prop] for prop in cls.extprops])
+        self.extprops_err = np.array([row[prop + '_err'] for prop in
+                                      cls.extprops])
