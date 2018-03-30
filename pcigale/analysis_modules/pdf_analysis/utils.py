@@ -208,24 +208,27 @@ def compute_chi2(model_fluxes, model_props, model_propsmass, obs,
                                           args=(obs_values, obs_values_err,
                                                 model_values[:, imod])).x
 
-    # χ² of the comparison of each model to each observation.
+    # Computation of the χ² from fluxes
     chi2 = np.zeros(model_fluxes.shape[1])
     for i in range(obs.fluxes.size):
         if np.isfinite(obs.fluxes[i]) and obs.fluxes_err[i] > 0.:
             chi2 += np.square((obs.fluxes[i] - model_fluxes[i, :] * scaling) *
                               (1./obs.fluxes_err[i]))
 
+    # Computation of the χ² from intensive properties
     for i in range(obs.extprops.size):
         if np.isfinite(obs.extprops[i]):
             chi2 += np.square((obs.extprops[i] - corr_dz * (scaling *
                                model_propsmass[i, :])) *
                               (1./obs.extprops_err[i]))
 
+    # Computation of the χ² from extensive properties
     for i in range(obs.intprops.size):
         if np.isfinite(obs.intprops[i]):
             chi2 += np.square((obs.intprops[i] - model_props[i, :]) *
                               (1./obs.intprops_err[i]))
-    # they can have upper limit(s).
+
+    # Finally take the presence of upper limits into account
     if limits == True:
         for i, obs_error in enumerate(obs.fluxes_err):
             if obs_error < 0.:
