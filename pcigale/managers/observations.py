@@ -300,7 +300,7 @@ class Observation(object):
         else:
             if self.redshift == 0.:
                 self.distance = 10. * parsec
-            elif self.redshift > 0:
+            elif self.redshift > 0.:
                 self.distance = cosmo.luminosity_distance(self.redshift).value
             else:
                 self.distance = np.nan
