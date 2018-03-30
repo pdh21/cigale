@@ -191,31 +191,45 @@ def analysis(idx, obs):
         # If all the models are valid, it is much more efficient to use a slice
         if likelihood.size == wlikely[0].size:
             wlikely = slice(None, None)
-        gbl_results.bayes.weights[idx] = np.nansum(likelihood)
+        gbl_results.bayes.weight.data[idx] = np.nansum(likelihood)
 
         # We compute the weighted average and standard deviation using the
         # likelihood as weight.
-        for i, variable in enumerate(gbl_results.bayes.propertiesnames):
-            if variable.endswith('_log'):
-                variable = variable[:-4]
+        for prop in gbl_results.bayes.intmean:
+            i = gbl_models.conf['analysis_params']['variables'].index(prop)
+            if prop.endswith('_log'):
+                prop = prop[:-4]
                 _ = np.log10
             else:
                 _ = lambda x: x
+            values = _(gbl_models.properties[i, wz])
+            mean, std = weighted_param(values[wlikely], likelihood[wlikely])
+            gbl_results.bayes.intmean[prop].data[idx] = mean
+            gbl_results.bayes.interror[prop].data[idx] = std
+            if gbl_models.conf['analysis_params']['save_chi2'] is True:
+                save_chi2(obs, prop, gbl_models, chi2, values)
 
-            if variable in gbl_results.bayes.massproportional:
-                values = _(gbl_models.properties[i, wz] * scaling * corr_dz)
+        for prop in gbl_results.bayes.extmean:
+            i = gbl_models.conf['analysis_params']['variables'].index(prop)
+            if prop.endswith('_log'):
+                prop = prop[:-4]
+                _ = np.log10
             else:
-                values = _(gbl_models.properties[i, wz])
+                _ = lambda x: x
+            values = _(gbl_models.properties[i, wz])
+            mean, std = weighted_param(values[wlikely] * scaling * corr_dz,
+                           likelihood[wlikely])
+            gbl_results.bayes.extmean[prop].data[idx] = mean
+            gbl_results.bayes.exterror[prop].data[idx] = std
+            if gbl_models.conf['analysis_params']['save_chi2'] is True:
+                save_chi2(obs, prop, gbl_models, chi2, values)
 
             mean, std = weighted_param(values[wlikely], likelihood[wlikely])
-            gbl_results.bayes.means[idx, i] = mean
-            gbl_results.bayes.errors[idx, i] = std
-            if gbl_models.conf['analysis_params']['save_chi2'] is True:
-                save_chi2(obs, variable, gbl_models, chi2, values)
         best_idx_z = np.nanargmin(chi2)
         gbl_results.best.chi2[idx] = chi2[best_idx_z]
         gbl_results.best.index[idx] = (wz.start + best_idx_z*wz.step +
                                        gbl_models.block.start)
+
     else:
         # It sometimes happens because models are older than the Universe's age
         print("No suitable model found for the object {}. One possible origin "

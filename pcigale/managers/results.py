@@ -28,10 +28,11 @@ class BayesResultsManager(object):
 
     """
     def __init__(self, models):
-        self.nobs = len(models.obs)
+        nobs = len(models.obs)
         self.propertiesnames = models.propertiesnames
-        self.massproportional = models.massproportional.\
+        self.extpropnames = models.massproportional.\
             intersection(models.propertiesnames)
+        self.intpropnames = set(models.propertiesnames) - self.extpropnames
         self.nproperties = len(models.propertiesnames)
 
         # Arrays where we store the data related to the models. For memory
@@ -39,9 +40,35 @@ class BayesResultsManager(object):
         # to the pool. Each worker will fill a part of the RawArrays. It is
         # important that there is no conflict and that two different workers do
         # not write on the same section.
-        self._means = SharedArray((self.nobs, self.nproperties))
-        self._errors = SharedArray((self.nobs, self.nproperties))
-        self._weights = SharedArray((self.nobs))
+        self.intmean = {prop: SharedArray(nobs) for prop in self.intpropnames}
+        self.interror = {prop: SharedArray(nobs) for prop in self.intpropnames}
+        self.extmean = {prop: SharedArray(nobs) for prop in self.extpropnames}
+        self.exterror = {prop: SharedArray(nobs) for prop in self.extpropnames}
+        self.weight = SharedArray(nobs)
+
+    @property
+    def mean(self):
+        return self._mean
+
+    @mean.setter
+    def mean(self, mean):
+        self._mean = mean
+
+    @property
+    def error(self):
+        return self._error
+
+    @error.setter
+    def error(self, error):
+        self._error = error
+
+    @property
+    def weight(self):
+        return self._weight
+
+    @weight.setter
+    def weight(self, weight):
+        self._weight = weight
 
     @staticmethod
     def merge(results):
@@ -59,59 +86,57 @@ class BayesResultsManager(object):
                     for result in results)):
             raise TypeError("A list of BayesResultsManager is required.")
 
-        means = np.array([result.means for result in results])
-        errors = np.array([result.errors for result in results])
-        weights = np.array([result.weights for result in results])[..., None]
-
         merged = results[0]
-        merged._means = SharedArray((merged.nobs, merged.nproperties))
-        merged._errors = SharedArray((merged.nobs, merged.nproperties))
-        merged._weights = None
+        intmean = {prop: np.array([result.intmean[prop].data
+                                   for result in results])
+                   for prop in merged.intmean}
+        interror = {prop: np.array([result.interror[prop].data
+                                    for result in results])
+                    for prop in merged.interror}
+        extmean = {prop: np.array([result.extmean[prop].data
+                                   for result in results])
+                   for prop in merged.extmean}
+        exterror = {prop: np.array([result.exterror[prop].data
+                                    for result in results])
+                    for prop in merged.exterror}
+        weight = np.array([result.weight.data for result in results])
 
-        sumweights = np.sum(weights, axis=0)
+        totweight = np.sum(weight, axis=0)
 
-        merged.means[:] = np.sum(means * weights, axis=0) / sumweights
+        for prop in merged.intmean:
+            merged.intmean[prop].data[:] = np.sum(
+                intmean[prop] * weight, axis=0) / totweight
 
-        # We compute the merged standard deviation by combining the standard
-        # deviations for each block. See http://stats.stackexchange.com/a/10445
-        # where the number of datapoints has been substituted with the weights.
-        # In short we exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
-        merged.errors[:] = np.sqrt(np.sum(weights * (errors**2 +
-                                          (means-merged.means)**2), axis=0) /
-                                   sumweights)
+            # We compute the merged standard deviation by combining the
+            # standard deviations for each block. See
+            # http://stats.stackexchange.com/a/10445 where the number of
+            # datapoints has been substituted with the weights. In short we
+            # exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
+            merged.interror[prop].data[:] = np.sqrt(np.sum(
+                weight * (interror[prop]**2. + (intmean[prop]-merged.intmean[prop].data)**2), axis=0) / totweight)
 
-        for i, variable in enumerate(merged.propertiesnames):
-            if variable.endswith('_log'):
-                merged.errors[:, i] = np.maximum(0.02, merged.errors[:, i])
+        for prop in merged.extmean:
+            merged.extmean[prop].data[:] = np.sum(
+                extmean[prop] * weight, axis=0) / totweight
+
+            # We compute the merged standard deviation by combining the
+            # standard deviations for each block. See
+            # http://stats.stackexchange.com/a/10445 where the number of
+            # datapoints has been substituted with the weights. In short we
+            # exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
+            merged.exterror[prop].data[:] = np.sqrt(np.sum(
+                weight * (exterror[prop]**2. + (extmean[prop]-merged.extmean[prop].data)**2), axis=0) / totweight)
+
+        for prop in merged.extmean:
+            if prop.endswith('_log'):
+                merged.exterror[prop].data[:] = \
+                    np.maximum(0.02, merged.exterror[prop].data)
             else:
-                merged.errors[:, i] = np.maximum(0.05 * merged.means[:, i],
-                                                 merged.errors[:, i])
+                merged.exterror[prop].data[:] = \
+                    np.maximum(0.05 * merged.extmean[prop].data,
+                               merged.exterror[prop].data)
 
         return merged
-
-    @property
-    def means(self):
-        """Returns a shared array containing the weighted means for each
-        physical property and each observation.
-
-        """
-        return self._means.data
-
-    @property
-    def errors(self):
-        """Returns a shared array containing the weighted standard deviation
-         for each physical property and each observation.
-
-        """
-        return self._errors.data
-
-    @property
-    def weights(self):
-        """Returns a shared array containing the some of the weights for each
-        each observation.
-
-        """
-        return self._weights.data
 
 
 class BestResultsManager(object):
@@ -302,11 +327,16 @@ class ResultsManager(object):
 
         table.add_column(Column(self.obs.table['id'], name="id"))
 
-        for idx, name in enumerate(self.bayes.propertiesnames):
-            table.add_column(Column(self.bayes.means[:, idx],
-                                    name="bayes."+name))
-            table.add_column(Column(self.bayes.errors[:, idx],
-                                    name="bayes."+name+"_err"))
+        for prop in sorted(self.bayes.intmean):
+            table.add_column(Column(self.bayes.intmean[prop].data,
+                                    name="bayes."+prop))
+            table.add_column(Column(self.bayes.interror[prop].data,
+                                    name="bayes."+prop+"_err"))
+        for prop in sorted(self.bayes.extmean):
+            table.add_column(Column(self.bayes.extmean[prop].data,
+                                    name="bayes."+prop))
+            table.add_column(Column(self.bayes.exterror[prop].data,
+                                    name="bayes."+prop+"_err"))
 
         table.add_column(Column(self.best.chi2, name="best.chi_square"))
         obs = [self.obs.table[obs].data for obs in self.obs.tofit]
