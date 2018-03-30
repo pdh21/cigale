@@ -208,8 +208,10 @@ def compute_chi2(model_fluxes, model_props, model_propsmass, obs,
                                           args=(obs_values, obs_values_err,
                                                 model_values[:, imod])).x
 
+    # χ² of the comparison of each model to each observation.
+    chi2 = np.zeros_like(scaling)
+
     # Computation of the χ² from fluxes
-    chi2 = np.zeros(model_fluxes.shape[1])
     for i in range(obs.fluxes.size):
         if np.isfinite(obs.fluxes[i]) and obs.fluxes_err[i] > 0.:
             chi2 += np.square((obs.fluxes[i] - model_fluxes[i, :] * scaling) *
