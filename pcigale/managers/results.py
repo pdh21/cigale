@@ -30,9 +30,9 @@ class BayesResultsManager(object):
     def __init__(self, models):
         nobs = len(models.obs)
         self.propertiesnames = models.propertiesnames
-        self.extpropnames = models.massproportional.\
+        extpropnames = models.massproportional.\
             intersection(models.propertiesnames)
-        self.intpropnames = set(models.propertiesnames) - self.extpropnames
+        intpropnames = set(models.propertiesnames) - extpropnames
         self.nproperties = len(models.propertiesnames)
 
         # Arrays where we store the data related to the models. For memory
@@ -40,10 +40,10 @@ class BayesResultsManager(object):
         # to the pool. Each worker will fill a part of the RawArrays. It is
         # important that there is no conflict and that two different workers do
         # not write on the same section.
-        self.intmean = {prop: SharedArray(nobs) for prop in self.intpropnames}
-        self.interror = {prop: SharedArray(nobs) for prop in self.intpropnames}
-        self.extmean = {prop: SharedArray(nobs) for prop in self.extpropnames}
-        self.exterror = {prop: SharedArray(nobs) for prop in self.extpropnames}
+        self.intmean = {prop: SharedArray(nobs) for prop in intpropnames}
+        self.interror = {prop: SharedArray(nobs) for prop in intpropnames}
+        self.extmean = {prop: SharedArray(nobs) for prop in extpropnames}
+        self.exterror = {prop: SharedArray(nobs) for prop in extpropnames}
         self.weight = SharedArray(nobs)
 
     @property
