@@ -227,6 +227,7 @@ def analysis(idx, obs):
             mean, std = weighted_param(values[wlikely], likelihood[wlikely])
         best_idx_z = np.nanargmin(chi2)
         gbl_results.best.chi2[idx] = chi2[best_idx_z]
+        gbl_results.best.scaling[idx] = scaling[best_idx_z]
         gbl_results.best.index[idx] = (wz.start + best_idx_z*wz.step +
                                        gbl_models.block.start)
 
@@ -272,14 +273,8 @@ def bestfit(oidx, obs):
         params[gbl_params.modules.index('redshifting')]['redshift'] = obs.redshift
     sed = gbl_warehouse.get_sed(gbl_params.modules, params)
 
-    fluxes = np.array([sed.compute_fnu(filt) for filt in gbl_obs.bands])
-    intprops = np.array([sed.info[prop] for prop in gbl_obs.intprops])
-    extprops = np.array([sed.info[prop] for prop in gbl_obs.extprops])
-
     corr_dz = compute_corr_dz(obs.redshift, obs.distance)
-    _, scaling = compute_chi2(fluxes[:, None], intprops[:, None],
-                          extprops[:, None],  obs, corr_dz,
-                          gbl_conf['analysis_params']['lim_flag'])
+    scaling = gbl_results.best.scaling[oidx]
 
     for band in gbl_results.best.flux:
         gbl_results.best.flux[band].data[oidx] = sed.compute_fnu(band) * scaling

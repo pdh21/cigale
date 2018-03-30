@@ -229,6 +229,18 @@ class BestResultsManager(object):
     def index(self, index):
         self._index = index
 
+    @property
+    def scaling(self):
+        """Returns a shared array containing the scaling of the best fit for each
+        observation.
+
+        """
+        return self._scaling.data
+
+    @scaling.setter
+    def scaling(self, scaling):
+        self._scaling = scaling
+
     @staticmethod
     def merge(results):
         """Merge a list of partial results computed on individual blocks of
@@ -262,6 +274,7 @@ class BestResultsManager(object):
                 merged.extprop[prop].data[iobs] = \
                     results[bestidx].extprop[prop].data[iobs]
             merged.chi2[iobs] = results[bestidx].chi2[iobs]
+            merged.scaling[iobs] = results[bestidx].scaling[iobs]
             merged.index[iobs] = results[bestidx].index[iobs]
 
         return merged
