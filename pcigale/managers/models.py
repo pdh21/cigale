@@ -10,7 +10,6 @@ of the models.
 """
 
 from astropy.table import Table, Column
-import numpy as np
 
 from .utils import SharedArray, get_info
 
