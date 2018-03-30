@@ -150,63 +150,60 @@ class BestResultsManager(object):
 
     def __init__(self, models):
         self.obs = models.obs
-        self.nbands = len(models.obs.bands)
-        self.nobs = len(models.obs)
-        self.nintprops = len(models.obs.intprops)
-        self.nextprops = len(models.obs.extprops)
-        self.propertiesnames = models.allpropertiesnames
-        self.massproportional = models.massproportional
-        self.nproperties = len(models.allpropertiesnames)
-
-        self._fluxes_shape = (self.nobs, self.nbands)
-        self._intprops_shape = (self.nobs, self.nintprops)
-        self._extprops_shape = (self.nobs, self.nextprops)
-        self._properties_shape = (self.nobs, self.nproperties)
-
+        nobs = len(models.obs)
         # Arrays where we store the data related to the models. For memory
         # efficiency reasons, we use RawArrays that will be passed in argument
         # to the pool. Each worker will fill a part of the RawArrays. It is
         # important that there is no conflict and that two different workers do
         # not write on the same section.
-        self._fluxes = SharedArray(self._fluxes_shape)
-        self._intprops = SharedArray(self._intprops_shape)
-        self._extprops = SharedArray(self._extprops_shape)
-        self._properties = SharedArray(self._properties_shape)
-        self._chi2 = SharedArray(self.nobs)
+        self.flux = {band: SharedArray(nobs) for band in models.obs.bands}
+        allintpropnames = set(models.allpropertiesnames) - models.massproportional
+        allextpropnames = set(models.allpropertiesnames) - allintpropnames
+        self.intprop = {prop: SharedArray(nobs)
+                        for prop in allintpropnames}
+        self.extprop = {prop: SharedArray(nobs)
+                        for prop in allextpropnames}
+        self.chi2 = SharedArray(nobs)
+        self.scaling = SharedArray(nobs)
+
         # We store the index as a float to work around python issue #10746
-        self._index = SharedArray(self.nobs)
+        self.index = SharedArray(nobs)
 
     @property
-    def fluxes(self):
+    def flux(self):
         """Returns a shared array containing the fluxes of the best fit for
         each observation.
 
         """
-        return self._fluxes.data
+        return self._flux
+
+    @flux.setter
+    def flux(self, flux):
+        self._flux = flux
 
     @property
-    def intprops(self):
+    def intprop(self):
         """Returns a shared array containing the fluxes of the best fit for
         each observation.
 
         """
-        return self._intprops.data
+        return self._intprop
+
+    @intprop.setter
+    def intprop(self, intprop):
+        self._intprop = intprop
 
     @property
-    def extprops(self):
+    def extprop(self):
         """Returns a shared array containing the fluxes of the best fit for
         each observation.
 
         """
-        return self._extprops.data
+        return self._extprop
 
-    @property
-    def properties(self):
-        """Returns a shared array containing the physical properties of the
-        best fit for each observation.
-
-        """
-        return self._properties.data
+    @extprop.setter
+    def extprop(self, extprop):
+        self._extprop = extprop
 
     @property
     def chi2(self):
@@ -216,6 +213,10 @@ class BestResultsManager(object):
         """
         return self._chi2.data
 
+    @chi2.setter
+    def chi2(self, chi2):
+        self._chi2 = chi2
+
     @property
     def index(self):
         """Returns a shared array containing the index of the best fit for each
@@ -223,6 +224,10 @@ class BestResultsManager(object):
 
         """
         return self._index.data
+
+    @index.setter
+    def index(self, index):
+        self._index = index
 
     @staticmethod
     def merge(results):
@@ -243,23 +248,21 @@ class BestResultsManager(object):
         if len(results) == 1:
             return results[0]
 
-        fluxes = np.array([result.fluxes for result in results])
-        properties = np.array([result.properties for result in results])
-        chi2 = np.array([result.chi2 for result in results])
-        index = np.array([result.index for result in results])
+        best = np.argmin([result.chi2 for result in results], axis=0)
 
         merged = results[0]
-        merged._fluxes = SharedArray((merged.nobs, merged.nbands))
-        merged._properties = SharedArray((merged.nobs, merged.nproperties))
-        merged._chi2 = SharedArray(merged.nobs)
-        # We store the index as a float to work around python issue #10746
-        merged._index = SharedArray(merged.nobs)
-
-        for iobs, bestidx in enumerate(np.argmin(chi2, axis=0)):
-            merged.fluxes[iobs, :] = fluxes[bestidx, iobs, :]
-            merged.properties[iobs, :] = properties[bestidx, iobs, :]
-            merged.chi2[iobs] = chi2[bestidx, iobs]
-            merged.index[iobs] = index[bestidx, iobs]
+        for iobs, bestidx in enumerate(best):
+            for band in merged.flux:
+                merged.flux[band].data[iobs] = \
+                    results[bestidx].flux[band].data[iobs]
+            for prop in merged.intprop:
+                merged.intprop[prop].data[iobs] = \
+                    results[bestidx].intprop[prop].data[iobs]
+            for prop in merged.extprop:
+                merged.extprop[prop].data[iobs] = \
+                    results[bestidx].extprop[prop].data[iobs]
+            merged.chi2[iobs] = results[bestidx].chi2[iobs]
+            merged.index[iobs] = results[bestidx].index[iobs]
 
         return merged
 
@@ -344,13 +347,17 @@ class ResultsManager(object):
         table.add_column(Column(self.best.chi2 / (nobs - 1),
                                 name="best.reduced_chi_square"))
 
-        for idx, name in enumerate(self.best.propertiesnames):
-            table.add_column(Column(self.best.properties[:, idx],
-                                    name="best."+name))
+        for prop in sorted(self.best.intprop):
+            table.add_column(Column(self.best.intprop[prop].data,
+                                    name="best."+prop))
+        for prop in sorted(self.best.extprop):
+            table.add_column(Column(self.best.extprop[prop].data,
+                                    name="best."+prop))
 
-        for idx, name in enumerate(self.obs.bands):
-            table.add_column(Column(self.best.fluxes[:, idx],
-                                    name="best."+name, unit='mJy'))
+        for band in self.obs.bands:
+            table.add_column(Column(self.best.flux[band].data,
+                                    name="best."+band, unit='mJy'))
+
 
         table.write("out/{}.txt".format(filename), format='ascii.fixed_width',
                     delimiter=None)

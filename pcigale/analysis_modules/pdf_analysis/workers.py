@@ -278,15 +278,18 @@ def bestfit(oidx, obs):
 
     corr_dz = compute_corr_dz(obs.redshift, obs.distance)
     _, scaling = compute_chi2(fluxes[:, None], intprops[:, None],
-                              extprops[:, None],  obs, corr_dz,
-                              gbl_conf['analysis_params']['lim_flag'])
+                          extprops[:, None],  obs, corr_dz,
+                          gbl_conf['analysis_params']['lim_flag'])
 
-    gbl_results.best.properties[oidx, :] = [sed.info[k] for k in
-                                            gbl_results.best.propertiesnames]
-    iprop = [i for i, k in enumerate(gbl_results.best.propertiesnames)
-             if k in gbl_results.best.massproportional]
-    gbl_results.best.properties[oidx, iprop] *= scaling * corr_dz
-    gbl_results.best.fluxes[oidx, :] = fluxes * scaling
+    for band in gbl_results.best.flux:
+        gbl_results.best.flux[band].data[oidx] = sed.compute_fnu(band) * scaling
+
+    for prop in gbl_results.best.intprop:
+        gbl_results.best.intprop[prop].data[oidx] = sed.info[prop]
+
+    for prop in gbl_results.best.extprop:
+        gbl_results.best.extprop[prop].data[oidx] = sed.info[prop] * scaling \
+                                                   * corr_dz
 
     if gbl_conf['analysis_params']["save_best_sed"]:
         sed.to_fits('out/{}'.format(obs.id), scaling)
