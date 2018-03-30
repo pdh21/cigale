@@ -120,7 +120,7 @@ def dchi2_over_ds2(s, obs_values, obs_errors, mod_values):
     return func
 
 
-def _compute_scaling(model_fluxes, model_propsmass, observation):
+def _compute_scaling(model_fluxes, model_propsmass, obs):
     """Compute the scaling factor to be applied to the model fluxes to best fit
     the observations. Note that we look over the bands to avoid the creation of
     an array of the same size as the model_fluxes array. Because we loop on the
@@ -132,34 +132,29 @@ def _compute_scaling(model_fluxes, model_propsmass, observation):
         Fluxes of the models
     model_propsmass: array
         Extensive properties of the models to be fitted
-    observation: Class
-        Class instance containing the fluxes, intensive properties, extensive
-        properties and their errors, for a sigle observation.
+    obs: Observation class instance
+        Contains the fluxes, intensive properties, extensive properties and
+        their errors, for a sigle observation.
     Returns
     -------
     scaling: array
         Scaling factors minimising the χ²
     """
 
-    obs_fluxes = observation.fluxes
-    obs_fluxes_err = observation.fluxes_err
-    obs_propsmass = observation.extprops
-    obs_propsmass_err = observation.extprops_err
-
     num = np.zeros(model_fluxes.shape[1])
     denom = np.zeros(model_fluxes.shape[1])
-    for i in range(obs_fluxes.size):
-        if np.isfinite(obs_fluxes[i]) and obs_fluxes_err[i] > 0.:
-            num += model_fluxes[i, :] * (obs_fluxes[i] / (obs_fluxes_err[i] *
-                                                          obs_fluxes_err[i]))
-            denom += np.square(model_fluxes[i, :] * (1./obs_fluxes_err[i]))
-    for i in range(obs_propsmass.size):
-        if np.isfinite(obs_propsmass[i]) and obs_propsmass_err[i] > 0.:
-            num += model_propsmass[i, :] * (obs_propsmass[i] /
-                                            (obs_propsmass_err[i] *
-                                             obs_propsmass_err[i]))
+    for i in range(obs.fluxes.size):
+        if np.isfinite(obs.fluxes[i]) and obs.fluxes_err[i] > 0.:
+            num += model_fluxes[i, :] * (obs.fluxes[i] / (obs.fluxes_err[i] *
+                                                          obs.fluxes_err[i]))
+            denom += np.square(model_fluxes[i, :] * (1./obs.fluxes_err[i]))
+    for i in range(obs.extprops.size):
+        if np.isfinite(obs.extprops[i]) and obs.extprops_err[i] > 0.:
+            num += model_propsmass[i, :] * (obs.extprops[i] /
+                                            (obs.extprops_err[i] *
+                                             obs.extprops_err[i]))
             denom += np.square(model_propsmass[i, :] *
-                               (1./obs_propsmass_err[i]))
+                               (1./obs.extprops_err[i]))
 
     return num/denom
 
