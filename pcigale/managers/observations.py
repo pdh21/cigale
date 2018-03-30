@@ -42,20 +42,22 @@ class ObservationsManagerPassbands(object):
         self.params = params
         self.allpropertiesnames, self.massproportional = get_info(self)
         self.table = read_table(config['data_file'])
-        self.bands = [band for band in config['bands'] if not
-                      band.endswith('_err')]
-        self.bands_err = [band for band in config['bands'] if
-                          band.endswith('_err')]
-        self.intprops = [prop for prop in config['properties'] if (prop not in
-                         self.massproportional and not prop.endswith('_err'))]
-        self.intprops_err = [prop for prop in config['properties'] if
-                             (prop.endswith('_err') and prop[:-4] not in
-                             self.massproportional)]
-        self.extprops = [prop for prop in config['properties'] if (prop in
-                         self.massproportional and not prop.endswith('_err'))]
-        self.extprops_err = [prop for prop in config['properties'] if
-                             (prop.endswith('_err') and prop[:-4] in
-                             self.massproportional)]
+        self.bands = [band for band in config['bands']
+                      if not band.endswith('_err')]
+        self.bands_err = [band for band in config['bands']
+                          if band.endswith('_err')]
+        self.intprops = [prop for prop in config['properties']
+                         if (prop not in self.massproportional
+                             and not prop.endswith('_err'))]
+        self.intprops_err = [prop for prop in config['properties']
+                             if (prop.endswith('_err')
+                                 and prop[:-4] not in self.massproportional)]
+        self.extprops = [prop for prop in config['properties']
+                         if (prop in self.massproportional
+                             and not prop.endswith('_err'))]
+        self.extprops_err = [prop for prop in config['properties']
+                             if (prop.endswith('_err')
+                                 and prop[:-4] in self.massproportional)]
         self.tofit = self.bands + self.intprops + self.extprops
         self.tofit_err = self.bands_err + self.intprops_err + self.extprops_err
 
@@ -106,7 +108,7 @@ class ObservationsManagerPassbands(object):
 
         for item in self.table.colnames:
             if (item != 'id' and item != 'redshift' and item != 'distance' and
-                item not in self.tofit + self.tofit_err):
+                    item not in self.tofit + self.tofit_err):
                 self.table.remove_column(item)
                 print("Warning: {} in the input file but not to be taken into"
                       " account in the fit.".format(item))
@@ -137,7 +139,7 @@ class ObservationsManagerPassbands(object):
             error = item + '_err'
             if item in self.intprops:
                 if (error not in self.intprops_err or
-                    error not in self.table.colnames):
+                        error not in self.table.colnames):
                     raise ValueError("Intensive properties errors must be in "
                                      "input file.")
             elif (error not in self.tofit_err or
@@ -289,6 +291,7 @@ class Observation(object):
     fluxes, intensive properties, extensive properties and their errors, that
     are going to be considered in the fit.
     """
+
     def __init__(self, row, cls):
         self.redshift = row['redshift']
         self.id = row['id']
