@@ -191,7 +191,7 @@ def analysis(idx, obs):
         # If all the models are valid, it is much more efficient to use a slice
         if likelihood.size == wlikely[0].size:
             wlikely = slice(None, None)
-        gbl_results.bayes.weight.data[idx] = np.nansum(likelihood)
+        gbl_results.bayes.weight.array[idx] = np.nansum(likelihood)
 
         # We compute the weighted average and standard deviation using the
         # likelihood as weight.
@@ -204,8 +204,8 @@ def analysis(idx, obs):
                 _ = lambda x: x
             values = _(gbl_models.properties[i, wz])
             mean, std = weighted_param(values[wlikely], likelihood[wlikely])
-            gbl_results.bayes.intmean[prop].data[idx] = mean
-            gbl_results.bayes.interror[prop].data[idx] = std
+            gbl_results.bayes.intmean[prop].array[idx] = mean
+            gbl_results.bayes.interror[prop].array[idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
                 save_chi2(obs, prop, gbl_models, chi2, values)
 
@@ -219,8 +219,8 @@ def analysis(idx, obs):
             values = _(gbl_models.properties[i, wz])
             mean, std = weighted_param(values[wlikely] * scaling * corr_dz,
                            likelihood[wlikely])
-            gbl_results.bayes.extmean[prop].data[idx] = mean
-            gbl_results.bayes.exterror[prop].data[idx] = std
+            gbl_results.bayes.extmean[prop].array[idx] = mean
+            gbl_results.bayes.exterror[prop].array[idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
                 save_chi2(obs, prop, gbl_models, chi2, values)
 
@@ -277,13 +277,13 @@ def bestfit(oidx, obs):
     scaling = gbl_results.best.scaling[oidx]
 
     for band in gbl_results.best.flux:
-        gbl_results.best.flux[band].data[oidx] = sed.compute_fnu(band) * scaling
+        gbl_results.best.flux[band].array[oidx] = sed.compute_fnu(band) * scaling
 
     for prop in gbl_results.best.intprop:
-        gbl_results.best.intprop[prop].data[oidx] = sed.info[prop]
+        gbl_results.best.intprop[prop].array[oidx] = sed.info[prop]
 
     for prop in gbl_results.best.extprop:
-        gbl_results.best.extprop[prop].data[oidx] = sed.info[prop] * scaling \
+        gbl_results.best.extprop[prop].array[oidx] = sed.info[prop] * scaling \
                                                    * corr_dz
 
     if gbl_conf['analysis_params']["save_best_sed"]:

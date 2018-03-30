@@ -35,16 +35,16 @@ class SharedArray(object):
     """
     def __init__(self, shape):
         self._shape = shape
-        self.data = RawArray(ctypes.c_double, int(np.product(self._shape)))
+        self.array = RawArray(ctypes.c_double, int(np.product(self._shape)))
 
     @property
-    def data(self):
-        return np.ctypeslib.as_array(self._data).reshape(self._shape)
+    def array(self):
+        return np.ctypeslib.as_array(self._array).reshape(self._shape)
 
-    @data.setter
-    def data(self, data):
-        if isinstance(data, ctypes.Array):
-            self._data = data
+    @array.setter
+    def array(self, array):
+        if isinstance(array, ctypes.Array):
+            self._array = array
         else:
             raise TypeError("Type must be RawArray.")
 

@@ -48,26 +48,26 @@ class ModelsManager(object):
         """Returns a shared array containing the fluxes of the models.
 
         """
-        return self._fluxes.data
+        return self._fluxes.array
 
     @property
     def properties(self):
         """Returns a shared array containing the properties of the models.
 
         """
-        return self._properties.data
+        return self._properties.array
 
     @property
     def intprops(self):
         """Returns a shared array containing the intensive properties to fit.
         """
-        return self._intprops.data
+        return self._intprops.array
 
     @property
     def extprops(self):
         """Returns a shared array containing the extensive properties to fit.
         """
-        return self._extprops.data
+        return self._extprops.array
 
     def save(self, filename):
         """Save the fluxes and properties of all the models into a table.
