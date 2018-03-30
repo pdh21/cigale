@@ -144,17 +144,19 @@ def _compute_scaling(model_fluxes, model_propsmass, obs):
     num = np.zeros(model_fluxes.shape[1])
     denom = np.zeros(model_fluxes.shape[1])
     for i in range(obs.fluxes.size):
+        # Multiplications are faster than division, so we directly use the
+        # inverse error
+        inv_err2 = 1. / obs.fluxes_err[i] ** 2.
         if np.isfinite(obs.fluxes[i]) and obs.fluxes_err[i] > 0.:
-            num += model_fluxes[i, :] * (obs.fluxes[i] / (obs.fluxes_err[i] *
-                                                          obs.fluxes_err[i]))
+            num += model_fluxes[i, :] * (obs.fluxes[i] * inv_err2)
             denom += np.square(model_fluxes[i, :] * (1./obs.fluxes_err[i]))
     for i in range(obs.extprops.size):
+        # Multiplications are faster than division, so we directly use the
+        # inverse error
+        inv_err2 = 1. / obs.extprops_err[i] ** 2.
         if np.isfinite(obs.extprops[i]) and obs.extprops_err[i] > 0.:
-            num += model_propsmass[i, :] * (obs.extprops[i] /
-                                            (obs.extprops_err[i] *
-                                             obs.extprops_err[i]))
-            denom += np.square(model_propsmass[i, :] *
-                               (1./obs.extprops_err[i]))
+            num += model_propsmass[i, :] * (obs.extprops[i] * inv_err2)
+            denom += model_propsmass[i, :] ** 2. * inv_err2
 
     return num/denom
 
