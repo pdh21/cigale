@@ -33,13 +33,12 @@ class SharedArray(object):
     not write on the same section.
 
     """
-    def __init__(self, shape):
-        self._shape = shape
-        self.array = RawArray(ctypes.c_double, int(np.product(self._shape)))
+    def __init__(self, size):
+        self.array = RawArray(ctypes.c_double, size)
 
     @property
     def array(self):
-        return np.ctypeslib.as_array(self._array).reshape(self._shape)
+        return np.ctypeslib.as_array(self._array)
 
     @array.setter
     def array(self, array):
@@ -47,7 +46,3 @@ class SharedArray(object):
             self._array = array
         else:
             raise TypeError("Type must be RawArray.")
-
-    @property
-    def shape(self):
-        return self._shape
