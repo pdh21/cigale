@@ -28,8 +28,9 @@ def init_fluxes(models, t0, ncomputed):
         Number of computed models. Shared among workers.
 
     """
-    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_obs
-    global gbl_properties, gbl_save, gbl_t0, gbl_ncomputed
+    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_obs, gbl_save
+    global gbl_t0, gbl_ncomputed
+
 
     # Limit the number of threads to 1 if we use MKL in order to limit the
     # oversubscription of the CPU/RAM.
@@ -40,8 +41,6 @@ def init_fluxes(models, t0, ncomputed):
 
     gbl_models = models
     gbl_obs = models.obs
-    gbl_properties = [prop[:-4] if prop.endswith('_log') else prop for prop in
-                      models.propertiesnames]
     gbl_save = models.conf['analysis_params']['save_sed']
     gbl_t0 = t0
     gbl_ncomputed = ncomputed
@@ -67,13 +66,19 @@ def fluxes(idx, midx):
                                 gbl_models.params.from_index(midx))
 
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
-        gbl_models.fluxes[:, idx] = np.full(len(gbl_obs.bands), np.nan)
-        gbl_models.properties[:, idx] = np.full(len(gbl_properties), np.nan)
+        for band in gbl_models.flux:
+            gbl_models.flux[band].raw[idx] = np.nan
+        for prop in gbl_models.extprop:
+            gbl_models.extprop[prop].raw[idx] = np.nan
+        for prop in gbl_models.intprop:
+            gbl_models.intprop[prop].raw[idx] = np.nan
     else:
-        gbl_models.fluxes[:, idx] = [sed.compute_fnu(filter_)
-                                     for filter_ in gbl_obs.bands]
-        gbl_models.properties[:, idx] = [sed.info[name]
-                                         for name in gbl_properties]
+        for band in gbl_models.flux.keys():
+            gbl_models.flux[band].array[idx] = sed.compute_fnu(band)
+        for prop in gbl_models.extprop.keys():
+            gbl_models.extprop[prop].array[idx] = sed.info[prop]
+        for prop in gbl_models.intprop.keys():
+            gbl_models.intprop[prop].array[idx] = sed.info[prop]
 
     if gbl_save is True:
         sed.to_fits("out/{}".format(midx))

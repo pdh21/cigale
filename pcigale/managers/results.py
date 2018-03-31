@@ -29,11 +29,10 @@ class BayesResultsManager(object):
     """
     def __init__(self, models):
         nobs = len(models.obs)
-        self.propertiesnames = models.propertiesnames
-        extpropnames = models.massproportional.\
-            intersection(models.propertiesnames)
-        intpropnames = set(models.propertiesnames) - extpropnames
-        self.nproperties = len(models.propertiesnames)
+        self.propertiesnames = models.allpropnames
+        extpropnames = models.extpropnames
+        intpropnames = models.intpropnames
+        self.nproperties = len(intpropnames) + len(extpropnames)
 
         # Arrays where we store the data related to the models. For memory
         # efficiency reasons, we use RawArrays that will be passed in argument
@@ -157,8 +156,8 @@ class BestResultsManager(object):
         # important that there is no conflict and that two different workers do
         # not write on the same section.
         self.flux = {band: SharedArray(nobs) for band in models.obs.bands}
-        allintpropnames = set(models.allpropertiesnames) - models.massproportional
-        allextpropnames = set(models.allpropertiesnames) - allintpropnames
+        allintpropnames = models.allintpropnames
+        allextpropnames = models.allextpropnames
         self.intprop = {prop: SharedArray(nobs)
                         for prop in allintpropnames}
         self.extprop = {prop: SharedArray(nobs)

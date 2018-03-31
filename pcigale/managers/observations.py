@@ -279,6 +279,8 @@ class ObservationsManagerVirtual(object):
         # this situation
         self.bands_err = None
         self.table = None
+        self.intprops = set()
+        self.extprops = set()
 
     def __len__(self):
         """As there is no observed object the length is naturally 0.
@@ -304,11 +306,9 @@ class Observation(object):
                 self.distance = cosmo.luminosity_distance(self.redshift).value
             else:
                 self.distance = np.nan
-        self.fluxes = np.array([row[band] for band in cls.bands])
-        self.fluxes_err = np.array([row[band + '_err'] for band in cls.bands])
-        self.intprops = np.array([row[prop] for prop in cls.intprops])
-        self.intprops_err = np.array([row[prop + '_err'] for prop in
-                                      cls.intprops])
-        self.extprops = np.array([row[prop] for prop in cls.extprops])
-        self.extprops_err = np.array([row[prop + '_err'] for prop in
-                                      cls.extprops])
+        self.flux = {band: row[band] for band in cls.bands}
+        self.flux_err = {band: row[band + '_err'] for band in cls.bands}
+        self.intprop = {prop: row[prop] for prop in cls.intprops}
+        self.intprop_err = {prop: row[prop + '_err'] for prop in cls.intprops}
+        self.extprop = {prop: row[prop] for prop in cls.extprops}
+        self.extprop_err = {prop: row[prop + '_err'] for prop in cls.extprops}

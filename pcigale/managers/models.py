@@ -26,47 +26,50 @@ class ModelsManager(object):
         self.conf = conf
         self.obs = obs
         self.params = params
-        self.iblock = iblock
         self.block = params.blocks[iblock]
+        self.allpropnames, self.allextpropnames = get_info(self)
+        self.allintpropnames = set(self.allpropnames) - self.allextpropnames
 
-        self.propertiesnames = conf['analysis_params']['variables']
-        self.allpropertiesnames, self.massproportional = get_info(self)
+        self.intpropnames = (self.allintpropnames & set(obs.intprops) |
+                             self.allintpropnames & set(conf['analysis_params']['variables']))
+        self.extpropnames = (self.allextpropnames & set(obs.extprops) |
+                             self.allextpropnames & set(conf['analysis_params']['variables']))
+        size = len(params.blocks[iblock])
 
-        self._fluxes = SharedArray((len(self.obs.bands), len(self.block)))
-        self._properties = SharedArray((len(self.propertiesnames),
-                                        len(self.block)))
-
-        if conf['analysis_method'] == 'pdf_analysis':
-            self._intprops = SharedArray((len(self.obs.intprops),
-                                          len(self.block)))
-            self._extprops = SharedArray((len(self.obs.extprops),
-                                          len(self.block)))
+        self.flux = {band: SharedArray(size) for band in obs.bands}
+        self.intprop = {prop: SharedArray(size) for prop in self.intpropnames}
+        self.extprop = {prop: SharedArray(size) for prop in self.extpropnames}
 
     @property
-    def fluxes(self):
+    def flux(self):
         """Returns a shared array containing the fluxes of the models.
 
         """
-        return self._fluxes.array
+        return self._flux
+
+    @flux.setter
+    def flux(self, flux):
+        self._flux = flux
 
     @property
-    def properties(self):
-        """Returns a shared array containing the properties of the models.
-
-        """
-        return self._properties.array
-
-    @property
-    def intprops(self):
+    def intprop(self):
         """Returns a shared array containing the intensive properties to fit.
         """
-        return self._intprops.array
+        return self._intprop
+
+    @intprop.setter
+    def intprop(self, intprop):
+        self._intprop = intprop
 
     @property
-    def extprops(self):
+    def extprop(self):
         """Returns a shared array containing the extensive properties to fit.
         """
-        return self._extprops.array
+        return self._extprop
+
+    @extprop.setter
+    def extprop(self, extprop):
+        self._extprop = extprop
 
     def save(self, filename):
         """Save the fluxes and properties of all the models into a table.
@@ -77,10 +80,15 @@ class ModelsManager(object):
             Root of the filename where to save the data.
 
         """
-        table = Table(np.vstack((self.fluxes, self.properties)).T,
-                      names=self.obs.bands + self.propertiesnames)
-
-        table.add_column(Column(self.block, name='id'), index=0)
+        table = Table()
+        table.add_column(Column(self.block, name='id'))
+        for band in sorted(self.flux.keys()):
+            table.add_column(Column(self.flux[band].array, name=band,
+                                    unit='mJy'))
+        for prop in sorted(self.extprop.keys()):
+            table.add_column(Column(self.extprop[prop].array, name=prop))
+        for prop in sorted(self.intprop.keys()):
+            table.add_column(Column(self.intprop[prop].array, name=prop))
 
         table.write("out/{}.fits".format(filename))
         table.write("out/{}.txt".format(filename), format='ascii.fixed_width',

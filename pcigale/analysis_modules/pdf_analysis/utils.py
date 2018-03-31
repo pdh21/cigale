@@ -120,7 +120,7 @@ def dchi2_over_ds2(s, obs_values, obs_errors, mod_values):
     return func
 
 
-def _compute_scaling(model_fluxes, model_propsmass, obs):
+def _compute_scaling(models, obs, wz):
     """Compute the scaling factor to be applied to the model fluxes to best fit
     the observations. Note that we look over the bands to avoid the creation of
     an array of the same size as the model_fluxes array. Because we loop on the
@@ -128,41 +128,47 @@ def _compute_scaling(model_fluxes, model_propsmass, obs):
 
     Parameters
     ----------
-    model_fluxes: array
-        Fluxes of the models
-    model_propsmass: array
-        Extensive properties of the models to be fitted
+    models: ModelsManagers class instance
+        Contains the models (fluxes, intensive, and extensive properties).
     obs: Observation class instance
         Contains the fluxes, intensive properties, extensive properties and
         their errors, for a sigle observation.
+    wz: slice
+        Selection of the models at the redshift of the observation or all the
+        redshifts in photometric-redshift mode.
+
     Returns
     -------
     scaling: array
         Scaling factors minimising the χ²
     """
 
-    num = np.zeros(model_fluxes.shape[1])
-    denom = np.zeros(model_fluxes.shape[1])
-    for i in range(obs.fluxes.size):
+    _ = list(models.flux.keys())[0]
+    num = np.zeros_like(models.flux[_].array[wz])
+    denom = np.zeros_like(models.flux[_].array[wz])
+
+    for band, flux in obs.flux.items():
         # Multiplications are faster than division, so we directly use the
         # inverse error
-        inv_err2 = 1. / obs.fluxes_err[i] ** 2.
-        if np.isfinite(obs.fluxes[i]) and obs.fluxes_err[i] > 0.:
-            num += model_fluxes[i, :] * (obs.fluxes[i] * inv_err2)
-            denom += np.square(model_fluxes[i, :] * (1./obs.fluxes_err[i]))
-    for i in range(obs.extprops.size):
+        inv_err2 = 1. / obs.flux_err[band] ** 2.
+        if np.isfinite(flux) and obs.flux_err[band] > 0.:
+            model = models.flux[band].array[wz]
+            num += model * (flux * inv_err2)
+            denom += model**2. * inv_err2
+
+    for name, prop in obs.extprop.items():
         # Multiplications are faster than division, so we directly use the
         # inverse error
-        inv_err2 = 1. / obs.extprops_err[i] ** 2.
-        if np.isfinite(obs.extprops[i]) and obs.extprops_err[i] > 0.:
-            num += model_propsmass[i, :] * (obs.extprops[i] * inv_err2)
-            denom += model_propsmass[i, :] ** 2. * inv_err2
+        inv_err2 = 1. / obs.extprop_err[name] ** 2.
+        if np.isfinite(prop) and obs.extprop_err[name] > 0.:
+            model = models.extprop[name].array[wz]
+            num += model * (prop * inv_err2)
+            denom += model ** 2. * inv_err2
 
     return num/denom
 
 
-def compute_chi2(model_fluxes, model_props, model_propsmass, obs,
-                 corr_dz, lim_flag):
+def compute_chi2(models, obs, corr_dz, wz, lim_flag):
     """Compute the χ² of observed fluxes with respect to the grid of models. We
     take into account upper limits if need be. Note that we look over the bands
     to avoid the creation of an array of the same size as the model_fluxes
@@ -171,17 +177,17 @@ def compute_chi2(model_fluxes, model_props, model_propsmass, obs,
 
     Parameters
     ----------
-    model_fluxes: array
-        2D grid containing the fluxes of the models
-    model_props: array
-        2D grid containing the intensive properties of the models
-    model_propsmass: array
-        2D grid containing the extensive properties of the models
+    models: ModelsManagers class instance
+        Contains the models (fluxes, intensive, and extensive properties).
     obs: Observation class instance
         Contains the fluxes, intensive properties, extensive properties and
         their errors, for a sigle observation.
-    corr_dz: correction factor to scale the extensive properties to the right
+    corr_dz: float
+        Correction factor to scale the extensive properties to the right
         distance
+    wz: slice
+        Selection of the models at the redshift of the observation or all the
+        redshifts in photometric-redshift mode.
     lim_flag: boolean
         Boolean indicating whether upper limits should be treated (True) or
         discarded (False)
@@ -195,7 +201,7 @@ def compute_chi2(model_fluxes, model_props, model_propsmass, obs,
     """
     limits = lim_flag and (np.any(obs.fluxes_err <= 0.)
                            or np.any(obs.extprops_err <= 0.))
-    scaling = _compute_scaling(model_fluxes, model_propsmass, obs)
+    scaling = _compute_scaling(models, obs, wz)
 
     # Some observations may not have flux values in some filter(s), but
     # they can have upper limit(s).
@@ -212,32 +218,37 @@ def compute_chi2(model_fluxes, model_props, model_propsmass, obs,
     chi2 = np.zeros_like(scaling)
 
     # Computation of the χ² from fluxes
-    for i in range(obs.fluxes.size):
-        if np.isfinite(obs.fluxes[i]) and obs.fluxes_err[i] > 0.:
-            chi2 += np.square((obs.fluxes[i] - model_fluxes[i, :] * scaling) *
-                              (1./obs.fluxes_err[i]))
+    for band, flux in obs.flux.items():
+        # Multiplications are faster than division, so we directly use the
+        # inverse error
+        inv_flux_err = 1. / obs.flux_err[band]
+        if np.isfinite(flux) and inv_flux_err > 0.:
+            model = models.flux[band].array[wz]
+            chi2 += ((flux - model * scaling) * inv_flux_err) ** 2.
 
     # Computation of the χ² from intensive properties
-    for i in range(obs.extprops.size):
-        if np.isfinite(obs.extprops[i]):
-            chi2 += np.square((obs.extprops[i] - corr_dz * (scaling *
-                               model_propsmass[i, :])) *
-                              (1./obs.extprops_err[i]))
+    for name, prop in obs.intprop.items():
+        if np.isfinite(prop):
+            model = models.intprop[name].array[wz]
+            chi2 += ((prop - model) * (1. / obs.intprops_err[name])) ** 2.
 
     # Computation of the χ² from extensive properties
-    for i in range(obs.intprops.size):
-        if np.isfinite(obs.intprops[i]):
-            chi2 += np.square((obs.intprops[i] - model_props[i, :]) *
-                              (1./obs.intprops_err[i]))
+    for name, prop in obs.extprop.items():
+        # Multiplications are faster than division, so we directly use the
+        # inverse error
+        inv_prop_err = 1. / obs.extprop_err[name]
+        if np.isfinite(prop) and inv_prop_err > 0.:
+            model = models.extprop[name].array[wz]
+            chi2 += ((prop - (scaling * model) * corr_dz) * inv_prop_err) ** 2.
 
     # Finally take the presence of upper limits into account
     if limits == True:
-        for i, obs_error in enumerate(obs.fluxes_err):
+        for band, obs_error in obs.flux_err.items():
             if obs_error < 0.:
                 chi2 -= 2. * np.log(.5 *
-                                    (1. + erf(((obs.fluxes[i] -
-                                     model_fluxes[i, :] * scaling) /
-                                     (-np.sqrt(2.)*obs.fluxes_err[i])))))
+                                    (1. + erf(((obs.fluxes[band] -
+                                     model_flux[band].array[wz] * scaling) /
+                                     (-np.sqrt(2.)*obs_error)))))
 
     return chi2, scaling
 

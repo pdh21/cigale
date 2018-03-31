@@ -29,8 +29,7 @@ def init_sed(models, t0, ncomputed):
         Number of computed models. Shared among workers.
 
     """
-    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_obs
-    global gbl_properties, gbl_t0, gbl_ncomputed
+    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_t0, gbl_ncomputed
 
     # Limit the number of threads to 1 if we use MKL in order to limit the
     # oversubscription of the CPU/RAM.
@@ -40,9 +39,6 @@ def init_sed(models, t0, ncomputed):
     gbl_warehouse = SedWarehouse()
 
     gbl_models = models
-    gbl_obs = models.obs
-    gbl_properties = [prop[:-4] if prop.endswith('_log') else prop for prop in
-                      models.propertiesnames]
     gbl_t0 = t0
     gbl_ncomputed = ncomputed
 
@@ -127,20 +123,21 @@ def sed(idx, midx):
                                 gbl_models.params.from_index(midx))
 
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
-        gbl_models.fluxes[:, idx] = np.full(len(gbl_obs.bands), np.nan)
-        gbl_models.properties[:, idx] = np.full(len(gbl_properties), np.nan)
-        gbl_models.intprops[:, idx] = np.full(len(gbl_obs.intprops), np.nan)
-        gbl_models.extprops[:, idx] = np.full(len(gbl_obs.extprops), np.nan)
+        for band in gbl_models.flux:
+           gbl_models.flux[band].array[idx] = np.nan
+        for prop in gbl_models.extprop:
+           gbl_models.extprop[prop].array[idx] = np.nan
+        for prop in gbl_models.intprop:
+           gbl_models.intprop[prop].array[idx] = np.nan
 
     else:
-        gbl_models.fluxes[:, idx] = [sed.compute_fnu(filter_)
-                                     for filter_ in gbl_obs.bands]
-        gbl_models.properties[:, idx] = [sed.info[name]
-                                         for name in gbl_properties]
-        gbl_models.intprops[:, idx] = [sed.info[name]
-                                       for name in gbl_obs.intprops]
-        gbl_models.extprops[:, idx] = [sed.info[name]
-                                       for name in gbl_obs.extprops]
+        for band in gbl_models.flux.keys():
+            gbl_models.flux[band].array[idx] = sed.compute_fnu(band)
+        for prop in gbl_models.extprop.keys():
+            gbl_models.extprop[prop].array[idx] = sed.info[prop]
+        for prop in gbl_models.intprop.keys():
+            gbl_models.intprop[prop].array[idx] = sed.info[prop]
+
     with gbl_ncomputed.get_lock():
         gbl_ncomputed.value += 1
         ncomputed = gbl_ncomputed.value
@@ -178,9 +175,7 @@ def analysis(idx, obs):
         wz = slice(0, None, 1)
         corr_dz = 1.
 
-    chi2, scaling = compute_chi2(gbl_models.fluxes[:, wz],
-                                 gbl_models.intprops[:, wz],
-                                 gbl_models.extprops[:, wz], obs, corr_dz,
+    chi2, scaling = compute_chi2(gbl_models, obs, corr_dz, wz,
                                  gbl_models.conf['analysis_params']['lim_flag'])
 
     if np.any(np.isfinite(chi2)):
@@ -196,13 +191,12 @@ def analysis(idx, obs):
         # We compute the weighted average and standard deviation using the
         # likelihood as weight.
         for prop in gbl_results.bayes.intmean:
-            i = gbl_models.conf['analysis_params']['variables'].index(prop)
             if prop.endswith('_log'):
                 prop = prop[:-4]
                 _ = np.log10
             else:
                 _ = lambda x: x
-            values = _(gbl_models.properties[i, wz])
+            values = _(gbl_models.intprop[prop].array[wz])
             mean, std = weighted_param(values[wlikely], likelihood[wlikely])
             gbl_results.bayes.intmean[prop].array[idx] = mean
             gbl_results.bayes.interror[prop].array[idx] = std
@@ -210,13 +204,12 @@ def analysis(idx, obs):
                 save_chi2(obs, prop, gbl_models, chi2, values)
 
         for prop in gbl_results.bayes.extmean:
-            i = gbl_models.conf['analysis_params']['variables'].index(prop)
             if prop.endswith('_log'):
                 prop = prop[:-4]
                 _ = np.log10
             else:
                 _ = lambda x: x
-            values = _(gbl_models.properties[i, wz])
+            values = _(gbl_models.extprop[prop].array[wz])
             mean, std = weighted_param(values[wlikely] * scaling * corr_dz,
                            likelihood[wlikely])
             gbl_results.bayes.extmean[prop].array[idx] = mean
@@ -224,7 +217,6 @@ def analysis(idx, obs):
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
                 save_chi2(obs, prop, gbl_models, chi2, values)
 
-            mean, std = weighted_param(values[wlikely], likelihood[wlikely])
         best_idx_z = np.nanargmin(chi2)
         gbl_results.best.chi2[idx] = chi2[best_idx_z]
         gbl_results.best.scaling[idx] = scaling[best_idx_z]
