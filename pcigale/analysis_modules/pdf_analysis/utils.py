@@ -144,15 +144,15 @@ def _compute_scaling(models, obs, wz):
     """
 
     _ = list(models.flux.keys())[0]
-    num = np.zeros_like(models.flux[_].array[wz])
-    denom = np.zeros_like(models.flux[_].array[wz])
+    num = np.zeros_like(models.flux[_][wz])
+    denom = np.zeros_like(models.flux[_][wz])
 
     for band, flux in obs.flux.items():
         # Multiplications are faster than division, so we directly use the
         # inverse error
         inv_err2 = 1. / obs.flux_err[band] ** 2.
         if np.isfinite(flux) and obs.flux_err[band] > 0.:
-            model = models.flux[band].array[wz]
+            model = models.flux[band][wz]
             num += model * (flux * inv_err2)
             denom += model**2. * inv_err2
 
@@ -161,7 +161,7 @@ def _compute_scaling(models, obs, wz):
         # inverse error
         inv_err2 = 1. / obs.extprop_err[name] ** 2.
         if np.isfinite(prop) and obs.extprop_err[name] > 0.:
-            model = models.extprop[name].array[wz]
+            model = models.extprop[name][wz]
             num += model * (prop * inv_err2)
             denom += model ** 2. * inv_err2
 
@@ -223,13 +223,13 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
         # inverse error
         inv_flux_err = 1. / obs.flux_err[band]
         if np.isfinite(flux) and inv_flux_err > 0.:
-            model = models.flux[band].array[wz]
+            model = models.flux[band][wz]
             chi2 += ((flux - model * scaling) * inv_flux_err) ** 2.
 
     # Computation of the χ² from intensive properties
     for name, prop in obs.intprop.items():
         if np.isfinite(prop):
-            model = models.intprop[name].array[wz]
+            model = models.intprop[name][wz]
             chi2 += ((prop - model) * (1. / obs.intprops_err[name])) ** 2.
 
     # Computation of the χ² from extensive properties
@@ -238,7 +238,7 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
         # inverse error
         inv_prop_err = 1. / obs.extprop_err[name]
         if np.isfinite(prop) and inv_prop_err > 0.:
-            model = models.extprop[name].array[wz]
+            model = models.extprop[name][wz]
             chi2 += ((prop - (scaling * model) * corr_dz) * inv_prop_err) ** 2.
 
     # Finally take the presence of upper limits into account
@@ -247,7 +247,7 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
             if obs_error < 0.:
                 chi2 -= 2. * np.log(.5 *
                                     (1. + erf(((obs.fluxes[band] -
-                                     model_flux[band].array[wz] * scaling) /
+                                     model_flux[band][wz] * scaling) /
                                      (-np.sqrt(2.)*obs_error)))))
 
     return chi2, scaling

@@ -124,19 +124,19 @@ def sed(idx, midx):
 
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
         for band in gbl_models.flux:
-           gbl_models.flux[band].array[idx] = np.nan
+           gbl_models.flux[band][idx] = np.nan
         for prop in gbl_models.extprop:
-           gbl_models.extprop[prop].array[idx] = np.nan
+           gbl_models.extprop[prop][idx] = np.nan
         for prop in gbl_models.intprop:
-           gbl_models.intprop[prop].array[idx] = np.nan
+           gbl_models.intprop[prop][idx] = np.nan
 
     else:
         for band in gbl_models.flux.keys():
-            gbl_models.flux[band].array[idx] = sed.compute_fnu(band)
+            gbl_models.flux[band][idx] = sed.compute_fnu(band)
         for prop in gbl_models.extprop.keys():
-            gbl_models.extprop[prop].array[idx] = sed.info[prop]
+            gbl_models.extprop[prop][idx] = sed.info[prop]
         for prop in gbl_models.intprop.keys():
-            gbl_models.intprop[prop].array[idx] = sed.info[prop]
+            gbl_models.intprop[prop][idx] = sed.info[prop]
 
     with gbl_ncomputed.get_lock():
         gbl_ncomputed.value += 1
@@ -186,7 +186,7 @@ def analysis(idx, obs):
         # If all the models are valid, it is much more efficient to use a slice
         if likelihood.size == wlikely[0].size:
             wlikely = slice(None, None)
-        gbl_results.bayes.weight.array[idx] = np.nansum(likelihood)
+        gbl_results.bayes.weight[idx] = np.nansum(likelihood)
 
         # We compute the weighted average and standard deviation using the
         # likelihood as weight.
@@ -196,10 +196,10 @@ def analysis(idx, obs):
                 _ = np.log10
             else:
                 _ = lambda x: x
-            values = _(gbl_models.intprop[prop].array[wz])
+            values = _(gbl_models.intprop[prop][wz])
             mean, std = weighted_param(values[wlikely], likelihood[wlikely])
-            gbl_results.bayes.intmean[prop].array[idx] = mean
-            gbl_results.bayes.interror[prop].array[idx] = std
+            gbl_results.bayes.intmean[prop][idx] = mean
+            gbl_results.bayes.interror[prop][idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
                 save_chi2(obs, prop, gbl_models, chi2, values)
 
@@ -209,11 +209,11 @@ def analysis(idx, obs):
                 _ = np.log10
             else:
                 _ = lambda x: x
-            values = _(gbl_models.extprop[prop].array[wz])
+            values = _(gbl_models.extprop[prop][wz])
             mean, std = weighted_param(values[wlikely] * scaling * corr_dz,
                            likelihood[wlikely])
-            gbl_results.bayes.extmean[prop].array[idx] = mean
-            gbl_results.bayes.exterror[prop].array[idx] = std
+            gbl_results.bayes.extmean[prop][idx] = mean
+            gbl_results.bayes.exterror[prop][idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
                 save_chi2(obs, prop, gbl_models, chi2, values)
 
@@ -269,13 +269,13 @@ def bestfit(oidx, obs):
     scaling = gbl_results.best.scaling[oidx]
 
     for band in gbl_results.best.flux:
-        gbl_results.best.flux[band].array[oidx] = sed.compute_fnu(band) * scaling
+        gbl_results.best.flux[band][oidx] = sed.compute_fnu(band) * scaling
 
     for prop in gbl_results.best.intprop:
-        gbl_results.best.intprop[prop].array[oidx] = sed.info[prop]
+        gbl_results.best.intprop[prop][oidx] = sed.info[prop]
 
     for prop in gbl_results.best.extprop:
-        gbl_results.best.extprop[prop].array[oidx] = sed.info[prop] * scaling \
+        gbl_results.best.extprop[prop][oidx] = sed.info[prop] * scaling \
                                                    * corr_dz
 
     if gbl_conf['analysis_params']["save_best_sed"]:

@@ -83,12 +83,12 @@ class ModelsManager(object):
         table = Table()
         table.add_column(Column(self.block, name='id'))
         for band in sorted(self.flux.keys()):
-            table.add_column(Column(self.flux[band].array, name=band,
+            table.add_column(Column(self.flux[band], name=band,
                                     unit='mJy'))
         for prop in sorted(self.extprop.keys()):
-            table.add_column(Column(self.extprop[prop].array, name=prop))
+            table.add_column(Column(self.extprop[prop], name=prop))
         for prop in sorted(self.intprop.keys()):
-            table.add_column(Column(self.intprop[prop].array, name=prop))
+            table.add_column(Column(self.intprop[prop], name=prop))
 
         table.write("out/{}.fits".format(filename))
         table.write("out/{}.txt".format(filename), format='ascii.fixed_width',

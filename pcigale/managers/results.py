@@ -86,24 +86,24 @@ class BayesResultsManager(object):
             raise TypeError("A list of BayesResultsManager is required.")
 
         merged = results[0]
-        intmean = {prop: np.array([result.intmean[prop].array
+        intmean = {prop: np.array([result.intmean[prop]
                                    for result in results])
                    for prop in merged.intmean}
-        interror = {prop: np.array([result.interror[prop].array
+        interror = {prop: np.array([result.interror[prop]
                                     for result in results])
                     for prop in merged.interror}
-        extmean = {prop: np.array([result.extmean[prop].array
+        extmean = {prop: np.array([result.extmean[prop]
                                    for result in results])
                    for prop in merged.extmean}
-        exterror = {prop: np.array([result.exterror[prop].array
+        exterror = {prop: np.array([result.exterror[prop]
                                     for result in results])
                     for prop in merged.exterror}
-        weight = np.array([result.weight.array for result in results])
+        weight = np.array([result.weight for result in results])
 
         totweight = np.sum(weight, axis=0)
 
         for prop in merged.intmean:
-            merged.intmean[prop].array[:] = np.sum(
+            merged.intmean[prop][:] = np.sum(
                 intmean[prop] * weight, axis=0) / totweight
 
             # We compute the merged standard deviation by combining the
@@ -111,11 +111,11 @@ class BayesResultsManager(object):
             # http://stats.stackexchange.com/a/10445 where the number of
             # datapoints has been substituted with the weights. In short we
             # exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
-            merged.interror[prop].array[:] = np.sqrt(np.sum(
-                weight * (interror[prop]**2. + (intmean[prop]-merged.intmean[prop].array)**2), axis=0) / totweight)
+            merged.interror[prop][:] = np.sqrt(np.sum(
+                weight * (interror[prop]**2. + (intmean[prop]-merged.intmean[prop])**2), axis=0) / totweight)
 
         for prop in merged.extmean:
-            merged.extmean[prop].array[:] = np.sum(
+            merged.extmean[prop][:] = np.sum(
                 extmean[prop] * weight, axis=0) / totweight
 
             # We compute the merged standard deviation by combining the
@@ -123,17 +123,17 @@ class BayesResultsManager(object):
             # http://stats.stackexchange.com/a/10445 where the number of
             # datapoints has been substituted with the weights. In short we
             # exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
-            merged.exterror[prop].array[:] = np.sqrt(np.sum(
-                weight * (exterror[prop]**2. + (extmean[prop]-merged.extmean[prop].array)**2), axis=0) / totweight)
+            merged.exterror[prop][:] = np.sqrt(np.sum(
+                weight * (exterror[prop]**2. + (extmean[prop]-merged.extmean[prop])**2), axis=0) / totweight)
 
         for prop in merged.extmean:
             if prop.endswith('_log'):
-                merged.exterror[prop].array[:] = \
-                    np.maximum(0.02, merged.exterror[prop].array)
+                merged.exterror[prop][:] = \
+                    np.maximum(0.02, merged.exterror[prop])
             else:
-                merged.exterror[prop].array[:] = \
-                    np.maximum(0.05 * merged.extmean[prop].array,
-                               merged.exterror[prop].array)
+                merged.exterror[prop][:] = \
+                    np.maximum(0.05 * merged.extmean[prop],
+                               merged.exterror[prop])
 
         return merged
 
@@ -210,7 +210,7 @@ class BestResultsManager(object):
         each observation.
 
         """
-        return self._chi2.array
+        return self._chi2
 
     @chi2.setter
     def chi2(self, chi2):
@@ -222,7 +222,7 @@ class BestResultsManager(object):
         observation.
 
         """
-        return self._index.array
+        return self._index
 
     @index.setter
     def index(self, index):
@@ -234,7 +234,7 @@ class BestResultsManager(object):
         observation.
 
         """
-        return self._scaling.array
+        return self._scaling
 
     @scaling.setter
     def scaling(self, scaling):
@@ -264,14 +264,14 @@ class BestResultsManager(object):
         merged = results[0]
         for iobs, bestidx in enumerate(best):
             for band in merged.flux:
-                merged.flux[band].array[iobs] = \
-                    results[bestidx].flux[band].array[iobs]
+                merged.flux[band][iobs] = \
+                    results[bestidx].flux[band][iobs]
             for prop in merged.intprop:
-                merged.intprop[prop].array[iobs] = \
-                    results[bestidx].intprop[prop].array[iobs]
+                merged.intprop[prop][iobs] = \
+                    results[bestidx].intprop[prop][iobs]
             for prop in merged.extprop:
-                merged.extprop[prop].array[iobs] = \
-                    results[bestidx].extprop[prop].array[iobs]
+                merged.extprop[prop][iobs] = \
+                    results[bestidx].extprop[prop][iobs]
             merged.chi2[iobs] = results[bestidx].chi2[iobs]
             merged.scaling[iobs] = results[bestidx].scaling[iobs]
             merged.index[iobs] = results[bestidx].index[iobs]
@@ -343,14 +343,14 @@ class ResultsManager(object):
         table.add_column(Column(self.obs.table['id'], name="id"))
 
         for prop in sorted(self.bayes.intmean):
-            table.add_column(Column(self.bayes.intmean[prop].array,
+            table.add_column(Column(self.bayes.intmean[prop],
                                     name="bayes."+prop))
-            table.add_column(Column(self.bayes.interror[prop].array,
+            table.add_column(Column(self.bayes.interror[prop],
                                     name="bayes."+prop+"_err"))
         for prop in sorted(self.bayes.extmean):
-            table.add_column(Column(self.bayes.extmean[prop].array,
+            table.add_column(Column(self.bayes.extmean[prop],
                                     name="bayes."+prop))
-            table.add_column(Column(self.bayes.exterror[prop].array,
+            table.add_column(Column(self.bayes.exterror[prop],
                                     name="bayes."+prop+"_err"))
 
         table.add_column(Column(self.best.chi2, name="best.chi_square"))
@@ -360,14 +360,14 @@ class ResultsManager(object):
                                 name="best.reduced_chi_square"))
 
         for prop in sorted(self.best.intprop):
-            table.add_column(Column(self.best.intprop[prop].array,
+            table.add_column(Column(self.best.intprop[prop],
                                     name="best."+prop))
         for prop in sorted(self.best.extprop):
-            table.add_column(Column(self.best.extprop[prop].array,
+            table.add_column(Column(self.best.extprop[prop],
                                     name="best."+prop))
 
         for band in self.obs.bands:
-            table.add_column(Column(self.best.flux[band].array,
+            table.add_column(Column(self.best.flux[band],
                                     name="best."+band, unit='mJy'))
 
 

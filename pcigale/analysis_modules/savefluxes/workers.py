@@ -74,11 +74,11 @@ def fluxes(idx, midx):
             gbl_models.intprop[prop][idx] = np.nan
     else:
         for band in gbl_models.flux.keys():
-            gbl_models.flux[band].array[idx] = sed.compute_fnu(band)
+            gbl_models.flux[band][idx] = sed.compute_fnu(band)
         for prop in gbl_models.extprop.keys():
-            gbl_models.extprop[prop].array[idx] = sed.info[prop]
+            gbl_models.extprop[prop][idx] = sed.info[prop]
         for prop in gbl_models.intprop.keys():
-            gbl_models.intprop[prop].array[idx] = sed.info[prop]
+            gbl_models.intprop[prop][idx] = sed.info[prop]
 
     if gbl_save is True:
         sed.to_fits("out/{}".format(midx))
