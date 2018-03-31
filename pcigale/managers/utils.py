@@ -54,12 +54,12 @@ class SharedArray(object):
         if isinstance(idx, slice):
             self.array[idx] = data
         else:
-            self.raw[idx] = data
+            self._raw[idx] = data
 
     def __getitem__(self, idx):
         if isinstance(idx, slice):
             return self.array[idx]
-        return self.raw[idx]
+        return self._raw[idx]
 
     def __len__(self):
         return self.size
@@ -69,7 +69,7 @@ class SharedArray(object):
 
     @property
     def array(self):
-        return np.ctypeslib.as_array(self.raw)
+        return np.ctypeslib.as_array(self._raw)
 
     @property
     def raw(self):
