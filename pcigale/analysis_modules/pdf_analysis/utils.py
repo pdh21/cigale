@@ -222,33 +222,30 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
         # Multiplications are faster than divisions, so we directly use the
         # inverse error
         inv_flux_err = 1. / obs.flux_err[band]
-        if np.isfinite(flux) and inv_flux_err > 0.:
-            model = models.flux[band][wz]
-            chi2 += ((flux - model * scaling) * inv_flux_err) ** 2.
+        model = models.flux[band][wz]
+        chi2 += ((flux - model * scaling) * inv_flux_err) ** 2.
 
     # Computation of the χ² from intensive properties
     for name, prop in obs.intprop.items():
-        if np.isfinite(prop):
-            model = models.intprop[name][wz]
-            chi2 += ((prop - model) * (1. / obs.intprops_err[name])) ** 2.
+        model = models.intprop[name][wz]
+        chi2 += ((prop - model) * (1. / obs.intprops_err[name])) ** 2.
 
     # Computation of the χ² from extensive properties
     for name, prop in obs.extprop.items():
         # Multiplications are faster than divisions, so we directly use the
         # inverse error
         inv_prop_err = 1. / obs.extprop_err[name]
-        if np.isfinite(prop) and inv_prop_err > 0.:
-            model = models.extprop[name][wz]
-            chi2 += ((prop - (scaling * model) * corr_dz) * inv_prop_err) ** 2.
+        model = models.extprop[name][wz]
+        chi2 += ((prop - (scaling * model) * corr_dz) * inv_prop_err) ** 2.
 
     # Finally take the presence of upper limits into account
     if limits == True:
-        for band, obs_error in obs.flux_err.items():
-            if obs_error < 0.:
-                chi2 -= 2. * np.log(.5 *
-                                    (1. + erf(((obs.fluxes[band] -
-                                     model_flux[band][wz] * scaling) /
-                                     (-np.sqrt(2.)*obs_error)))))
+        for band, obs_error in obs.flux_ul_err.items():
+            model = models.flux[band][wz]
+            chi2 -= 2. * np.log(.5 *
+                                (1. + erf(((obs.flux_ul[band] -
+                                 model * scaling) /
+                                 (-np.sqrt(2.)*obs_error)))))
 
     return chi2, scaling
 

@@ -306,9 +306,20 @@ class Observation(object):
                 self.distance = cosmo.luminosity_distance(self.redshift).value
             else:
                 self.distance = np.nan
-        self.flux = {band: row[band] for band in cls.bands}
-        self.flux_err = {band: row[band + '_err'] for band in cls.bands}
-        self.intprop = {prop: row[prop] for prop in cls.intprops}
-        self.intprop_err = {prop: row[prop + '_err'] for prop in cls.intprops}
-        self.extprop = {prop: row[prop] for prop in cls.extprops}
-        self.extprop_err = {prop: row[prop + '_err'] for prop in cls.extprops}
+        self.flux = {k: row[k] for k in cls.bands
+                     if np.isfinite(row[k]) and row[k + '_err'] > 0.}
+        self.flux_ul = {k: row[k] for k in cls.bands
+                        if np.isfinite(row[k]) and row[k + '_err'] <= 0.}
+        self.flux_err = {k: row[k + '_err'] for k in self.flux.keys()}
+        self.flux_ul_err = {k: row[k + '_err'] for k in self.flux_ul.keys()}
+
+        self.extprop = {k: row[k] for k in cls.extprops
+                        if np.isfinite(row[k]) and row[k + '_err'] > 0.}
+        self.extprop_ul = {k: row[k] for k in cls.extprops
+                           if np.isfinite(row[k]) and row[k + '_err'] <= 0.}
+        self.extprop_err = {k: row[k + '_err'] for k in self.extprop.keys()}
+        self.extprop_ul_err = {k: row[k + '_err']
+                               for prop in self.extprop_ul.keys()}
+
+        self.intprop = {k: row[k] for k in cls.intprops}
+        self.intprop_err = {k: row[k + '_err'] for k in cls.intprops}
