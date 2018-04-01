@@ -311,14 +311,14 @@ class Observation(object):
         self.flux_ul = {k: row[k] for k in cls.bands
                         if np.isfinite(row[k]) and row[k + '_err'] <= 0.}
         self.flux_err = {k: row[k + '_err'] for k in self.flux.keys()}
-        self.flux_ul_err = {k: row[k + '_err'] for k in self.flux_ul.keys()}
+        self.flux_ul_err = {k: -row[k + '_err'] for k in self.flux_ul.keys()}
 
         self.extprop = {k: row[k] for k in cls.extprops
                         if np.isfinite(row[k]) and row[k + '_err'] > 0.}
         self.extprop_ul = {k: row[k] for k in cls.extprops
                            if np.isfinite(row[k]) and row[k + '_err'] <= 0.}
         self.extprop_err = {k: row[k + '_err'] for k in self.extprop.keys()}
-        self.extprop_ul_err = {k: row[k + '_err']
+        self.extprop_ul_err = {k: -row[k + '_err']
                                for prop in self.extprop_ul.keys()}
 
         self.intprop = {k: row[k] for k in cls.intprops}
