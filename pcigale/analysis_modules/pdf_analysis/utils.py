@@ -199,8 +199,7 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
     scaling: array
         scaling of the models to obtain the minimum χ²
     """
-    limits = lim_flag and (np.any(obs.fluxes_err <= 0.)
-                           or np.any(obs.extprops_err <= 0.))
+    limits = lim_flag and (len(obs.flux_ul) > 0 or len(obs.extprop_ul) > 0)
     scaling = _compute_scaling(models, obs, wz)
 
     # Some observations may not have flux values in some filter(s), but
