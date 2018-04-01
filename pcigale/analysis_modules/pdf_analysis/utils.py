@@ -48,8 +48,8 @@ def compute_corr_dz(model_z, obs_dist):
 
     """
     if model_z == 0.:
-        return (obs_dist / (10. * parsec))**2.
-    return (obs_dist / cosmo.luminosity_distance(model_z).value)**2.
+        return (obs_dist / (10. * parsec)) ** 2.
+    return (obs_dist / cosmo.luminosity_distance(model_z).value) ** 2.
 
 
 def dchi2_over_ds2(s, obs_values, obs_errors, mod_values):
@@ -148,21 +148,21 @@ def _compute_scaling(models, obs, wz):
     denom = np.zeros_like(models.flux[_][wz])
 
     for band, flux in obs.flux.items():
-        # Multiplications are faster than division, so we directly use the
+        # Multiplications are faster than divisions, so we directly use the
         # inverse error
         inv_err2 = 1. / obs.flux_err[band] ** 2.
         if np.isfinite(flux) and obs.flux_err[band] > 0.:
             model = models.flux[band][wz]
-            num += model * (flux * inv_err2)
-            denom += model**2. * inv_err2
+            num += model * (flux*inv_err2)
+            denom += model ** 2. * inv_err2
 
     for name, prop in obs.extprop.items():
-        # Multiplications are faster than division, so we directly use the
+        # Multiplications are faster than divisions, so we directly use the
         # inverse error
         inv_err2 = 1. / obs.extprop_err[name] ** 2.
         if np.isfinite(prop) and obs.extprop_err[name] > 0.:
             model = models.extprop[name][wz]
-            num += model * (prop * inv_err2)
+            num += model * (prop*inv_err2)
             denom += model ** 2. * inv_err2
 
     return num/denom
@@ -219,7 +219,7 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
 
     # Computation of the χ² from fluxes
     for band, flux in obs.flux.items():
-        # Multiplications are faster than division, so we directly use the
+        # Multiplications are faster than divisions, so we directly use the
         # inverse error
         inv_flux_err = 1. / obs.flux_err[band]
         if np.isfinite(flux) and inv_flux_err > 0.:
@@ -234,7 +234,7 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
 
     # Computation of the χ² from extensive properties
     for name, prop in obs.extprop.items():
-        # Multiplications are faster than division, so we directly use the
+        # Multiplications are faster than divisions, so we directly use the
         # inverse error
         inv_prop_err = 1. / obs.extprop_err[name]
         if np.isfinite(prop) and inv_prop_err > 0.:
