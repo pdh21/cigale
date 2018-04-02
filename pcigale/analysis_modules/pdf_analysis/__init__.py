@@ -200,7 +200,7 @@ class PdfAnalysis(AnalysisModule):
             print("\nAnalysing the mock observations...")
 
             # For the mock analysis we do not save the ancillary files.
-            for k in ['best_sed', 'chi2', 'pdf']:
+            for k in ['best_sed', 'chi2']:
                 conf['analysis_params']["save_{}".format(k)] = False
 
             # We replace the observations with a mock catalogue..
