@@ -27,6 +27,7 @@ class ModelsManager(object):
         self.obs = obs
         self.params = params
         self.block = params.blocks[iblock]
+        self.iblock = iblock
         self.allpropnames, self.allextpropnames = get_info(self)
         self.allintpropnames = set(self.allpropnames) - self.allextpropnames
 
