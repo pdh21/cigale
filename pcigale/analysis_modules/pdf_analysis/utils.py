@@ -136,19 +136,17 @@ def _compute_scaling(models, obs, corr_dz, wz):
         # Multiplications are faster than divisions, so we directly use the
         # inverse error
         inv_err2 = 1. / obs.flux_err[band] ** 2.
-        if np.isfinite(flux) and obs.flux_err[band] > 0.:
-            model = models.flux[band][wz]
-            num += model * (flux*inv_err2)
-            denom += model ** 2. * inv_err2
+        model = models.flux[band][wz]
+        num += model * (flux * inv_err2)
+        denom += model ** 2. * inv_err2
 
     for name, prop in obs.extprop.items():
         # Multiplications are faster than divisions, so we directly use the
         # inverse error
         inv_err2 = 1. / obs.extprop_err[name] ** 2.
-        if np.isfinite(prop) and obs.extprop_err[name] > 0.:
-            model = models.extprop[name][wz]
-            num += model * (prop * inv_err2 * corr_dz)
-            denom += model ** 2. * (inv_err2 * corr_dz ** 2.)
+        model = models.extprop[name][wz]
+        num += model * (prop * inv_err2 * corr_dz)
+        denom += model ** 2. * (inv_err2 * corr_dz ** 2.)
 
     return num/denom
 
