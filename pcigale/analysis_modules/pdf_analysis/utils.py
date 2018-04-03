@@ -102,7 +102,7 @@ def dchi2_over_ds2(s, obsdata, obsdata_err, obslim, obslim_err, moddata,
     return func
 
 
-def _compute_scaling(models, obs, wz):
+def _compute_scaling(models, obs, corr_dz, wz):
     """Compute the scaling factor to be applied to the model fluxes to best fit
     the observations. Note that we look over the bands to avoid the creation of
     an array of the same size as the model_fluxes array. Because we loop on the
@@ -115,6 +115,9 @@ def _compute_scaling(models, obs, wz):
     obs: Observation class instance
         Contains the fluxes, intensive properties, extensive properties and
         their errors, for a sigle observation.
+    corr_dz: float
+        Correction factor to scale the extensive properties to the right
+        distance
     wz: slice
         Selection of the models at the redshift of the observation or all the
         redshifts in photometric-redshift mode.
@@ -144,8 +147,8 @@ def _compute_scaling(models, obs, wz):
         inv_err2 = 1. / obs.extprop_err[name] ** 2.
         if np.isfinite(prop) and obs.extprop_err[name] > 0.:
             model = models.extprop[name][wz]
-            num += model * (prop*inv_err2)
-            denom += model ** 2. * inv_err2
+            num += model * (prop * inv_err2 * corr_dz)
+            denom += model ** 2. * (inv_err2 * corr_dz ** 2.)
 
     return num/denom
 
@@ -235,7 +238,7 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
         scaling of the models to obtain the minimum χ²
     """
     limits = lim_flag and (len(obs.flux_ul) > 0 or len(obs.extprop_ul) > 0)
-    scaling = _compute_scaling(models, obs, wz)
+    scaling = _compute_scaling(models, obs, corr_dz, wz)
 
     # Some observations may not have flux values in some filter(s), but
     # they can have upper limit(s).
