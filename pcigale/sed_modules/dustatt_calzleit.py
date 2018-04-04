@@ -163,6 +163,8 @@ def a_vs_ebv(wavelength, bump_wave, bump_width, bump_ampl, power_slope):
     attenuation[mask] = 0
     # Power law
     attenuation *= power_law(wavelength, power_slope)
+    # UV bump
+    attenuation += uv_bump(wavelength, bump_wave, bump_width, bump_ampl)
 
     # As the powerlaw slope changes E(B-V), we correct this so that the curve
     # always has the same E(B-V) as the starburst curve. This ensures that the
@@ -174,21 +176,125 @@ def a_vs_ebv(wavelength, bump_wave, bump_width, bump_ampl, power_slope):
            uv_bump(wl_BV, bump_wave, bump_width, bump_ampl))
     attenuation *= (EBV_calz[1]-EBV_calz[0]) / (EBV[1]-EBV[0])
 
-    # UV bump. It is added after the renormalization as the bump strength
-    # should correspond to the requested E(B-V) and should therefore not be
-    # changed by the renormalization.
-    attenuation += uv_bump(wavelength, bump_wave, bump_width, bump_ampl)
-
     return attenuation
+
+
+def ccm(wave, Rv):
+    """ Compute the complete attenuation curve A(λ)/E(B-V) for emission lines
+
+    Using Cardelli, Clayton & Mathis (1989) MW extinction function.
+    Valid from 1250 Angstroms to 3.3 microns.
+
+    Parameters
+    ----------
+    wave : numpy.ndarray (1-d)
+        Wavelengths in nm.
+    Rv : float
+        Ratio of total to selective extinction, A_V / E(B-V).
+    """
+
+    x = 1e3 / wave
+
+    # In the paper the condition is 0.3 < x < 1.1.
+    # However setting just x <1.1 avoids to have an artificial break at 0.3
+    # with something positive above 0.3 and 0 below.
+    cond1 = x < 1.1
+    cond2 = (x >= 1.1) & (x < 3.3)
+    cond3 = (x >= 3.3) & (x < 5.9)
+    cond4 = (x >= 5.9) & (x < 8.0)
+    cond5 = (x >= 8.0) & (x <= 11.)
+    fcond1 = lambda wn: Rv * .574 * wn**1.61 - .527 * wn**1.61
+    fcond2 = lambda wn: Rv * (np.polyval([0.32999, -0.77530, 0.01979,
+                                          0.72085, -0.02427, -0.50447,
+                                          0.17699, 1.], wn - 1.82) +
+                              np.polyval([-2.09002, 5.30260, -0.62251,
+                                          -5.38434, 1.07233, 2.28305,
+                                          1.41338, 0.], wn - 1.82))
+    fcond3 = lambda wn: Rv * ((1.752 - 0.316 * wn -
+                               (0.104 / ((wn - 4.67)**2 + 0.341))) +
+                              (-3.090 + 1.825 * wn +
+                               (1.206 / ((wn - 4.62)**2 + 0.263))))
+    fcond4 = lambda wn: Rv * ((1.752 - 0.316 * wn -
+                               (0.104 / ((wn - 4.67)**2 + 0.341)) +
+                              np.polyval([-0.009779, -0.04473, 0., 0.],
+                                         wn - 5.9)) +
+                              (-3.090 + 1.825 * wn +
+                               (1.206 / ((wn - 4.62)**2 + 0.263)) +
+                               np.polyval([0.1207, 0.2130, 0., 0.],
+                                          wn - 5.9)))
+    fcond5 = lambda wn: Rv * ((np.polyval([-0.070, 0.137, -0.628, -1.073],
+                                          wn-8.)) +
+                              np.polyval([0.374, -0.420, 4.257, 13.670],
+                                         wn - 8.))
+
+    return np.piecewise(x, [cond1, cond2, cond3, cond4, cond5],
+                        [fcond1, fcond2, fcond3, fcond4, fcond5])
+
+
+def Pei92(wave, Rv=None, law='mw'):
+    """ Compute the extinction curve A(λ)/E(B-V) for emission lines
+
+    Using Pei92 (1989) MW,LMC,SMC extinction function.
+    Valid from 912 Angstroms to 25 microns.
+
+    Parameters
+    ----------
+    wave : numpy.ndarray (1-d)
+        Wavelengths in nm.
+    Rv : float
+        Ratio of total to selective extinction, A_V / E(B-V).
+    law : string
+          name of the extinction curve to use: 'mw','lmc' or 'smc'
+    """
+    wvl = wave * 1e-3
+    if law.lower() == 'smc':
+        if Rv is None:
+            Rv = 2.93
+        a_coeff = np.array([185, 27, 0.005, 0.010, 0.012, 0.03])
+        wvl_coeff = np.array([0.042, 0.08, 0.22, 9.7, 18, 25])
+        b_coeff = np.array([90, 5.50, -1.95, -1.95, -1.80, 0.0])
+        n_coeff = np.array([2.0, 4.0, 2.0, 2.0, 2.0, 2.0])
+
+    elif law.lower() == 'lmc':
+        if Rv is None:
+            Rv = 3.16
+        a_coeff = np.array([175, 19, 0.023, 0.005, 0.006, 0.02])
+        wvl_coeff = np.array([0.046, 0.08, 0.22, 9.7, 18, 25])
+        b_coeff = np.array([90, 5.5, -1.95, -1.95, -1.8, 0.0])
+        n_coeff = np.array([2.0, 4.5, 2.0, 2.0, 2.0, 2.0])
+
+    elif law.lower() == 'mw':
+        if Rv is None:
+            Rv = 3.08
+        a_coeff = np.array([165, 14, 0.045, 0.002, 0.002, 0.012])
+        wvl_coeff = np.array([0.046, 0.08, 0.22, 9.7, 18, 25])
+        b_coeff = np.array([90, 4.0, -1.95, -1.95, -1.8, 0.0])
+        n_coeff = np.array([2.0, 6.5, 2.0, 2.0, 2.0, 2.0])
+
+    Alambda_over_Ab = np.zeros(len(wvl))
+    for a, wv, b, n in zip(a_coeff, wvl_coeff, b_coeff, n_coeff):
+        Alambda_over_Ab += a / ((wvl / wv)**n + (wv / wvl)**n + b)
+
+    # Normalise with Av
+    Alambda_over_Av = (1 / Rv + 1) * Alambda_over_Ab
+
+    # set 0 for wvl < 91.2nm
+    Alambda_over_Av[wvl < 91.2 * 1e-3] = 0
+
+    # Set 0 for wvl > 30 microns
+    Alambda_over_Av[wvl > 30] = 0
+
+    # Transform Alambda_over_Av into Alambda_over_E(B-V)
+    Alambda_over_Ebv = Rv * Alambda_over_Av
+
+    return Alambda_over_Ebv
 
 
 class CalzLeit(SedModule):
     """Calzetti + Leitherer attenuation module
 
-    This module computes the dust attenuation using the formulae from
-    Calzetti et al. (2000) and Leitherer et al. (2002). Note that both the
-    stars and the gas are attenuated with the same curve as opposed to Calzetti
-    et al. (2000) where the gas is attenuated with a Milky Way curve.
+    This module computes the dust attenuation using the
+    formulae from Calzetti et al. (2000) and Leitherer et al. (2002).
 
     The attenuation can be computed on the whole spectrum or on a specific
     contribution and is added to the SED as a negative contribution.
@@ -196,17 +302,18 @@ class CalzLeit(SedModule):
     """
 
     parameter_list = OrderedDict([
-        ("E_BVs_young", (
+        ("E_BV_lines", (
             "cigale_list(minvalue=0.)",
-            "E(B-V)*, the colour excess of the stellar continuum light for "
-            "the young population.",
+            "E(B-V)l, the colour excess of the nebular lines light for "
+            "both the young and old population.",
             0.3
         )),
-        ("E_BVs_old_factor", (
+        ("E_BV_factor", (
             "cigale_list(minvalue=0., maxvalue=1.)",
-            "Reduction factor for the E(B-V)* of the old population compared "
-            "to the young one (<1).",
-            1.0
+            "Reduction factor to apply on E_BV_lines to compute E(B-V)s "
+            "the stellar continuum attenuation. Both young and old population "
+            "are attenuated with E(B-V)s. ",
+            0.44
         )),
         ("uv_bump_wavelength", (
             "cigale_list(minvalue=0.)",
@@ -228,6 +335,23 @@ class CalzLeit(SedModule):
             "Slope delta of the power law modifying the attenuation curve.",
             0.
         )),
+        ("Ext_law_emission_lines", (
+            "cigale_list(dtype=int, options=1 & 2 & 3)",
+            "Extinction law to use for attenuating the emission lines flux. "
+            "Possible values are: 1, 2, 3.   "
+            "1: MW, 2: LMC, 3: SMC.   "
+            "MW is modelled using CCM89, SMC and LMC using Pei92",
+            1
+        )),
+        ("Rv", (
+            "cigale_list()",
+            "Ratio of total to selective extinction, A_V / E(B-V), "
+            "for the extinction curve applied to emission lines."
+            "Standard value is 3.1 for MW using CCM89, but can be changed."
+            "For SMC and LMC using Pei92 the value is automatically set to "
+            "2.93 and 3.16 respectively, no matter the value you write.",
+            3.1
+        )),
         ("filters", (
             "string()",
             "Filters for which the attenuation will be computed and added to "
@@ -239,23 +363,28 @@ class CalzLeit(SedModule):
 
     def _init_code(self):
         """Get the filters from the database"""
-        self.ebvs = {}
-        self.ebvs['young'] = float(self.parameters["E_BVs_young"])
-        self.ebvs_old_factor = float(self.parameters["E_BVs_old_factor"])
-        self.ebvs['old'] = self.ebvs_old_factor * self.ebvs['young']
+
+        self.ebvl = float(self.parameters["E_BV_lines"])
+        self.ebv_factor = float(self.parameters["E_BV_factor"])
+        self.ebvs = self.ebv_factor * self.ebvl
         self.uv_bump_wavelength = float(self.parameters["uv_bump_wavelength"])
         self.uv_bump_width = float(self.parameters["uv_bump_width"])
         self.uv_bump_amplitude = float(self.parameters["uv_bump_amplitude"])
         self.powerlaw_slope = float(self.parameters["powerlaw_slope"])
-
+        self.ext_law_emLines = int(self.parameters["Ext_law_emission_lines"])
+        self.Rv = float(self.parameters["Rv"])
         self.filter_list = [item.strip() for item in
                             self.parameters["filters"].split("&")]
         # We cannot compute the attenuation until we know the wavelengths. Yet,
         # we reserve the object.
-        self.sel_attenuation = None
+        self.stellar_cont_att = None
+        self.emission_lines_att = None
 
     def process(self, sed):
-        """Add the CCM dust attenuation to the SED.
+        """Add the modified Calzetti attenuation law to stellar continuum
+        for old and young stellar populations. Add the MW, LM or SMC extincton
+        curve to to the nebular lines and continuum for young and
+        stellar populations
 
         Parameters
         ----------
@@ -268,21 +397,33 @@ class CalzLeit(SedModule):
         flux_noatt = {filt: sed.compute_fnu(filt) for filt in self.filter_list}
 
         # Compute attenuation curve
-        if self.sel_attenuation is None:
-            self.sel_attenuation = a_vs_ebv(wavelength,
-                                            self.uv_bump_wavelength,
-                                            self.uv_bump_width,
-                                            self.uv_bump_amplitude,
-                                            self.powerlaw_slope)
+        if self.stellar_cont_att is None:
+            self.stellar_cont_att = a_vs_ebv(wavelength,
+                                             self.uv_bump_wavelength,
+                                             self.uv_bump_width,
+                                             self.uv_bump_amplitude,
+                                             self.powerlaw_slope)
+
+        if self.emission_lines_att is None:
+            if self.ext_law_emLines == 1:
+                self.emission_lines_att = ccm(wavelength, self.Rv)
+            elif self.ext_law_emLines == 2:
+                self.emission_lines_att = Pei92(wavelength, law='smc')
+            elif self.ext_law_emLines == 3:
+                self.emission_lines_att = Pei92(wavelength, law='lmc')
 
         attenuation_total = 0.
         contribs = [contrib for contrib in sed.contribution_names if
                     'absorption' not in contrib]
+
         for contrib in contribs:
-            age = contrib.split('.')[-1].split('_')[-1]
+            if 'nebular' in contrib:
+                attenuation = self.emission_lines_att * self.ebvl
+            else:
+                attenuation = self.stellar_continuum_att * self.ebvs
+
             luminosity = sed.get_lumin_contribution(contrib)
-            attenuated_luminosity = (luminosity * 10. ** (self.ebvs[age] *
-                                     self.sel_attenuation / -2.5))
+            attenuated_luminosity = luminosity * 10. ** (attenuation / -2.5)
             attenuation_spectrum = attenuated_luminosity - luminosity
             # We integrate the amount of luminosity attenuated (-1 because the
             # spectrum is negative).
@@ -290,7 +431,6 @@ class CalzLeit(SedModule):
             attenuation_total += attenuation
 
             sed.add_module(self.name, self.parameters)
-            sed.add_info("attenuation.E_BVs." + contrib, self.ebvs[age])
             sed.add_info("attenuation." + contrib, attenuation, True)
             sed.add_contribution("attenuation." + contrib, wavelength,
                                  attenuation_spectrum)
@@ -311,7 +451,9 @@ class CalzLeit(SedModule):
             sed.add_info("attenuation." + filt,
                          -2.5 * np.log10(flux_att[filt] / flux_noatt[filt]))
 
-        sed.add_info('attenuation.ebvs_old_factor', self.ebvs_old_factor)
+        sed.add_info('attenuation.E_BV_lines', self.ebvl)
+        sed.add_info('attenuation.E_BVs', self.ebvs)
+        sed.add_info('attenuation.E_BV_factor', self.ebv_factor)
         sed.add_info('attenuation.uv_bump_wavelength', self.uv_bump_wavelength)
         sed.add_info('attenuation.uv_bump_width', self.uv_bump_width)
         sed.add_info('attenuation.uv_bump_amplitude', self.uv_bump_amplitude)

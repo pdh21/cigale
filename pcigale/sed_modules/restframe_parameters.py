@@ -72,6 +72,12 @@ class RestframeParam(SedModule):
             "Rest-frame colours to be computed. You can give several colours "
             "separated by a & (don't use commas).",
             "FUV-NUV & NUV-r_prime"
+        )),
+        ("Flux_emission_lines", (
+            "string()",
+            "Name of the emission lines for which to compute the flux "
+            "separated by a & (don't use commas).",
+            "Halpha & Hbeta"
         ))
     ])
 
@@ -160,6 +166,114 @@ class RestframeParam(SedModule):
 
         return EW
 
+    def emission_lines_library(self):
+        """ Creates a dictionary containing all available emission lines.
+        Central wavelength express in Angstroms.
+        Values taken taken from database_builder/nebular/line_wavelengths.dat
+        """
+
+        lib = dict(Ly_alpha=1216,
+                   CII_1335=1335,
+                   SiIV=1397,
+                   CIV=1549,
+                   HeII=1640,
+                   OIII_1665=1665,
+                   CIII=1909,
+                   CII_2326=2326,
+                   MgII=2798,
+                   OII=3727,
+                   Htheta=3798,
+                   NeIII=3869,
+                   Heta=3835,
+                   HeI=3889,
+                   Hepsilon=3970,
+                   SII=4070,
+                   Hdelta=4102,
+                   Hgamma=4340,
+                   Hbeta=4861,
+                   OIII_4959=4959,
+                   OIII_5007=5007,
+                   OI_6300=6300,
+                   NII_6548=6548,
+                   Halpha=6563,
+                   NII_6584=6584,
+                   SII_6716=6716,
+                   SII_6731=6731)
+
+        return lib
+
+    def EL_flux(self, sed):
+        """ Compute the flux of emission lines given in the properties.
+        This is done on the rest-frame SED.
+        The Flux is integrated when Lumin_tot > Lumin_cont around wvl
+        of interest. Underlying stellar absoprtion is theoretically
+        taken into account, meaning that the flux is corrected for
+        underlying stellar absorption.
+        Computed with CIGALE resolution, not at instrument resolution
+        """
+
+        # Wavelength in nm
+        wl = sed.wavelength_grid
+        # Luminosites in W / nm
+        lumin_lines = np.sum([sed.get_lumin_contribution(name)
+                             for name in sed.contribution_names
+                             if 'nebular.lines' in name], axis=0)
+
+        lumin_tot = sed.luminosity
+        lumin_cont = sed.luminosity - lumin_lines
+
+        # Get the names of lines
+        EL_names = [item.strip() for item in
+                    self.parameters['Flux_emission_lines'].split("&")
+                    if item.strip() != '']
+
+        # Create dictionary to store the fluxes
+        EL_fluxes = {}
+
+        # Check whether there are emission lines to compute
+        if EL_names != []:
+            for EL_name in EL_names:
+                # Get central wavelength in nm
+                wvl_c = self.EL_lib[EL_name]
+                wvl_c *= 0.1
+
+                # Get wavelength interval where:
+                # Lum_tot > Lum_tot - Lum_lines
+
+                # Nebular luminosity is never 0.
+                # so we need to multiply by a small factor to use:
+                # Lum_cont = Lum_tot - Lum_lines
+                # Lum_tot > Lum_cont * (1+factor)
+                factor = 1e-3
+
+                # get array index for central wavelength
+                line_idx = np.argmin((wl-wvl_c)**2)
+                # go backward to get wvl_min
+                idx = line_idx
+                wvl_min = np.nan
+                while lumin_tot[idx] > lumin_cont[idx]*(1+factor):
+                    idx = idx-1
+                wvl_min = wl[idx+1]
+                # get wvl_max
+                idx = line_idx
+                wvl_max = np.nan
+                while lumin_tot[idx] > lumin_cont[idx]*(1+factor):
+                    idx += 1
+                wvl_max = wl[idx-1]
+
+                # Sometimes code stops because no wvl_min is found
+                if np.isfinite(wvl_min) and np.isfinite(wvl_max):
+                    mask_EL = (wl >= wvl_min) & (wl <= wvl_max)
+                    Flux_EL = np.trapz(lumin_lines[mask_EL], wl[mask_EL])
+                else:
+                    Flux_EL = -np.inf
+
+                # Total integrated fluxes are expressed in W
+                # Will be corrected for Luminosity distance in pdf_analysis
+                EL_fluxes['EL_flux_%s' % EL_name] = Flux_EL
+
+        return EL_fluxes
+
     def _init_code(self):
         # Index of the wavelengths of interest. We use a dictionary with the
         # size of the wavelength array as a key to take into account that
@@ -169,6 +283,9 @@ class RestframeParam(SedModule):
         self.w_D4000blue = {}
         self.w_D4000red = {}
         self.w_lines = {}
+
+        # Load library of emission lines to associate a name to its wavelength.
+        self.EL_lib = self.emission_lines_library()
 
         # Extract the list of lines to compute the equivalent width
         self.lines = [item.strip() for item in
@@ -230,6 +347,9 @@ class RestframeParam(SedModule):
             sed.add_info("param.restframe_{}-{}".format(filt1, filt2),
                          2.5 * np.log10(fluxes[filt2]/fluxes[filt1]))
 
+        for line, flux in self.EL_flux(sed).items():
+            print (line)
+            sed.add_info("{}".format(line), flux, True)
 
 # SedModule to be returned by get_module
 Module = RestframeParam

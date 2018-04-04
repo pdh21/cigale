@@ -31,7 +31,6 @@ def init_fluxes(models, t0, ncomputed):
     global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_obs, gbl_save
     global gbl_t0, gbl_ncomputed
 
-
     # Limit the number of threads to 1 if we use MKL in order to limit the
     # oversubscription of the CPU/RAM.
     nothread()
@@ -64,6 +63,14 @@ def fluxes(idx, midx):
 
     sed = gbl_warehouse.get_sed(gbl_models.params.modules,
                                 gbl_models.params.from_index(midx))
+
+    # Factor to correct for luminosity distance for the Emission lines fluxes
+    # The flux is expressed in 1e-17 ergs/cm2/s
+    DL = sed.info['universe.luminosity_distance']
+    factor_DL = 1. / (4 * np.pi * DL * DL)
+    for prop in gbl_models.extprop.keys():
+        if 'EL_flux' in prop:
+            sed.info[prop] *= factor_DL * 1e7 * 1e-4 * 1e17
 
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
         for band in gbl_models.flux:

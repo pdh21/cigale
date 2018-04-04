@@ -122,13 +122,21 @@ def sed(idx, midx):
     sed = gbl_warehouse.get_sed(gbl_models.params.modules,
                                 gbl_models.params.from_index(midx))
 
+    # Factor to correct for luminosity distance for the Emission lines fluxes
+    # The flux is expressed in 1e-17 ergs/cm2/s
+    DL = sed.info['universe.luminosity_distance']
+    factor_DL = 1./(4 * np.pi * DL * DL)
+    for prop in gbl_models.extprop.keys():
+        if 'EL_flux' in prop:
+            sed.info[prop] *= factor_DL * 1e7 * 1e-4 * 1e17
+
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
         for band in gbl_models.flux:
-           gbl_models.flux[band][idx] = np.nan
+            gbl_models.flux[band][idx] = np.nan
         for prop in gbl_models.extprop:
-           gbl_models.extprop[prop][idx] = np.nan
+            gbl_models.extprop[prop][idx] = np.nan
         for prop in gbl_models.intprop:
-           gbl_models.intprop[prop][idx] = np.nan
+            gbl_models.intprop[prop][idx] = np.nan
 
     else:
         for band in gbl_models.flux.keys():
@@ -211,7 +219,7 @@ def analysis(idx, obs):
                 _ = lambda x: x
             values = _(gbl_models.extprop[prop][wz])
             mean, std = weighted_param(values[wlikely] * scaling * corr_dz,
-                           likelihood[wlikely])
+                                       likelihood[wlikely])
             gbl_results.bayes.extmean[prop][idx] = mean
             gbl_results.bayes.exterror[prop][idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
@@ -264,6 +272,15 @@ def bestfit(oidx, obs):
     if obs.redshift >= 0.:
         params[gbl_params.modules.index('redshifting')]['redshift'] = obs.redshift
     sed = gbl_warehouse.get_sed(gbl_params.modules, params)
+
+    # Factor to correct for luminosity distance for the Emission lines fluxes
+    # The flux is expressed in 1e-17 ergs/cm2/s
+    DL = sed.info['universe.luminosity_distance']
+    factor_DL = 1. / (4 * np.pi * DL * DL)
+    for prop in gbl_results.best.extprop:
+        if 'EL_flux' in prop:
+            sed.info[prop] *= factor_DL * 1e7 * 1e-4 * 1e17
+
 
     corr_dz = compute_corr_dz(obs.redshift, obs.distance)
     scaling = gbl_results.best.scaling[oidx]
