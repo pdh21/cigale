@@ -178,7 +178,7 @@ def analysis(idx, obs):
     chi2, scaling = compute_chi2(gbl_models, obs, corr_dz, wz,
                                  gbl_models.conf['analysis_params']['lim_flag'])
 
-    if np.any(np.isfinite(chi2)):
+    if np.any(chi2 < -np.log(np.finfo(np.float64).tiny) * 2.):
         # We use the exponential probability associated with the χ² as
         # likelihood function.
         likelihood = np.exp(-chi2 / 2.)
@@ -222,11 +222,11 @@ def analysis(idx, obs):
         gbl_results.best.scaling[idx] = scaling[best_idx_z]
         gbl_results.best.index[idx] = (wz.start + best_idx_z*wz.step +
                                        gbl_models.block.start)
-
     else:
         # It sometimes happens because models are older than the Universe's age
-        print("No suitable model found for the object {}. One possible origin "
-              "is that models are older than the Universe.".format(obs.id))
+        print("No suitable model found for the object {}. It may be that "
+              "models are older than the Universe or that your chi² are very "
+              "large.".format(obs.id))
 
     with gbl_ncomputed.get_lock():
         gbl_ncomputed.value += 1
