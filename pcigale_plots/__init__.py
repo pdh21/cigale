@@ -79,8 +79,14 @@ def _pdf_worker(obj_name, var_name):
         Name of the analysed variable..
 
     """
-
-    fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name, var_name))
+    if var_name.endswith('_log'):
+        fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name,
+                                                               var_name[:-4]))
+        log = True
+    else:
+        fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name,
+                                                               var_name))
+        log = False
     likelihood = []
     model_variable = []
     for fname in fnames:
@@ -91,6 +97,8 @@ def _pdf_worker(obj_name, var_name):
         model_variable.append(data[1, :])
     likelihood = np.concatenate(likelihood)
     model_variable = np.concatenate(model_variable)
+    if log is True:
+        model_variable = np.log10(model_variable)
     w = np.where(np.isfinite(likelihood) & np.isfinite(model_variable))
     likelihood = likelihood[w]
     model_variable = model_variable[w]
