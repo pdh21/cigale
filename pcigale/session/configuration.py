@@ -265,7 +265,7 @@ class Configuration(object):
         """
 
         modules = OrderedDict((('SFH', ['sfh2exp', 'sfhdelayed', 'sfhfromfile',
-                                        'sfhperiodic']),
+                                        'sfhperiodic', 'sfhdelayedplusExpburst']),
                                ('SSP', ['bc03', 'm2005']),
                                ('nebular', ['nebular']),
                                ('dust attenuation', ['dustatt_calzleit',
@@ -277,7 +277,7 @@ class Configuration(object):
                                ('AGN', ['dale2014', 'fritz2006']),
                                ('radio', ['radio']),
                                ('restframe_parameters',
-                                ['restframe_parameters']),
+                                ['restframe_parameters', 'restframe_parameters_EL']),
                                ('redshift', ['redshifting'])))
 
         comments = {'SFH': "ERROR! Choosing one SFH module is mandatory.",
