@@ -234,7 +234,7 @@ class RestframeParam(SedModule):
         if EL_names != []:
             for EL_name in EL_names:
                 # Check whether lines should be added
-                Flux_EL = 0
+                Flux_EL = []
 
                 for i, EL_ in enumerate(EL_name.split("+")):
                     EL_ = EL_.strip()
@@ -270,22 +270,22 @@ class RestframeParam(SedModule):
                     # Sometimes code stops because no wvl_min is found
                     if np.isfinite(wvl_min) and np.isfinite(wvl_max):
                         mask_EL = (wl >= wvl_min) & (wl <= wvl_max)
-                        Flux_new = np.trapz(lumin_lines[mask_EL], wl[mask_EL])
-                        if Flux_new == Flux_EL:
-                            print ('WARNING: %s flux == %s flux '
-                                   % (EL_name.split("+")[i].strip(),
-                                      EL_name.split("+")[i-1].strip()))
-                            print ('\t %s Flux not added in %s total Flux'
-                                   % (EL_name.split("+")[i].strip(),
-                                      EL_name))
-                        else:
-                            Flux_EL += Flux_new
+                        Flux_EL.append(np.trapz(lumin_lines[mask_EL], wl[mask_EL]))
                     else:
-                        Flux_EL += -np.inf
+                        Flux_EL.append(-np.inf)
+
+                #if len(Flux_EL) != len(set(Flux_EL)):
+                #     print ('WARNING: some lines are not resolved in %s'
+                #            % EL_name)
+
+                # Remove duplicate fluxes, i.e. lines are not resolved
+                Flux_EL = list(set(Flux_EL))
+                # Sum all the lines fluxes if required
+                Flux_EL_sum = np.sum(Flux_EL)
 
                 # Total integrated fluxes are expressed in W
                 # Will be corrected for Luminosity distance in pdf_analysis
-                EL_fluxes['EL_flux_%s' % EL_name] = Flux_EL
+                EL_fluxes['EL_flux_%s' % EL_name] = Flux_EL_sum
 
         return EL_fluxes
 
