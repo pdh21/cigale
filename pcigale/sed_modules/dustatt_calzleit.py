@@ -204,28 +204,28 @@ def ccm(wave, Rv):
     cond4 = (x >= 5.9) & (x < 8.0)
     cond5 = (x >= 8.0) & (x <= 11.)
     fcond1 = lambda wn: Rv * .574 * wn**1.61 - .527 * wn**1.61
-    fcond2 = lambda wn: Rv * (np.polyval([0.32999, -0.77530, 0.01979,
-                                          0.72085, -0.02427, -0.50447,
-                                          0.17699, 1.], wn - 1.82) +
-                              np.polyval([-2.09002, 5.30260, -0.62251,
-                                          -5.38434, 1.07233, 2.28305,
-                                          1.41338, 0.], wn - 1.82))
-    fcond3 = lambda wn: Rv * ((1.752 - 0.316 * wn -
+    fcond2 = lambda wn: 1.0 * (Rv * np.polyval([0.32999, -0.77530, 0.01979,
+                                                0.72085, -0.02427, -0.50447,
+                                                0.17699, 1.], wn - 1.82) +
+                               np.polyval([-2.09002, 5.30260, -0.62251,
+                                           -5.38434, 1.07233, 2.28305,
+                                           1.41338, 0.], wn - 1.82))
+    fcond3 = lambda wn: 1.0 * (Rv * (1.752 - 0.316 * wn -
                                (0.104 / ((wn - 4.67)**2 + 0.341))) +
                               (-3.090 + 1.825 * wn +
                                (1.206 / ((wn - 4.62)**2 + 0.263))))
-    fcond4 = lambda wn: Rv * ((1.752 - 0.316 * wn -
-                               (0.104 / ((wn - 4.67)**2 + 0.341)) +
-                              np.polyval([-0.009779, -0.04473, 0., 0.],
-                                         wn - 5.9)) +
-                              (-3.090 + 1.825 * wn +
-                               (1.206 / ((wn - 4.62)**2 + 0.263)) +
-                               np.polyval([0.1207, 0.2130, 0., 0.],
-                                          wn - 5.9)))
-    fcond5 = lambda wn: Rv * ((np.polyval([-0.070, 0.137, -0.628, -1.073],
-                                          wn-8.)) +
-                              np.polyval([0.374, -0.420, 4.257, 13.670],
-                                         wn - 8.))
+    fcond4 = lambda wn: 1.0 * (Rv * (1.752 - 0.316 * wn -
+                                     (0.104 / ((wn - 4.67)**2 + 0.341)) +
+                                     np.polyval([-0.009779, -0.04473, 0., 0.],
+                                                wn - 5.9)) +
+                               (-3.090 + 1.825 * wn +
+                                (1.206 / ((wn - 4.62)**2 + 0.263)) +
+                                np.polyval([0.1207, 0.2130, 0., 0.],
+                                           wn - 5.9)))
+    fcond5 = lambda wn: 1.0 * (Rv * (np.polyval([-0.070, 0.137, -0.628, -1.073],
+                                                wn-8.)) +
+                               np.polyval([0.374, -0.420, 4.257, 13.670],
+                                          wn - 8.))
 
     return np.piecewise(x, [cond1, cond2, cond3, cond4, cond5],
                         [fcond1, fcond2, fcond3, fcond4, fcond5])
@@ -420,7 +420,7 @@ class CalzLeit(SedModule):
             if 'nebular' in contrib:
                 attenuation = self.emission_lines_att * self.ebvl
             else:
-                attenuation = self.stellar_continuum_att * self.ebvs
+                attenuation = self.stellar_cont_att * self.ebvs
 
             luminosity = sed.get_lumin_contribution(contrib)
             attenuated_luminosity = luminosity * 10. ** (attenuation / -2.5)
