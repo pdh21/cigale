@@ -348,7 +348,6 @@ class RestframeParam(SedModule):
                          2.5 * np.log10(fluxes[filt2]/fluxes[filt1]))
 
         for line, flux in self.EL_flux(sed).items():
-            print (line)
             sed.add_info("{}".format(line), flux, True)
 
 # SedModule to be returned by get_module
