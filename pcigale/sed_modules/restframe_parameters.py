@@ -233,40 +233,55 @@ class RestframeParam(SedModule):
         # Check whether there are emission lines to compute
         if EL_names != []:
             for EL_name in EL_names:
-                # Get central wavelength in nm
-                wvl_c = self.EL_lib[EL_name]
-                wvl_c *= 0.1
+                # Check whether lines should be added
+                Flux_EL = 0
 
-                # Get wavelength interval where:
-                # Lum_tot > Lum_tot - Lum_lines
+                for i, EL_ in enumerate(EL_name.split("+")):
+                    EL_ = EL_.strip()
 
-                # Nebular luminosity is never 0.
-                # so we need to multiply by a small factor to use:
-                # Lum_cont = Lum_tot - Lum_lines
-                # Lum_tot > Lum_cont * (1+factor)
-                factor = 1e-3
+                    # Get central wavelength in nm
+                    wvl_c = self.EL_lib[EL_]
+                    wvl_c *= 0.1
 
-                # get array index for central wavelength
-                line_idx = np.argmin((wl-wvl_c)**2)
-                # go backward to get wvl_min
-                idx = line_idx
-                wvl_min = np.nan
-                while lumin_tot[idx] > lumin_cont[idx]*(1+factor):
-                    idx = idx-1
-                wvl_min = wl[idx+1]
-                # get wvl_max
-                idx = line_idx
-                wvl_max = np.nan
-                while lumin_tot[idx] > lumin_cont[idx]*(1+factor):
-                    idx += 1
-                wvl_max = wl[idx-1]
+                    # Get wavelength interval where:
+                    # Lum_tot > Lum_tot - Lum_lines
 
-                # Sometimes code stops because no wvl_min is found
-                if np.isfinite(wvl_min) and np.isfinite(wvl_max):
-                    mask_EL = (wl >= wvl_min) & (wl <= wvl_max)
-                    Flux_EL = np.trapz(lumin_lines[mask_EL], wl[mask_EL])
-                else:
-                    Flux_EL = -np.inf
+                    # Nebular luminosity is never 0.
+                    # so we need to multiply by a small factor to use:
+                    # Lum_cont = Lum_tot - Lum_lines
+                    # Lum_tot > Lum_cont * (1+factor)
+                    factor = 1e-3
+
+                    # get array index for central wavelength
+                    line_idx = np.argmin((wl-wvl_c)**2)
+                    # go backward to get wvl_min
+                    idx = line_idx
+                    wvl_min = np.nan
+                    while lumin_tot[idx] > lumin_cont[idx]*(1+factor):
+                        idx = idx-1
+                    wvl_min = wl[idx+1]
+                    # get wvl_max
+                    idx = line_idx
+                    wvl_max = np.nan
+                    while lumin_tot[idx] > lumin_cont[idx]*(1+factor):
+                        idx += 1
+                    wvl_max = wl[idx-1]
+
+                    # Sometimes code stops because no wvl_min is found
+                    if np.isfinite(wvl_min) and np.isfinite(wvl_max):
+                        mask_EL = (wl >= wvl_min) & (wl <= wvl_max)
+                        Flux_new = np.trapz(lumin_lines[mask_EL], wl[mask_EL])
+                        if Flux_new == Flux_EL:
+                            print ('WARNING: %s flux == %s flux '
+                                   % (EL_name.split("+")[i].strip(),
+                                      EL_name.split("+")[i-1].strip()))
+                            print ('\t %s Flux not added in %s total Flux'
+                                   % (EL_name.split("+")[i].strip(),
+                                      EL_name))
+                        else:
+                            Flux_EL += Flux_new
+                    else:
+                        Flux_EL += -np.inf
 
                 # Total integrated fluxes are expressed in W
                 # Will be corrected for Luminosity distance in pdf_analysis
