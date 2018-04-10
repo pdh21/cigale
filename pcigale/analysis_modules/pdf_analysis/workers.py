@@ -186,6 +186,9 @@ def analysis(idx, obs):
         # If all the models are valid, it is much more efficient to use a slice
         if likelihood.size == wlikely[0].size:
             wlikely = slice(None, None)
+        likelihood = likelihood[wlikely]
+        scaling_l = scaling[wlikely]
+
         gbl_results.bayes.weight[idx] = np.nansum(likelihood)
 
         # We compute the weighted average and standard deviation using the
@@ -197,7 +200,7 @@ def analysis(idx, obs):
             else:
                 _ = lambda x: x
             values = _(gbl_models.intprop[prop][wz])
-            mean, std = weighted_param(values[wlikely], likelihood[wlikely])
+            mean, std = weighted_param(values[wlikely], likelihood)
             gbl_results.bayes.intmean[prop][idx] = mean
             gbl_results.bayes.interror[prop][idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
@@ -210,8 +213,8 @@ def analysis(idx, obs):
             else:
                 _ = lambda x: x
             values = _(gbl_models.extprop[prop][wz])
-            mean, std = weighted_param(values[wlikely] * scaling * corr_dz,
-                           likelihood[wlikely])
+            mean, std = weighted_param(values[wlikely] * scaling_l * corr_dz,
+                           likelihood)
             gbl_results.bayes.extmean[prop][idx] = mean
             gbl_results.bayes.exterror[prop][idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
