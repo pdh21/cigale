@@ -257,7 +257,7 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
     # Computation of the χ² from intensive properties
     for name, prop in obs.intprop.items():
         model = models.intprop[name][wz]
-        chi2 += ((prop - model) * (1. / obs.intprops_err[name])) ** 2.
+        chi2 += ((prop - model) * (1. / obs.intprop_err[name])) ** 2.
 
     # Computation of the χ² from extensive properties
     for name, prop in obs.extprop.items():
