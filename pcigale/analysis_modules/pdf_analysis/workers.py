@@ -195,12 +195,12 @@ def analysis(idx, obs):
         # likelihood as weight.
         for prop in gbl_results.bayes.intmean:
             if prop.endswith('_log'):
-                prop = prop[:-4]
+                values = gbl_models.intprop[prop[:-4]][wz]
                 _ = np.log10
             else:
+                values = gbl_models.intprop[prop][wz]
                 _ = lambda x: x
-            values = _(gbl_models.intprop[prop][wz])
-            mean, std = weighted_param(values[wlikely], likelihood)
+            mean, std = weighted_param(_(values[wlikely]), likelihood)
             gbl_results.bayes.intmean[prop][idx] = mean
             gbl_results.bayes.interror[prop][idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
@@ -208,13 +208,13 @@ def analysis(idx, obs):
 
         for prop in gbl_results.bayes.extmean:
             if prop.endswith('_log'):
-                prop = prop[:-4]
+                values = gbl_models.extprop[prop[:-4]][wz]
                 _ = np.log10
             else:
+                values = gbl_models.extprop[prop][wz]
                 _ = lambda x: x
-            values = _(gbl_models.extprop[prop][wz])
-            mean, std = weighted_param(values[wlikely] * scaling_l * corr_dz,
-                           likelihood)
+            mean, std = weighted_param(_(values[wlikely] * scaling_l * corr_dz),
+                                       likelihood)
             gbl_results.bayes.extmean[prop][idx] = mean
             gbl_results.bayes.exterror[prop][idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
