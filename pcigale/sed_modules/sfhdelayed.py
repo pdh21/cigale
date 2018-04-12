@@ -75,7 +75,7 @@ class SFHDelayed(SedModule):
 
     def _init_code(self):
         self.tau_main = float(self.parameters["tau_main"])
-        age_main = int(self.parameters["age_main"])
+        self.age_main = int(self.parameters["age_main"])
         self.tau_burst = float(self.parameters["tau_burst"])
         self.age_burst = int(self.parameters["age_burst"])
         self.f_burst = float(self.parameters["f_burst"])
@@ -83,7 +83,7 @@ class SFHDelayed(SedModule):
         normalise = bool(self.parameters["normalise"])
 
         # Time grid for each component
-        t = np.arange(age_main)
+        t = np.arange(self.age_main)
         t_burst = np.arange(self.age_burst)
 
         # SFR for each component
@@ -121,6 +121,7 @@ class SFHDelayed(SedModule):
         # Add the sfh and the output parameters to the SED.
         sed.sfh = self.sfr
         sed.add_info("sfh.integrated", self.sfr_integrated, True)
+        sed.add_info("sfh.age_main", self.age_main)
         sed.add_info("sfh.tau_main", self.tau_main)
         sed.add_info("sfh.age_burst", self.age_burst)
         sed.add_info("sfh.tau_burst", self.tau_burst)
