@@ -174,7 +174,10 @@ class Configuration(object):
         self.spec['bands'] = "cigale_string_list()"
 
         self.config['properties'] = ''
-        self.config.comments['properties'] = [""] + wrap("Properties to be considered.")
+        self.config.comments['properties'] = [""] + wrap("Properties to be "
+            "considered. All properties are to be given in the rest frame "
+            "rather than the observed frame. This is the case for instance "
+            "the equivalent widths and for luminosity densities.")
         self.spec['properties'] = "cigale_string_list()"
 
         # SED creation modules configurations. For each module, we generate
