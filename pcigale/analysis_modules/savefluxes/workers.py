@@ -31,6 +31,7 @@ def init_fluxes(models, t0, ncomputed):
     global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_obs, gbl_save
     global gbl_t0, gbl_ncomputed
 
+
     # Limit the number of threads to 1 if we use MKL in order to limit the
     # oversubscription of the CPU/RAM.
     nothread()
@@ -71,6 +72,7 @@ def fluxes(idx, midx):
     for prop in gbl_models.extprop.keys():
         if 'EL_flux' in prop:
             sed.info[prop] *= factor_DL * 1e7 * 1e-4 * 1e17
+
 
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
         for band in gbl_models.flux:

@@ -31,10 +31,12 @@ class ModelsManager(object):
         self.allpropnames, self.allextpropnames = get_info(self)
         self.allintpropnames = set(self.allpropnames) - self.allextpropnames
 
+        props_nolog = set([prop[:-4] if prop.endswith('log') else prop
+                           for prop in conf['analysis_params']['variables']])
         self.intpropnames = (self.allintpropnames & set(obs.intprops) |
-                             self.allintpropnames & set(conf['analysis_params']['variables']))
+                             self.allintpropnames & props_nolog)
         self.extpropnames = (self.allextpropnames & set(obs.extprops) |
-                             self.allextpropnames & set(conf['analysis_params']['variables']))
+                             self.allextpropnames & props_nolog)
         size = len(params.blocks[iblock])
 
         self.flux = {band: SharedArray(size) for band in obs.bands}

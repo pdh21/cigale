@@ -30,8 +30,12 @@ class BayesResultsManager(object):
     def __init__(self, models):
         nobs = len(models.obs)
         self.propertiesnames = models.allpropnames
-        extpropnames = models.extpropnames
-        intpropnames = models.intpropnames
+        extpropnames = [prop for prop in models.obs.conf['analysis_params']['variables']
+                        if (prop in models.allextpropnames or
+                            prop[:-4] in models.allextpropnames)]
+        intpropnames = [prop for prop in models.obs.conf['analysis_params']['variables']
+                        if (prop in models.allintpropnames or
+                            prop[:-4] in models.allintpropnames)]
         self.nproperties = len(intpropnames) + len(extpropnames)
 
         # Arrays where we store the data related to the models. For memory

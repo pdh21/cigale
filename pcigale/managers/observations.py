@@ -229,20 +229,21 @@ class ObservationsManagerPassbands(object):
             Best fit fluxes of a previous run.
 
         """
-        for idx, band in enumerate(self.bands):
+        for band in self.bands:
             err = band + '_err'
-            self.table[band] = np.random.normal(fits.best.fluxes[:, idx],
+            self.table[band] = np.random.normal(fits.best.flux[band],
                                                 np.fabs(self.table[err]))
-        for idx, prop in enumerate(self.intprops):
+        for prop in self.intprops:
             err = prop + '_err'
-            index = fits.best.propertiesnames.index(prop)
-            self.table[prop] = np.random.normal(fits.best.properties[:, index],
+            self.table[name] = np.random.normal(fits.best.intprop[prop],
                                                 np.fabs(self.table[err]))
-        for idx, prop in enumerate(self.extprops):
+        for prop in self.extprops:
             err = prop + '_err'
-            index = fits.best.propertiesnames.index(prop)
-            self.table[prop] = np.random.normal(fits.best.properties[:, index],
+            self.table[prop] = np.random.normal(fits.best.extprop[prop],
                                                 np.fabs(self.table[err]))
+
+        self.observations = list([Observation(row, self)
+                                  for row in self.table])
 
     def save(self, filename):
         """Saves the observations as seen internally by the code so it is easy
