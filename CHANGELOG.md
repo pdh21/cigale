@@ -17,6 +17,7 @@
 
 ### Optimised
 - The estimation of the physical properties is made a bit faster when all the models are valid. (Médéric Boquien)
+- The access to the SED and module caches has been made faster and simpler. This results in a speedup of ~6% in the computation of the models. (Médéric Boquien)
 
 ## 0.12.1 (2018-02-27)
 ### Fixed

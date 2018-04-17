@@ -3,8 +3,6 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Yannick Roehlly
 
-import marshal
-
 from ..sed import SED
 from .. import sed_modules
 
@@ -62,9 +60,10 @@ class SedWarehouse(object):
         if name in self.nocache:
             module = sed_modules.get_module(name, **kwargs)
         else:
-            # Marshal a tuple (name, parameters) to be used as a key for
-            # storing the module in the cache.
-            module_key = marshal.dumps((name, kwargs))
+            # Use the name of the module and the values of the parameters as a
+            # key to the cache. This works because the parameters are stored in
+            # ordered dictionaries.
+            module_key = (name, tuple(kwargs.values()))
             if module_key in self.module_cache:
                 module = self.module_cache[module_key]
             else:
@@ -92,7 +91,7 @@ class SedWarehouse(object):
         """
         if n_modules_max > -1:
             for k in list(self.sed_cache.keys()):
-                if len(marshal.loads(k)[0]) > n_modules_max:
+                if len(k) > n_modules_max:
                     del self.sed_cache[k]
 
     def get_sed(self, module_list, parameter_list):
@@ -120,9 +119,10 @@ class SedWarehouse(object):
         module_list = list(module_list)
         parameter_list = list(parameter_list)
 
-        # Marshal a tuple (module_list, parameter_list) to be used as a key
-        # for storing the SED in the cache.
-        key = marshal.dumps((module_list, parameter_list))
+        # Use the values of the parameters of all the modules as the key for
+        # the cache. This works because the parameters are stored in ordered
+        # dictionaries.
+        key = tuple(tuple(par.values()) for par in parameter_list)
 
         sed = self.sed_cache.get(key)
         if sed is None:
