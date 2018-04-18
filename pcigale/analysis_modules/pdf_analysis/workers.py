@@ -132,11 +132,11 @@ def sed(idx, midx):
 
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
         for band in gbl_models.flux:
-            gbl_models.flux[band][idx] = np.nan
+           gbl_models.flux[band][idx] = np.nan
         for prop in gbl_models.extprop:
-            gbl_models.extprop[prop][idx] = np.nan
+           gbl_models.extprop[prop][idx] = np.nan
         for prop in gbl_models.intprop:
-            gbl_models.intprop[prop][idx] = np.nan
+           gbl_models.intprop[prop][idx] = np.nan
 
     else:
         for band in gbl_models.flux.keys():
@@ -186,7 +186,7 @@ def analysis(idx, obs):
     chi2, scaling = compute_chi2(gbl_models, obs, corr_dz, wz,
                                  gbl_models.conf['analysis_params']['lim_flag'])
 
-    if np.any(np.isfinite(chi2)):
+    if np.any(chi2 < -np.log(np.finfo(np.float64).tiny) * 2.):
         # We use the exponential probability associated with the χ² as
         # likelihood function.
         likelihood = np.exp(-chi2 / 2.)
@@ -203,12 +203,12 @@ def analysis(idx, obs):
         # likelihood as weight.
         for prop in gbl_results.bayes.intmean:
             if prop.endswith('_log'):
-                prop = prop[:-4]
+                values = gbl_models.intprop[prop[:-4]][wz]
                 _ = np.log10
             else:
+                values = gbl_models.intprop[prop][wz]
                 _ = lambda x: x
-            values = _(gbl_models.intprop[prop][wz])
-            mean, std = weighted_param(values[wlikely], likelihood)
+            mean, std = weighted_param(_(values[wlikely]), likelihood)
             gbl_results.bayes.intmean[prop][idx] = mean
             gbl_results.bayes.interror[prop][idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
@@ -216,12 +216,12 @@ def analysis(idx, obs):
 
         for prop in gbl_results.bayes.extmean:
             if prop.endswith('_log'):
-                prop = prop[:-4]
+                values = gbl_models.extprop[prop[:-4]][wz] 
                 _ = np.log10
             else:
+                values = gbl_models.extprop[prop][wz] * scaling * corr_dz
                 _ = lambda x: x
-            values = _(gbl_models.extprop[prop][wz])
-            mean, std = weighted_param(values[wlikely] * scaling_l * corr_dz,
+            mean, std = weighted_param(_(values[wlikely] * scaling_l * corr_dz),
                                        likelihood)
             gbl_results.bayes.extmean[prop][idx] = mean
             gbl_results.bayes.exterror[prop][idx] = std
@@ -233,11 +233,11 @@ def analysis(idx, obs):
         gbl_results.best.scaling[idx] = scaling[best_idx_z]
         gbl_results.best.index[idx] = (wz.start + best_idx_z*wz.step +
                                        gbl_models.block.start)
-
     else:
         # It sometimes happens because models are older than the Universe's age
-        print("No suitable model found for the object {}. One possible origin "
-              "is that models are older than the Universe.".format(obs.id))
+        print("No suitable model found for the object {}. It may be that "
+              "models are older than the Universe or that your chi² are very "
+              "large.".format(obs.id))
 
     with gbl_ncomputed.get_lock():
         gbl_ncomputed.value += 1
@@ -283,7 +283,6 @@ def bestfit(oidx, obs):
     for prop in gbl_results.best.extprop:
         if 'EL_flux' in prop:
             sed.info[prop] *= factor_DL * 1e7 * 1e-4 * 1e17
-
 
     corr_dz = compute_corr_dz(obs.redshift, obs.distance)
     scaling = gbl_results.best.scaling[oidx]
