@@ -221,7 +221,7 @@ def analysis(idx, obs):
             else:
                 values = gbl_models.extprop[prop][wz] * scaling * corr_dz
                 _ = lambda x: x
-            mean, std = weighted_param(_(values[wlikely] * scaling_l * corr_dz),
+            mean, std = weighted_param(_(values[wlikely]),
                                        likelihood)
             gbl_results.bayes.extmean[prop][idx] = mean
             gbl_results.bayes.exterror[prop][idx] = std
