@@ -273,14 +273,12 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
             model = models.flux[band][wz]
             chi2 -= 2. * np.log(.5 *
                                 (1. + erf(((obs.flux_ul[band] -
-                                 model * scaling) /
-                                 (-np.sqrt(2.)*obs_error)))))
+                                 model * scaling) / (np.sqrt(2.)*obs_error)))))
         for band, obs_error in obs.extprop_ul_err.items():
             model = models.extprop[band][wz]
             chi2 -= 2. * np.log(.5 *
                                 (1. + erf(((obs.extprop_ul[band] -
-                                 model * scaling) /
-                                 (-np.sqrt(2.)*obs_error)))))
+                                 model * scaling) / (np.sqrt(2.)*obs_error)))))
 
     return chi2, scaling
 
