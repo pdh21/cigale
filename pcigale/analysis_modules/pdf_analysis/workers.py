@@ -16,20 +16,18 @@ from .utils import save_chi2, compute_corr_dz, compute_chi2, weighted_param
 from ...warehouse import SedWarehouse
 
 
-def init_sed(models, t0, ncomputed):
+def init_sed(models, counter):
     """Initializer of the pool of processes to share variables between workers.
 
     Parameters
     ----------
     models: ModelsManagers
         Manages the storage of the computed models (fluxes and properties).
-    t0: float
-        Time of the beginning of the computation.
-    ncomputed: Value
-        Number of computed models. Shared among workers.
+    counter: Counter class object
+        Counter for the number of models computed
 
     """
-    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_t0, gbl_ncomputed
+    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_counter
 
     # Limit the number of threads to 1 if we use MKL in order to limit the
     # oversubscription of the CPU/RAM.
@@ -39,11 +37,10 @@ def init_sed(models, t0, ncomputed):
     gbl_warehouse = SedWarehouse()
 
     gbl_models = models
-    gbl_t0 = t0
-    gbl_ncomputed = ncomputed
+    gbl_counter = counter
 
 
-def init_analysis(models, results, t0, ncomputed):
+def init_analysis(models, results, counter):
     """Initializer of the pool of processes to share variables between workers.
 
     Parameters
@@ -52,22 +49,19 @@ def init_analysis(models, results, t0, ncomputed):
         Manages the storage of the computed models (fluxes and properties).
     results: ResultsManager
         Contains the estimates and errors on the properties.
-    t0: float
-        Time of the beginning of the computation.
-    ncomputed: Value
-        Number of computed models. Shared among workers.
+    counter: Counter class object
+        Counter for the number of objects analysed
 
     """
-    global gbl_models, gbl_obs, gbl_results, gbl_t0, gbl_ncomputed
+    global gbl_models, gbl_obs, gbl_results, gbl_counter
 
     gbl_models = models
     gbl_obs = models.obs
     gbl_results = results
-    gbl_t0 = t0
-    gbl_ncomputed = ncomputed
+    gbl_counter = counter
 
 
-def init_bestfit(conf, params, observations, results, t0, ncomputed):
+def init_bestfit(conf, params, observations, results, counter):
     """Initializer of the pool of processes to share variables between workers.
 
     Parameters
@@ -78,18 +72,14 @@ def init_bestfit(conf, params, observations, results, t0, ncomputed):
         Manages the parameters from a 1D index.
     observations: astropy.Table
         Contains the observations including the filter names.
-    ncomputed: Value
-        Number of computed models. Shared among workers.
-    t0: float
-        Time of the beginning of the computation.
     results: ResultsManager
         Contains the estimates and errors on the properties.
-    offset: integer
-        Offset of the block to retrieve the global model index.
+    counter: Counter class object
+        Counter for the number of objects analysed
 
     """
     global gbl_previous_idx, gbl_warehouse, gbl_conf, gbl_params, gbl_obs
-    global gbl_results, gbl_t0, gbl_ncomputed
+    global gbl_results, gbl_counter
 
     gbl_previous_idx = -1
     gbl_warehouse = SedWarehouse()
@@ -98,8 +88,7 @@ def init_bestfit(conf, params, observations, results, t0, ncomputed):
     gbl_params = params
     gbl_obs = observations
     gbl_results = results
-    gbl_t0 = t0
-    gbl_ncomputed = ncomputed
+    gbl_counter = counter
 
 
 def sed(idx, midx):
@@ -138,15 +127,7 @@ def sed(idx, midx):
         for prop in gbl_models.intprop.keys():
             gbl_models.intprop[prop][idx] = sed.info[prop]
 
-    with gbl_ncomputed.get_lock():
-        gbl_ncomputed.value += 1
-        ncomputed = gbl_ncomputed.value
-    nmodels = len(gbl_models.block)
-    if ncomputed % 250 == 0 or ncomputed == nmodels:
-        dt = time.time() - gbl_t0
-        print("{}/{} models computed in {:.1f} seconds ({:.1f} models/s)".
-              format(ncomputed, nmodels, dt, ncomputed/dt),
-              end="\n" if ncomputed == nmodels else "\r")
+    gbl_counter.inc()
 
 
 def analysis(idx, obs):
@@ -231,14 +212,7 @@ def analysis(idx, obs):
               "models are older than the Universe or that your chi² are very "
               "large.".format(obs.id))
 
-    with gbl_ncomputed.get_lock():
-        gbl_ncomputed.value += 1
-        ncomputed = gbl_ncomputed.value
-    dt = time.time() - gbl_t0
-    print("{}/{} objects analysed in {:.1f} seconds ({:.2f} objects/s)".
-          format(ncomputed, len(gbl_models.obs), dt, ncomputed/dt),
-          end="\n" if ncomputed == len(gbl_models.obs) else "\r")
-
+    gbl_counter.inc()
 
 def bestfit(oidx, obs):
     """Worker process to compute and save the best fit.
@@ -284,10 +258,4 @@ def bestfit(oidx, obs):
     if gbl_conf['analysis_params']["save_best_sed"]:
         sed.to_fits('out/{}'.format(obs.id), scaling)
 
-    with gbl_ncomputed.get_lock():
-        gbl_ncomputed.value += 1
-        ncomputed = gbl_ncomputed.value
-    dt = time.time() - gbl_t0
-    print("{}/{} best fit spectra computed in {:.1f} seconds ({:.2f} objects/s)".
-          format(ncomputed, len(gbl_obs), dt, ncomputed/dt), end="\n" if
-          ncomputed == len(gbl_obs) else "\r")
+    gbl_counter.inc()

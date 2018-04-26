@@ -13,7 +13,7 @@ from ...warehouse import SedWarehouse
 from ..utils import nothread
 
 
-def init_fluxes(models, t0, ncomputed):
+def init_fluxes(models, counter):
     """Initializer of the pool of processes. It is mostly used to convert
     RawArrays into numpy arrays. The latter are defined as global variables to
     be accessible from the workers.
@@ -22,14 +22,12 @@ def init_fluxes(models, t0, ncomputed):
     ----------
     models: ModelsManagers
         Manages the storage of the computed models (fluxes and properties).
-    t0: float
-        Time of the beginning of the computation.
-    ncomputed: Value
-        Number of computed models. Shared among workers.
+    counter: Counter class object
+        Counter for the number of models computed
 
     """
     global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_obs, gbl_save
-    global gbl_t0, gbl_ncomputed
+    global gbl_counter
 
 
     # Limit the number of threads to 1 if we use MKL in order to limit the
@@ -42,8 +40,7 @@ def init_fluxes(models, t0, ncomputed):
     gbl_models = models
     gbl_obs = models.obs
     gbl_save = models.conf['analysis_params']['save_sed']
-    gbl_t0 = t0
-    gbl_ncomputed = ncomputed
+    gbl_counter = counter
 
 
 def fluxes(idx, midx):
@@ -83,12 +80,4 @@ def fluxes(idx, midx):
     if gbl_save is True:
         sed.to_fits("out/{}".format(midx))
 
-    with gbl_ncomputed.get_lock():
-        gbl_ncomputed.value += 1
-        ncomputed = gbl_ncomputed.value
-    nmodels = len(gbl_models.block)
-    if ncomputed % 250 == 0 or ncomputed == nmodels:
-        dt = time.time() - gbl_t0
-        print("{}/{} models computed in {:.1f} seconds ({:.1f} models/s)".
-              format(ncomputed, nmodels, dt, ncomputed/dt),
-              end="\n" if ncomputed == nmodels else "\r")
+    gbl_counter.inc()
