@@ -124,11 +124,11 @@ def sed(idx, midx):
 
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
         for band in gbl_models.flux:
-           gbl_models.flux[band][idx] = np.nan
+            gbl_models.flux[band][idx] = np.nan
         for prop in gbl_models.extprop:
-           gbl_models.extprop[prop][idx] = np.nan
+            gbl_models.extprop[prop][idx] = np.nan
         for prop in gbl_models.intprop:
-           gbl_models.intprop[prop][idx] = np.nan
+            gbl_models.intprop[prop][idx] = np.nan
 
     else:
         for band in gbl_models.flux.keys():
