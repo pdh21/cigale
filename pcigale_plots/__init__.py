@@ -441,7 +441,7 @@ def sed(config, sed_type, nologo):
     with Database() as base:
         filters = OrderedDict([(name, base.get_filter(name))
                                for name in config.configuration['bands']
-                               if not name.endswith('_err')])
+                               if not (name.endswith('_err') or name.startswith('line')) ])
 
     with mp.Pool(processes=config.configuration['cores']) as pool:
         pool.starmap(_sed_worker, zip(obs, mod, repeat(filters),
