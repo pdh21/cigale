@@ -64,6 +64,7 @@ class SED(object):
         self.contribution_names = []
         self.luminosity = None
         self.luminosities = None
+        self.lines = dict()
         self.info = dict()
         self.mass_proportional_info = set()
 
@@ -286,6 +287,13 @@ class SED(object):
                 key = (wavelength.size, filter_name, 0.)
             dist = 10. * parsec
 
+        if filter_name.startswith('line.'):
+            lum = 0
+            for name in filter_name.split('+'):
+                line = self.lines[name.split('.', maxsplit=1)[1]]
+                lum += line[1] + line[2]  # Young and old components
+            return utils.luminosity_to_flux(lum, dist)
+
         if key in self.cache_filters:
             wavelength_r, transmission_r, lambda_piv = self.cache_filters[key]
         else:
@@ -373,6 +381,7 @@ class SED(object):
             sed.luminosity = self.luminosity.copy()
             sed.luminosities = self.luminosities.copy()
         sed.contribution_names = self.contribution_names[:]
+        sed.lines = self.lines.copy()
         sed.info = self.info.copy()
         sed.mass_proportional_info = self.mass_proportional_info.copy()
 
