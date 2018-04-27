@@ -106,7 +106,9 @@ class ModCF00Att(SedModule):
         self.filter_list = [item.strip() for item in
                             self.parameters["filters"].split("&")]
         self.Av_BC = self.Av_ISM * (1. - self.mu) / self.mu
-        self.curve = {}
+        self.contatt = {}
+        self.lineatt = {}
+
 
     def process(self, sed):
         """Add the dust attenuation to the SED.
@@ -119,13 +121,26 @@ class ModCF00Att(SedModule):
 
         wl = sed.wavelength_grid
 
-        if len(self.curve) == 0:
-            self.curve['old'] = 10. ** (-.4 * alambda_av(wl, self.slope_ISM) *
-                                        self.Av_ISM)
+        # Compute the attenuation curves on the continuum wavelength grid
+        if len(self.contatt) == 0:
+            self.contatt['old'] = 10. ** (-.4 * alambda_av(wl, self.slope_ISM) *
+                                          self.Av_ISM)
             # Emission from the young population is attenuated by both
             # components
-            self.curve['young'] = 10. ** (-.4 * alambda_av(wl, self.slope_BC) *
-                                          self.Av_BC) * self.curve['old']
+            self.contatt['young'] = 10. ** (-.4 * alambda_av(wl, self.slope_BC) *
+                                            self.Av_BC) * self.contatt['old']
+
+        # Compute the attenuation curves on the line wavelength grid
+        if len(self.lineatt) == 0:
+            names = [k for k in sed.lines]
+            linewl = np.array([sed.lines[k][0] for k in names])
+            old_curve =  10. ** (-.4 * alambda_av(linewl, self.slope_ISM) *
+                                 self.Av_ISM)
+            young_curve = 10. ** (-.4 * alambda_av(linewl, self.slope_BC) *
+                                  self.Av_BC) * old_curve
+
+            for name, old, young in zip(names, old_curve, young_curve):
+                self.lineatt[name] = (old, young)
 
         # Fλ fluxes in each filter before attenuation.
         flux_noatt = {filt: sed.compute_fnu(filt) for filt in self.filter_list}
@@ -138,12 +153,16 @@ class ModCF00Att(SedModule):
             age = contrib.split('.')[-1].split('_')[-1]
             luminosity = sed.get_lumin_contribution(contrib)
 
-            attenuation_spectrum = luminosity * (self.curve[age] - 1.)
+            attenuation_spectrum = luminosity * (self.contatt[age] - 1.)
             dust_lumin -= np.trapz(attenuation_spectrum, wl)
 
             sed.add_module(self.name, self.parameters)
             sed.add_contribution("attenuation." + contrib, wl,
                                  attenuation_spectrum)
+
+        for name, (linewl, old, young) in sed.lines.items():
+            sed.lines[name] = (linewl, old * self.lineatt[name][0],
+                               young * self.lineatt[name][1])
 
         sed.add_info('attenuation.Av_ISM', self.Av_ISM)
         sed.add_info('attenuation.Av_BC', self.Av_BC)
