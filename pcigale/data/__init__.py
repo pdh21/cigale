@@ -209,12 +209,14 @@ class _NebularLines(BASE):
     __tablename__ = 'nebular_lines'
     metallicity = Column(Float, primary_key=True)
     logU = Column(Float, primary_key=True)
+    name = Column(PickleType)
     wave = Column(PickleType)
     ratio = Column(PickleType)
 
     def __init__(self, nebular_lines):
         self.metallicity = nebular_lines.metallicity
         self.logU = nebular_lines.logU
+        self.name = nebular_lines.name
         self.wave = nebular_lines.wave
         self.ratio = nebular_lines.ratio
 
@@ -767,8 +769,8 @@ class Database(object):
                   filter(_NebularLines.logU == logU).
                   first())
         if result:
-            return NebularLines(result.metallicity, result.logU, result.wave,
-                                result.ratio)
+            return NebularLines(result.metallicity, result.logU, result.name,
+                                result.wave, result.ratio)
         else:
             return None
 
