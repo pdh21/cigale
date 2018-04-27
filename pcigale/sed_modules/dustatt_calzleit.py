@@ -284,7 +284,9 @@ class CalzLeit(SedModule):
             attenuation_spectrum = luminosity * (self.curve[age] - 1.)
             # We integrate the amount of luminosity attenuated (-1 because the
             # spectrum is negative).
-            attenuation = -1. * np.trapz(attenuation_spectrum, wavelength)
+            attenuation = -.5 * np.dot(np.diff(wavelength),
+                                       attenuation_spectrum[1:] +
+                                       attenuation_spectrum[:-1])
             attenuation_total += attenuation
 
             sed.add_module(self.name, self.parameters)
