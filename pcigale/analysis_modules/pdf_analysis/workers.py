@@ -120,11 +120,11 @@ def sed(idx, midx):
             gbl_models.intprop[prop][idx] = np.nan
 
     else:
-        for band in gbl_models.flux.keys():
+        for band in gbl_models.flux:
             gbl_models.flux[band][idx] = sed.compute_fnu(band)
-        for prop in gbl_models.extprop.keys():
+        for prop in gbl_models.extprop:
             gbl_models.extprop[prop][idx] = sed.info[prop]
-        for prop in gbl_models.intprop.keys():
+        for prop in gbl_models.intprop:
             gbl_models.intprop[prop][idx] = sed.info[prop]
 
     gbl_counter.inc()
