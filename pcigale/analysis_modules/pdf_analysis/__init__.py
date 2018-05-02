@@ -104,7 +104,8 @@ class PdfAnalysis(AnalysisModule):
                            init_worker_sed, conf['cores'])
 
         # Print the final value as it may not otherwise be printed
-        counter.pprint(len(params.blocks[iblock]))
+        if counter.global_counter.value % 250 != 0:
+            counter.pprint(len(params.blocks[iblock]))
 
         return models
 

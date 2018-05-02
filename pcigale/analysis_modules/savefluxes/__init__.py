@@ -82,7 +82,8 @@ class SaveFluxes(AnalysisModule):
                                init_worker_fluxes, conf['cores'])
 
             # Print the final value as it may not otherwise be printed
-            counter.pprint(len(params.blocks[iblock]))
+            if counter.global_counter.value % 250 != 0:
+                counter.pprint(len(params.blocks[iblock]))
 
             print("Saving the models ....")
             models.save('models-block-{}'.format(iblock))
