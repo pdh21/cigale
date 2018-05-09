@@ -5,8 +5,6 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Yannick Roehlly & Médéric Boquien
 
-import time
-
 import numpy as np
 
 from ...warehouse import SedWarehouse
@@ -26,15 +24,12 @@ def init_fluxes(models, counter):
         Counter for the number of models computed
 
     """
-    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_obs, gbl_save
-    global gbl_counter
-
+    global gbl_warehouse, gbl_models, gbl_obs, gbl_save, gbl_counter
 
     # Limit the number of threads to 1 if we use MKL in order to limit the
     # oversubscription of the CPU/RAM.
     nothread()
 
-    gbl_previous_idx = -1
     gbl_warehouse = SedWarehouse()
 
     gbl_models = models
@@ -53,12 +48,6 @@ def fluxes(idx, midx):
         Index of the model within the current block of models.
 
     """
-    global gbl_previous_idx
-    if gbl_previous_idx > -1:
-        gbl_warehouse.partial_clear_cache(
-            gbl_models.params.index_module_changed(gbl_previous_idx, midx))
-    gbl_previous_idx = midx
-
     sed = gbl_warehouse.get_sed(gbl_models.params.modules,
                                 gbl_models.params.from_index(midx))
 
@@ -70,11 +59,11 @@ def fluxes(idx, midx):
         for prop in gbl_models.intprop:
             gbl_models.intprop[prop][idx] = np.nan
     else:
-        for band in gbl_models.flux.keys():
+        for band in gbl_models.flux:
             gbl_models.flux[band][idx] = sed.compute_fnu(band)
-        for prop in gbl_models.extprop.keys():
+        for prop in gbl_models.extprop:
             gbl_models.extprop[prop][idx] = sed.info[prop]
-        for prop in gbl_models.intprop.keys():
+        for prop in gbl_models.intprop:
             gbl_models.intprop[prop][idx] = sed.info[prop]
 
     if gbl_save is True:

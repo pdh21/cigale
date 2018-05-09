@@ -7,7 +7,6 @@
 # Author: Yannick Roehlly, Médéric Boquien & Denis Burgarella
 
 from copy import deepcopy
-import time
 
 import numpy as np
 
@@ -27,13 +26,12 @@ def init_sed(models, counter):
         Counter for the number of models computed
 
     """
-    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_counter
+    global gbl_warehouse, gbl_models, gbl_counter
 
     # Limit the number of threads to 1 if we use MKL in order to limit the
     # oversubscription of the CPU/RAM.
     nothread()
 
-    gbl_previous_idx = -1
     gbl_warehouse = SedWarehouse()
 
     gbl_models = models
@@ -78,10 +76,9 @@ def init_bestfit(conf, params, observations, results, counter):
         Counter for the number of objects analysed
 
     """
-    global gbl_previous_idx, gbl_warehouse, gbl_conf, gbl_params, gbl_obs
+    global gbl_warehouse, gbl_conf, gbl_params, gbl_obs
     global gbl_results, gbl_counter
 
-    gbl_previous_idx = -1
     gbl_warehouse = SedWarehouse()
 
     gbl_conf = conf
@@ -103,11 +100,6 @@ def sed(idx, midx):
         Global index of the model.
 
     """
-    global gbl_previous_idx
-    if gbl_previous_idx > -1:
-        gbl_warehouse.partial_clear_cache(
-            gbl_models.params.index_module_changed(gbl_previous_idx, midx))
-    gbl_previous_idx = midx
     sed = gbl_warehouse.get_sed(gbl_models.params.modules,
                                 gbl_models.params.from_index(midx))
 
@@ -118,13 +110,12 @@ def sed(idx, midx):
             gbl_models.extprop[prop][idx] = np.nan
         for prop in gbl_models.intprop:
             gbl_models.intprop[prop][idx] = np.nan
-
     else:
-        for band in gbl_models.flux.keys():
+        for band in gbl_models.flux:
             gbl_models.flux[band][idx] = sed.compute_fnu(band)
-        for prop in gbl_models.extprop.keys():
+        for prop in gbl_models.extprop:
             gbl_models.extprop[prop][idx] = sed.info[prop]
-        for prop in gbl_models.intprop.keys():
+        for prop in gbl_models.intprop:
             gbl_models.intprop[prop][idx] = sed.info[prop]
 
     gbl_counter.inc()
@@ -238,11 +229,6 @@ def bestfit(oidx, obs):
     np.seterr(invalid='ignore')
 
     best_index = int(gbl_results.best.index[oidx])
-    global gbl_previous_idx
-    if gbl_previous_idx > -1:
-        gbl_warehouse.partial_clear_cache(
-            gbl_params.index_module_changed(gbl_previous_idx, best_index))
-    gbl_previous_idx = best_index
 
     # We compute the model at the exact redshift not to have to correct for the
     # difference between the object and the grid redshifts.

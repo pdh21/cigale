@@ -43,37 +43,6 @@ class ModelsManager(object):
         self.intprop = {prop: SharedArray(size) for prop in self.intpropnames}
         self.extprop = {prop: SharedArray(size) for prop in self.extpropnames}
 
-    @property
-    def flux(self):
-        """Returns a shared array containing the fluxes of the models.
-
-        """
-        return self._flux
-
-    @flux.setter
-    def flux(self, flux):
-        self._flux = flux
-
-    @property
-    def intprop(self):
-        """Returns a shared array containing the intensive properties to fit.
-        """
-        return self._intprop
-
-    @intprop.setter
-    def intprop(self, intprop):
-        self._intprop = intprop
-
-    @property
-    def extprop(self):
-        """Returns a shared array containing the extensive properties to fit.
-        """
-        return self._extprop
-
-    @extprop.setter
-    def extprop(self, extprop):
-        self._extprop = extprop
-
     def save(self, filename):
         """Save the fluxes and properties of all the models into a table.
 

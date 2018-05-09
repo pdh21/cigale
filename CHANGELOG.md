@@ -17,9 +17,10 @@
 
 ### Optimised
 - The estimation of the physical properties is made a bit faster when all the models are valid. (Médéric Boquien)
-- The access to the SED and module caches has been made faster and simpler. This results in a speedup of ~6% in the computation of the models. (Médéric Boquien)
+- The access to the module cache has been made faster and the model cache has been made much simpler, avoiding plenty of complex computations. This results in a speedup of at least ~6% in the computation of the models. The speedup can be higher when using few photometric bands. At the same time it considerably reduces the number of page faults seen in some rare circumstances. (Médéric Boquien)
 - The models counter was a bottleneck when using many cores as updating it could stall other parallel processes. Now the internal counter is updated much less frequently. The speedup goes from between negligible (few cores) up to a factor of a few (many cores). The downside is the the updates on the screen may be a bit irregular. (Médéric Boquien)
 - It turns out that elevating an array to some power is an especially slow operation in python. The `dustatt_calzleit` module has been optimised leading to a massive speed improvement. This speedup is especially large for models that do not include dust emission. (Médéric Boquien)
+- Making copies of partially computed SED when storing them to the cache can be slow. Now we avoid making copies of the redshifted SED. The speedup should be especially noticeable when computing a set of models with numerous redshifts. (Médéric Boquien)
 
 ## 0.12.1 (2018-02-27)
 ### Fixed
