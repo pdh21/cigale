@@ -5,8 +5,6 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Yannick Roehlly & Médéric Boquien
 
-import time
-
 import numpy as np
 
 from ...warehouse import SedWarehouse

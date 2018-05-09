@@ -7,7 +7,6 @@
 # Author: Yannick Roehlly, Médéric Boquien & Denis Burgarella
 
 from copy import deepcopy
-import time
 
 import numpy as np
 
