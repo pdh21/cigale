@@ -36,12 +36,6 @@ class SedWarehouse(object):
         self.sed_cache = {}
         self.module_cache = {}
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
     def get_module_cached(self, name, **kwargs):
         """Get the SED module using the internal cache.
 
