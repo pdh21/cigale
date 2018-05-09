@@ -26,13 +26,12 @@ def init_sed(models, counter):
         Counter for the number of models computed
 
     """
-    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_counter
+    global gbl_warehouse, gbl_models, gbl_counter
 
     # Limit the number of threads to 1 if we use MKL in order to limit the
     # oversubscription of the CPU/RAM.
     nothread()
 
-    gbl_previous_idx = -1
     gbl_warehouse = SedWarehouse()
 
     gbl_models = models
@@ -77,10 +76,9 @@ def init_bestfit(conf, params, observations, results, counter):
         Counter for the number of objects analysed
 
     """
-    global gbl_previous_idx, gbl_warehouse, gbl_conf, gbl_params, gbl_obs
+    global gbl_warehouse, gbl_conf, gbl_params, gbl_obs
     global gbl_results, gbl_counter
 
-    gbl_previous_idx = -1
     gbl_warehouse = SedWarehouse()
 
     gbl_conf = conf

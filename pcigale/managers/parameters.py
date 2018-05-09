@@ -138,29 +138,6 @@ class ParametersManagerGrid(object):
 
         return params
 
-    def index_module_changed(self, idx1, idx2):
-        """Find the index of the first module affected by a change of parameters.
-
-        Parameters
-        ----------
-        idx1: int
-            First index
-        idx2: int
-            Second index
-
-        Returns
-        -------
-        module_idx: int
-            Index of the first module that has a different parameter
-
-        """
-        indices = np.unravel_index((idx1, idx2), self.shape)
-        for module_idx, (i, j) in enumerate(indices):
-            if i != j:
-                return module_idx
-
-        return len(self.shape)
-
 
 class ParametersManagerFile(object):
     """Class to generate a parameters manager for list of parameters given in an
@@ -244,26 +221,3 @@ class ParametersManagerFile(object):
                   in enumerate(self.modules)]
 
         return params
-
-    def index_module_changed(self, idx1, idx2):
-        """Find the index of the first module affected by a change of parameters.
-
-        Parameters
-        ----------
-        idx1: int
-            First index
-        idx2: int
-            Second index
-
-        Returns
-        -------
-        module_idx: int
-            Index of the first module that has a different parameter
-
-        """
-
-        for module_idx, module in enumerate(self.parameters):
-            if any([param[idx1] != param[idx2] for param in module.values()]):
-                return module_idx
-
-        return len(self.parameters)

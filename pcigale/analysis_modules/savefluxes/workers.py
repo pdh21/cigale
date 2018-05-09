@@ -24,15 +24,12 @@ def init_fluxes(models, counter):
         Counter for the number of models computed
 
     """
-    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_obs, gbl_save
-    global gbl_counter
-
+    global gbl_warehouse, gbl_models, gbl_obs, gbl_save, gbl_counter
 
     # Limit the number of threads to 1 if we use MKL in order to limit the
     # oversubscription of the CPU/RAM.
     nothread()
 
-    gbl_previous_idx = -1
     gbl_warehouse = SedWarehouse()
 
     gbl_models = models

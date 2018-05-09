@@ -67,28 +67,6 @@ class SedWarehouse(object):
 
         return module
 
-    def partial_clear_cache(self, n_modules_max):
-        """Clear the cache of SEDs that are not relevant anymore
-
-        To do partial clearing of the cache, we go through the entire cache
-        and delete the SEDs that have more than a given number of modules.
-        This is done by computing the index of the module that has a changed
-        parameter. This means that SEDs with this number of modules or more
-        are not needed anymore to compute new models and we can discard them.
-        Passing 0 as an argument empties the cache completely.
-
-        Parameters
-        ----------
-        n_modules_max: int
-            Maximum number of modules. All SED with at least this number of
-            modules have to be discarded
-
-        """
-        if n_modules_max > -1:
-            for k in list(self.sed_cache.keys()):
-                if len(k) > n_modules_max:
-                    del self.sed_cache[k]
-
     def get_sed(self, module_list, parameter_list):
         """Get the SED corresponding to the module and parameter lists
 
