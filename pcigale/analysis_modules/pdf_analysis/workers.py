@@ -110,7 +110,6 @@ def sed(idx, midx):
             gbl_models.extprop[prop][idx] = np.nan
         for prop in gbl_models.intprop:
             gbl_models.intprop[prop][idx] = np.nan
-
     else:
         for band in gbl_models.flux:
             gbl_models.flux[band][idx] = sed.compute_fnu(band)
