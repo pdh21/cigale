@@ -132,9 +132,9 @@ class SedWarehouse(object):
             if (len(module_list) == 0):
                 sed = SED()
             else:
-                sed = self.get_sed(module_list, parameter_list)
+                sed = self.get_sed(module_list, parameter_list).copy()
 
             mod.process(sed)
             self.sed_cache[key] = sed
 
-        return sed.copy()
+        return sed

@@ -20,6 +20,7 @@
 - The access to the SED and module caches has been made faster and simpler. This results in a speedup of ~6% in the computation of the models. (Médéric Boquien)
 - The models counter was a bottleneck when using many cores as updating it could stall other parallel processes. Now the internal counter is updated much less frequently. The speedup goes from between negligible (few cores) up to a factor of a few (many cores). The downside is the the updates on the screen may be a bit irregular. (Médéric Boquien)
 - It turns out that elevating an array to some power is an especially slow operation in python. The `dustatt_calzleit` module has been optimised leading to a massive speed improvement. This speedup is especially large for models that do not include dust emission. (Médéric Boquien)
+- Making copies of partially computed SED when storing them to the cache can be slow. Now we avoid making copies of the redshifted SED. The speedup should be especially noticeable when computing a set of models with numerous redshifts. (Médéric Boquien)
 
 ## 0.12.1 (2018-02-27)
 ### Fixed
