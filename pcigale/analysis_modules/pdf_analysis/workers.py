@@ -102,11 +102,6 @@ def sed(idx, midx):
         Global index of the model.
 
     """
-    global gbl_previous_idx
-    if gbl_previous_idx > -1:
-        gbl_warehouse.partial_clear_cache(
-            gbl_models.params.index_module_changed(gbl_previous_idx, midx))
-    gbl_previous_idx = midx
     sed = gbl_warehouse.get_sed(gbl_models.params.modules,
                                 gbl_models.params.from_index(midx))
 
@@ -228,11 +223,6 @@ def bestfit(oidx, obs):
     np.seterr(invalid='ignore')
 
     best_index = int(gbl_results.best.index[oidx])
-    global gbl_previous_idx
-    if gbl_previous_idx > -1:
-        gbl_warehouse.partial_clear_cache(
-            gbl_params.index_module_changed(gbl_previous_idx, best_index))
-    gbl_previous_idx = best_index
 
     # We compute the model at the exact redshift not to have to correct for the
     # difference between the object and the grid redshifts.

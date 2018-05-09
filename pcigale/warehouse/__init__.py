@@ -5,6 +5,7 @@
 
 from ..sed import SED
 from .. import sed_modules
+from .sedcache import SedCache
 
 
 class SedWarehouse(object):
@@ -33,7 +34,7 @@ class SedWarehouse(object):
         else:
             raise TypeError("The nocache argument must be a list or an str.")
 
-        self.sed_cache = {}
+        self.sed_cache = SedCache()
         self.module_cache = {}
 
     def get_module_cached(self, name, **kwargs):
@@ -118,7 +119,7 @@ class SedWarehouse(object):
         # dictionaries.
         key = tuple(tuple(par.values()) for par in parameter_list)
 
-        sed = self.sed_cache.get(key)
+        sed = self.sed_cache[key]
         if sed is None:
             mod = self.get_module_cached(module_list.pop(),
                                          **parameter_list.pop())

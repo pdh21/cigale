@@ -51,12 +51,6 @@ def fluxes(idx, midx):
         Index of the model within the current block of models.
 
     """
-    global gbl_previous_idx
-    if gbl_previous_idx > -1:
-        gbl_warehouse.partial_clear_cache(
-            gbl_models.params.index_module_changed(gbl_previous_idx, midx))
-    gbl_previous_idx = midx
-
     sed = gbl_warehouse.get_sed(gbl_models.params.modules,
                                 gbl_models.params.from_index(midx))
 
