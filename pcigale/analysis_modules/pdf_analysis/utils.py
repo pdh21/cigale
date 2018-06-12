@@ -430,7 +430,10 @@ def weighted_param(param, weights):
 
     """
 
-    mean = np.average(param, weights=weights)
-    std = np.sqrt(np.average((param-mean)**2, weights=weights))
+    try:
+        mean = np.average(param, weights=weights)
+        std = np.sqrt(np.average((param-mean)**2, weights=weights))
+    except ZeroDivisionError:
+        mean, std = np.nan, np.nan
 
     return (mean, std)
