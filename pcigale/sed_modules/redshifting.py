@@ -146,8 +146,8 @@ class Redshifting(SedModule):
     parameter_list = OrderedDict([
         ("redshift", (
             "cigale_list(minvalue=0.)",
-            "Redshift to apply to the galaxy. Leave empty to use the redshifts"
-            " from the input file.",
+            "Redshift of the objects. Leave empty to use the redshifts from the"
+            " input file.",
             None
         ))
     ])
