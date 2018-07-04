@@ -405,24 +405,22 @@ class ModStarburstAtt(SedModule):
 
         # Compute nebular attenuation curves
         if len(self.lineatt) == 0:
-            if self.ext_law_emLines == 1:
-                self.lineatt['nebular'] = ccm(wl, self.Rv)
-            elif self.ext_law_emLines == 2:
-                self.lineatt['nebular'] = Pei92(wl, law='smc')
-            elif self.ext_law_emLines == 3:
-                self.lineatt['nebular'] = Pei92(wl, law='lmc')
-            self.lineatt['nebular'] = 10. ** (-.4 * self.lineatt['nebular'] *
-                                              self.ebvl)
-
             names = [k for k in sed.lines]
             linewl = np.array([sed.lines[k][0] for k in names])
-            curve = 10. ** (-.4 * a_vs_ebv(linewl, self.uv_bump_wavelength,
-                                           self.uv_bump_width,
-                                           self.uv_bump_amplitude,
-                                           self.powerlaw_slope) * self.ebvl)
-
-            for name,  att in zip(names, curve):
-                self.lineatt[name] = att
+            if self.ext_law_emLines == 1:
+                self.lineatt['nebular'] = ccm(wl, self.Rv)
+                for name,  att in zip(names, ccm(linewl, self.Rv)):
+                    self.lineatt[name] = att
+            elif self.ext_law_emLines == 2:
+                self.lineatt['nebular'] = Pei92(wl, law='smc')
+                for name,  att in zip(names, Pei92(linewl, law='smc')):
+                    self.lineatt[name] = att
+            elif self.ext_law_emLines == 3:
+                self.lineatt['nebular'] = Pei92(wl, law='lmc')
+                for name,  att in zip(names, Pei92(linewl, law='lmc')):
+                    self.lineatt[name] = att
+            for k, v in self.lineatt.items():
+                self.lineatt[k] = 10. ** (-.4 * v * self.ebvl)
 
         dust_lumin = 0.
         contribs = [contrib for contrib in sed.contribution_names if
