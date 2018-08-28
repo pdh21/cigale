@@ -168,7 +168,8 @@ def build_filters(base):
         # We normalise the filter and compute the pivot wavelength. If the
         # filter is a pseudo-filter used to compute line fluxes, it should not
         # be normalised.
-        if not filter_name.startswith('PSEUDO'):
+        if not (filter_name.startswith('PSEUDO') or
+                filter_name.startswith('linefilter')):
             new_filter.normalise()
         else:
             new_filter.pivot_wavelength = np.mean(

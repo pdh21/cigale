@@ -301,8 +301,17 @@ class SED(object):
                 filter_ = db.get_filter(filter_name)
             trans_table = filter_.trans_table
             lambda_piv = filter_.pivot_wavelength
-            lambda_min = filter_.trans_table[0][0]
-            lambda_max = filter_.trans_table[0][-1]
+            lambda_min = trans_table[0][0]
+            lambda_max = trans_table[0][-1]
+            if filter_name.startswith('linefilter.'):
+                if 'universe.redshift' in self.info:
+                    zp1 = 1. + self.info['universe.redshift']
+                else:
+                    zp1 = 1.
+                trans_table[0] *= zp1
+                lambda_piv *= zp1
+                lambda_min *= zp1
+                lambda_max *= zp1
 
             # Test if the filter covers all the spectrum extent. If not then
             # the flux is not defined
