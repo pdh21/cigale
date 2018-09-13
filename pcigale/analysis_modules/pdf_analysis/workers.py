@@ -190,7 +190,8 @@ def analysis(idx, obs):
             gbl_results.bayes.extmean[prop][idx] = mean
             gbl_results.bayes.exterror[prop][idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
-                save_chi2(obs, prop, gbl_models, chi2, values)
+                save_chi2(obs, prop, gbl_models, chi2,
+                          values * scaling * corr_dz)
 
         for band in gbl_results.bayes.fluxmean:
             values = gbl_models.flux[band][wz]
@@ -199,7 +200,7 @@ def analysis(idx, obs):
             gbl_results.bayes.fluxmean[band][idx] = mean
             gbl_results.bayes.fluxerror[band][idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
-                save_chi2(obs, band, gbl_models, chi2, values)
+                save_chi2(obs, band, gbl_models, chi2, values * scaling)
 
         best_idx_z = np.nanargmin(chi2)
         gbl_results.best.chi2[idx] = chi2[best_idx_z]
