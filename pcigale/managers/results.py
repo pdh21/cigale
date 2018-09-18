@@ -47,6 +47,8 @@ class BayesResultsManager(object):
         self.interror = {prop: SharedArray(nobs) for prop in intpropnames}
         self.extmean = {prop: SharedArray(nobs) for prop in extpropnames}
         self.exterror = {prop: SharedArray(nobs) for prop in extpropnames}
+        self.fluxmean = {band: SharedArray(nobs) for band in models.flux}
+        self.fluxerror = {band: SharedArray(nobs) for band in models.flux}
         self.weight = SharedArray(nobs)
 
     @property
@@ -102,6 +104,12 @@ class BayesResultsManager(object):
         exterror = {prop: np.array([result.exterror[prop]
                                     for result in results])
                     for prop in merged.exterror}
+        fluxmean = {band: np.array([result.fluxmean[band]
+                                   for result in results])
+                   for band in merged.fluxmean}
+        fluxerror = {band: np.array([result.fluxerror[band]
+                                    for result in results])
+                    for band in merged.fluxerror}
         weight = np.array([result.weight for result in results])
 
         totweight = np.sum(weight, axis=0)
@@ -138,6 +146,19 @@ class BayesResultsManager(object):
                 merged.exterror[prop][:] = \
                     np.maximum(0.05 * merged.extmean[prop],
                                merged.exterror[prop])
+
+        for band in merged.fluxmean:
+            merged.fluxmean[band][:] = np.sum(
+                fluxmean[band] * weight, axis=0) / totweight
+
+            # We compute the merged standard deviation by combining the
+            # standard deviations for each block. See
+            # http://stats.stackexchange.com/a/10445 where the number of
+            # datapoints has been substituted with the weights. In short we
+            # exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
+            merged.fluxerror[band][:] = np.sqrt(np.sum(
+                weight * (fluxerror[band]**2. + (fluxmean[band]-merged.fluxmean[band])**2), axis=0) / totweight)
+
 
         return merged
 
@@ -356,6 +377,11 @@ class ResultsManager(object):
                                     name="bayes."+prop))
             table.add_column(Column(self.bayes.exterror[prop],
                                     name="bayes."+prop+"_err"))
+        for band in sorted(self.bayes.fluxmean):
+            table.add_column(Column(self.bayes.fluxmean[band],
+                                    name="bayes."+band))
+            table.add_column(Column(self.bayes.fluxerror[band],
+                                    name="bayes."+band+"_err"))
 
         table.add_column(Column(self.best.chi2, name="best.chi_square"))
         obs = [self.obs.table[obs].data for obs in self.obs.tofit]
