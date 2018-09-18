@@ -696,7 +696,10 @@ def build_nebular(base):
     print("Importing {}...".format(nebular_dir + 'lines.dat'))
     lines = np.genfromtxt(nebular_dir + 'lines.dat')
 
-    wave_lines = np.genfromtxt(nebular_dir + 'line_wavelengths.dat')
+    tmp = Table.read(nebular_dir + 'line_wavelengths.dat', format='ascii')
+    wave_lines = tmp['col1'].data
+    name_lines = tmp['col2'].data
+
     print("Importing {}...".format(nebular_dir + 'continuum.dat'))
     cont = np.genfromtxt(nebular_dir + 'continuum.dat')
 
@@ -727,8 +730,8 @@ def build_nebular(base):
         spectra = lines[idx::6, :]
         for logU, spectrum in zip(np.around(np.arange(-4., -.9, .1), 1),
                                   spectra.T):
-            models_lines.append(NebularLines(metallicity, logU, wave_lines,
-                                             spectrum))
+            models_lines.append(NebularLines(metallicity, logU, name_lines,
+                                             wave_lines, spectrum))
 
     # Import continuum
     for idx, metallicity in enumerate(metallicities):
