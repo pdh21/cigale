@@ -252,7 +252,8 @@ class CalzLeit(SedModule):
                             self.parameters["filters"].split("&")]
         # We cannot compute the attenuation until we know the wavelengths. Yet,
         # we reserve the object.
-        self.curve = {}
+        self.contatt = {}
+        self.lineatt = {}
 
     def process(self, sed):
         """Add the CCM dust attenuation to the SED.
@@ -268,12 +269,25 @@ class CalzLeit(SedModule):
         flux_noatt = {filt: sed.compute_fnu(filt) for filt in self.filter_list}
 
         # Compute attenuation curve
-        if len(self.curve) == 0:
+        if len(self.contatt) == 0:
             sel_att = a_vs_ebv(wavelength, self.uv_bump_wavelength,
                                self.uv_bump_width, self.uv_bump_amplitude,
                                self.powerlaw_slope)
             for age in ['young', 'old']:
-                self.curve[age] = 10 ** (-.4 * self.ebvs[age] * sel_att)
+                self.contatt[age] = 10 ** (-.4 * self.ebvs[age] * sel_att)
+
+        # Compute the attenuation curves on the line wavelength grid
+        if len(self.lineatt) == 0:
+            names = [k for k in sed.lines]
+            linewl = np.array([sed.lines[k][0] for k in names])
+            sel_att = a_vs_ebv(linewl, self.uv_bump_wavelength,
+                               self.uv_bump_width, self.uv_bump_amplitude,
+                               self.powerlaw_slope)
+            old_curve = 10 ** (-.4 * self.ebvs['old'] * sel_att)
+            young_curve = 10 ** (-.4 * self.ebvs['young'] * sel_att)
+
+            for name, old, young in zip(names, old_curve, young_curve):
+                self.lineatt[name] = (old, young)
 
         attenuation_total = 0.
         contribs = [contrib for contrib in sed.contribution_names if
@@ -281,7 +295,7 @@ class CalzLeit(SedModule):
         for contrib in contribs:
             age = contrib.split('.')[-1].split('_')[-1]
             luminosity = sed.get_lumin_contribution(contrib)
-            attenuation_spectrum = luminosity * (self.curve[age] - 1.)
+            attenuation_spectrum = luminosity * (self.contatt[age] - 1.)
             # We integrate the amount of luminosity attenuated (-1 because the
             # spectrum is negative).
             attenuation = -.5 * np.dot(np.diff(wavelength),
@@ -294,6 +308,10 @@ class CalzLeit(SedModule):
             sed.add_info("attenuation." + contrib, attenuation, True)
             sed.add_contribution("attenuation." + contrib, wavelength,
                                  attenuation_spectrum)
+
+        for name, (linewl, old, young) in sed.lines.items():
+            sed.lines[name] = (linewl, old * self.lineatt[name][0],
+                               young * self.lineatt[name][1])
 
         # Total attenuation
         if 'dust.luminosity' in sed.info:
