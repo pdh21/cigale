@@ -4,6 +4,7 @@
 ### Added
 - It is now possible to optionally indicate the distance in Mpc in the input file. If present it will be used in lieu of the distance computed from the redshift. This is especially useful in the nearby universe where the redshift is a very poor indicator of the actual distance. (Médéric Boquien)
 - It is now possible to fit any physical property indicated by the code (e.g. equivalent width, dust luminosity, etc.). For this the physical property needs to be given in the input file and the properties to be fitted must be given in the properties filed in pcigale.ini. (Héctor Salas & Médéric Boquien)
+- It is now possible to fit emission lines. For this the line has to be indicated in the same way as any other band both in the input flux file (in units of W/m²) and in the list of bands in `pcigale.ini`. Lines are prefixed with `line.` followed by the name of the line, for instance `line.H-alpha` for Hɑ. The following lines are supported at the moment: `Ly-alpha`, `CII-133.5`, `SiIV-139.7`, `CIV-154.9`, `HeII-164.0`, `OIII-166.5`, `CIII-190.9`, `CII-232.6`, `MgII-279.8`, `OII-372.7`, `H-10`, `H-9`, `NeIII-386.9` `HeI-388.9`, `H-epsilon`, `SII-407.0`, `H-delta`, `H-gamma`, `H-beta`, `OIII-495.9`, `OIII-500.7`, `OI-630.0`, `NII-654.8`, `H-alpha`, `NII-658.4`, `SII-671.6`, `SII-673.1`.
 
 ### Changed
 - The `sfhdelayed` module has been extended to optionally include an exponential burst to model the latest episode of star formation. (Médéric Boquien & Barbara Lo Faro)

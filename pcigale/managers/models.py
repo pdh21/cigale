@@ -55,8 +55,12 @@ class ModelsManager(object):
         table = Table()
         table.add_column(Column(self.block, name='id'))
         for band in sorted(self.flux.keys()):
+            if band.startswith('line.'):
+                unit = 'W/m^2'
+            else:
+                unit = 'mJy'
             table.add_column(Column(self.flux[band], name=band,
-                                    unit='mJy'))
+                                    unit=unit))
         for prop in sorted(self.extprop.keys()):
             table.add_column(Column(self.extprop[prop], name=prop))
         for prop in sorted(self.intprop.keys()):

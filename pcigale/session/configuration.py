@@ -69,11 +69,12 @@ class Configuration(object):
             "File containing the input data. The columns are 'id' (name of the"
             " object), 'redshift' (if 0 the distance is assumed to be 10 pc), "
             "'distance' (Mpc, optional, if present it will be used in lieu "
-            "of the distance computed from the redshift), the filter names for"
-            " the fluxes, and the filter names with the '_err' suffix for the "
-            "uncertainties. The fluxes and the uncertainties must be in mJy. "
-            "This file is optional to generate the configuration file, in "
-            "particular for the savefluxes module.")
+            "of the distance computed from the redshift), the filter names for "
+            "the fluxes, and the filter names with the '_err' suffix for the "
+            "uncertainties. The fluxes and the uncertainties must be in mJy "
+            "for broadband data and in W/m² for emission lines. This file is "
+            "optional to generate the configuration file, in particular for "
+            "the savefluxes module.")
         self.spec['data_file'] = "string()"
 
         self.config['parameters_file'] = ""

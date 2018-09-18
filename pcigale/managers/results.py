@@ -371,8 +371,12 @@ class ResultsManager(object):
                                     name="best."+prop))
 
         for band in self.obs.bands:
+            if band.startswith('line.'):
+                unit = 'W/m^2'
+            else:
+                unit = 'mJy'
             table.add_column(Column(self.best.flux[band],
-                                    name="best."+band, unit='mJy'))
+                                    name="best."+band, unit=unit))
 
 
         table.write("out/{}.txt".format(filename), format='ascii.fixed_width',
