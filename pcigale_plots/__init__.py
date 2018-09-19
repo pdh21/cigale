@@ -413,8 +413,8 @@ def chi2(config):
     """
     input_data = read_table(config.configuration['data_file'])
     chi2_vars = config.configuration['analysis_params']['variables']
-    pdf_vars += [band for band in config.configuration['bands']
-                 if band.endswith('_err') is False]
+    chi2_vars += [band for band in config.configuration['bands']
+                  if band.endswith('_err') is False]
 
     with mp.Pool(processes=config.configuration['cores']) as pool:
         items = product(input_data['id'], chi2_vars)
