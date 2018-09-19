@@ -53,6 +53,7 @@ def _chi2_worker(obj_name, var_name):
     figure = plt.figure()
     ax = figure.add_subplot(111)
 
+    var_name = var_name.replace('/', '_')
     fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name, var_name))
     for fname in fnames:
         data = np.memmap(fname, dtype=np.float64)
@@ -79,6 +80,7 @@ def _pdf_worker(obj_name, var_name):
         Name of the analysed variable..
 
     """
+    var_name = var_name.replace('/', '_')
     if var_name.endswith('_log'):
         fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name,
                                                                var_name[:-4]))

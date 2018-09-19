@@ -22,7 +22,7 @@ def save_chi2(obs, variable, models, chi2, values):
 
     """
     fname = 'out/{}_{}_chi2-block-{}.npy'.format(obs.id, variable.replace('/',
-                                                 '\/'), models.iblock)
+                                                 '_'), models.iblock)
     data = np.memmap(fname, dtype=np.float64, mode='w+',
                      shape=(2, chi2.size))
     data[0, :] = chi2
