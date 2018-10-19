@@ -200,7 +200,6 @@ class PowerLawAtt(SedModule):
             young_curve = 10 ** (-.4 * self.av['young'] * att)
 
             for name, old, young in zip(names, old_curve, young_curve):
-                print(name, old_curve, young_curve)
                 self.lineatt[name] = (old, young)
 
         dust_lumin = 0.
