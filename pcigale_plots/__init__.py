@@ -164,7 +164,7 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
         obs_fluxes_err = np.array([obs[filt+'_err']
                                    for filt in filters.keys()])
         mod_fluxes = np.array([mod["best."+filt] for filt in filters.keys()])
-        z = np.around(obs['redshift'], decimals=2)
+        z = obs['redshift']
         DL = mod['best.universe.luminosity_distance']
 
         if sed_type == 'lum':

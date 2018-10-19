@@ -18,6 +18,7 @@
 - Missing import in the `m2005` module. (Médéric Boquien, reported by Dominika Wylezalek)
 - The plot of the PDF could not be generated for physical properties estimated in log (Médéric Boquien)
 - We do not attempt anymore to estimate the physical properties of galaxies with insanely large χ² that lead to an underflow in the computation of the likelihood. (Médéric Boquien)
+- The best fit is now plotted at the exact redshift rather than at the rounded redshift. (Médéric Boquien)
 
 ### Optimised
 - The estimation of the physical properties is made a bit faster when all the models are valid. (Médéric Boquien)
