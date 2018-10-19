@@ -236,9 +236,10 @@ def bestfit(oidx, obs):
     params = deepcopy(gbl_params.from_index(best_index))
     if obs.redshift >= 0.:
         params[gbl_params.modules.index('redshifting')]['redshift'] = obs.redshift
+        corr_dz = compute_corr_dz(obs.redshift, obs.distance)
+    else:  # The model redshift is always exact in redhisfting mode
+        corr_dz = 1.
     sed = gbl_warehouse.get_sed(gbl_params.modules, params)
-
-    corr_dz = compute_corr_dz(obs.redshift, obs.distance)
     scaling = gbl_results.best.scaling[oidx]
 
     for band in gbl_results.best.flux:
