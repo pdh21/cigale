@@ -19,6 +19,7 @@
 - The plot of the PDF could not be generated for physical properties estimated in log (Médéric Boquien)
 - We do not attempt anymore to estimate the physical properties of galaxies with insanely large χ² that lead to an underflow in the computation of the likelihood. (Médéric Boquien)
 - The best fit is now plotted at the exact redshift rather than at the rounded redshift. (Médéric Boquien)
+- It is now possible to plot the best fit obtained in redshifting mode. (Médéric Boquien)
 
 ### Optimised
 - The estimation of the physical properties is made a bit faster when all the models are valid. (Médéric Boquien)

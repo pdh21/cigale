@@ -164,7 +164,10 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
         obs_fluxes_err = np.array([obs[filt+'_err']
                                    for filt in filters.keys()])
         mod_fluxes = np.array([mod["best."+filt] for filt in filters.keys()])
-        z = obs['redshift']
+        if obs['redshift'] >= 0:
+            z = obs['redshift']
+        else:  # Redshift mode
+            z = mod['best.universe.redshift']
         DL = mod['best.universe.luminosity_distance']
 
         if sed_type == 'lum':
@@ -342,8 +345,7 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
             plt.setp(ax1.get_xticklabels(), visible=False)
             plt.setp(ax1.get_yticklabels()[1], visible=False)
             figure.suptitle("Best model for {} at z = {}. Reduced $\chi^2$={}".
-                            format(obs['id'], np.round(obs['redshift'],
-                                   decimals=3),
+                            format(obs['id'], np.round(z, decimals=3),
                                    np.round(mod['best.reduced_chi_square'],
                                             decimals=2)))
             if nologo is False:
