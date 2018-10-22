@@ -9,7 +9,8 @@ This module implements an attenuation law combining the birth cloud (BC)
 attenuation and the interstellar medium (ISM) attenuation, each one modelled by
 a power law. The young star emission is attenuated by the BC and the ISM
 attenuations whereas the old star emission is only affected by the ISM. This
-simple model was proposed by Charlot & Fall (2000).
+simple model was proposed by Charlot & Fall (2000). This module is described in
+more detail in Lo Faro et al. (2017).
 
 Parameters available for analysis
 ---------------------------------
@@ -64,7 +65,8 @@ class ModCF00Att(SedModule):
     interstellar medium (ISM) one.
 
     The attenuation can be computed on the whole spectrum or on a specific
-    contribution and is added to the SED as a negative contribution.
+    contribution and is added to the SED as a negative contribution. See
+    Lo Faro et al. (2017).
 
     """
 
