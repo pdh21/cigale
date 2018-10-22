@@ -94,7 +94,8 @@ class Configuration(object):
         self.config['sed_modules'] = []
         self.config.comments['sed_modules'] = ([""] +
             ["Order of the modules use for SED creation. Available modules:"] +
-            ["SFH: sfh2exp, sfhdelayed, sfhfromfile, sfhperiodic"] +
+            ["SFH: sfh2exp, sfhdelayed, sfhdelayedbq, sfhfromfile, "
+             "sfhperiodic"] +
             ["SSP: bc03, m2005"] +
             ["Nebular emission: nebular"] +
             ["Dust attenuation: dustatt_calzleit, dustatt_powerlaw, "
@@ -268,8 +269,8 @@ class Configuration(object):
         unofficial module that is not in our list
         """
 
-        modules = OrderedDict((('SFH', ['sfh2exp', 'sfhdelayed', 'sfhfromfile',
-                                        'sfhperiodic']),
+        modules = OrderedDict((('SFH', ['sfh2exp', 'sfhdelayed', 'sfhdelayedbq',
+                                        'sfhfromfile', 'sfhperiodic']),
                                ('SSP', ['bc03', 'm2005']),
                                ('nebular', ['nebular']),
                                ('dust attenuation', ['dustatt_calzleit',
