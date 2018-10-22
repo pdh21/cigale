@@ -13,6 +13,7 @@
 ### Changed
 - The `sfhdelayed` module has been extended to optionally include an exponential burst to model the latest episode of star formation. (Médéric Boquien & Barbara Lo Faro)
 - On Linux platforms the method to start the parallel processes has been changed from "spawn" to "fork". This allows for a much faster startup. On other platforms is remains unchanged as Windows does not support "fork" and MacOS is bugged when using "fork", resulting in a free of cigale. (Médéric Boquien)
+- The list of modules has been made more explicit in the `pcigale.ini` file. (Médéric Boquien)
 
 ### Fixed
 - The histogram bin width was not computed optimally when some models were invalid. (David Corre & Médéric Boquien)
