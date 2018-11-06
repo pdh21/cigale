@@ -57,7 +57,7 @@ class SFHDelayedBQ(SedModule):
             "Ratio of the SFR after/before age_bq.",
             0.1
         )),
-         ("sfr_A", (
+        ("sfr_A", (
             "cigale_list(minvalue=0.)",
             "Value of SFR at t = 0 in M_sun/yr.",
             1.
