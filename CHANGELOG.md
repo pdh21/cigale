@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 2018.0 (2018-11-06)
 ### Added
 - It is now possible to optionally indicate the distance in Mpc in the input file. If present it will be used in lieu of the distance computed from the redshift. This is especially useful in the nearby universe where the redshift is a very poor indicator of the actual distance. (Médéric Boquien)
 - It is now possible to fit any physical property indicated by the code (e.g. equivalent width, dust luminosity, etc.). For this the physical property needs to be given in the input file and the properties to be fitted must be given in the properties filed in pcigale.ini. (Héctor Salas & Médéric Boquien)
