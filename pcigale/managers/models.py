@@ -55,7 +55,7 @@ class ModelsManager(object):
         table = Table()
         table.add_column(Column(self.block, name='id'))
         for band in sorted(self.flux.keys()):
-            if band.startswith('line.'):
+            if band.startswith('line.') or band.startswith('linefilter.'):
                 unit = 'W/m^2'
             else:
                 unit = 'mJy'
