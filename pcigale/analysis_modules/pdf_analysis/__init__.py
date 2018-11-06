@@ -27,11 +27,11 @@ reduced χ²) is given for each observation.
 
 from collections import OrderedDict
 import multiprocessing as mp
-import time
 
 import numpy as np
 
 from .. import AnalysisModule
+from ..utils import Counter
 from .workers import sed as worker_sed
 from .workers import init_sed as init_worker_sed
 from .workers import init_analysis as init_worker_analysis
@@ -95,28 +95,31 @@ class PdfAnalysis(AnalysisModule):
         ))
     ])
 
-
     def _compute_models(self, conf, obs, params, iblock):
         models = ModelsManager(conf, obs, params, iblock)
+        counter = Counter(len(params.blocks[iblock]), 50, 250)
+        initargs = (models, counter)
 
-        initargs = (models, time.time(), mp.Value('i', 0))
         self._parallel_job(worker_sed, params.blocks[iblock], initargs,
                            init_worker_sed, conf['cores'])
+
+        # Print the final value as it may not otherwise be printed
+        if counter.global_counter.value % 250 != 0:
+            counter.pprint(len(params.blocks[iblock]))
 
         return models
 
     def _compute_bayes(self, conf, obs, models):
         results = ResultsManager(models)
 
-        initargs = (models, results, time.time(), mp.Value('i', 0))
+        initargs = (models, results, Counter(len(obs)))
         self._parallel_job(worker_analysis, obs, initargs,
                            init_worker_analysis, conf['cores'])
 
         return results
 
     def _compute_best(self, conf, obs, params, results):
-        initargs = (conf, params, obs, results, time.time(),
-                    mp.Value('i', 0))
+        initargs = (conf, params, obs, results, Counter(len(obs)))
         self._parallel_job(worker_bestfit, obs, initargs,
                            init_worker_bestfit, conf['cores'])
 
@@ -181,15 +184,15 @@ class PdfAnalysis(AnalysisModule):
         # Rename the output directory if it exists
         self.prepare_dirs()
 
-        # Store the observations in a manager which sanitises the data, checks
-        # all the required fluxes are present, adding errors if needed,
-        # discarding invalid fluxes, etc.
-        obs = ObservationsManager(conf)
-        obs.save('observations')
-
         # Store the grid of parameters in a manager to facilitate the
         # computation of the models
         params = ParametersManager(conf)
+
+        # Store the observations in a manager which sanitises the data, checks
+        # all the required fluxes are present, adding errors if needed,
+        # discarding invalid fluxes, etc.
+        obs = ObservationsManager(conf, params)
+        obs.save('observations')
 
         results = self._compute(conf, obs, params)
         results.best.analyse_chi2()
@@ -201,7 +204,7 @@ class PdfAnalysis(AnalysisModule):
             print("\nAnalysing the mock observations...")
 
             # For the mock analysis we do not save the ancillary files.
-            for k in ['best_sed', 'chi2', 'pdf']:
+            for k in ['best_sed', 'chi2']:
                 conf['analysis_params']["save_{}".format(k)] = False
 
             # We replace the observations with a mock catalogue..

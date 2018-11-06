@@ -68,10 +68,13 @@ class Configuration(object):
         self.config.comments['data_file'] = wrap(
             "File containing the input data. The columns are 'id' (name of the"
             " object), 'redshift' (if 0 the distance is assumed to be 10 pc), "
-            "the filter names for the fluxes, and the filter names with the "
-            "'_err' suffix for the uncertainties. The fluxes and the "
-            "uncertainties must be in mJy. This file is optional to generate "
-            "the configuration file, in particular for the savefluxes module.")
+            "'distance' (Mpc, optional, if present it will be used in lieu "
+            "of the distance computed from the redshift), the filter names for "
+            "the fluxes, and the filter names with the '_err' suffix for the "
+            "uncertainties. The fluxes and the uncertainties must be in mJy "
+            "for broadband data and in W/m² for emission lines. This file is "
+            "optional to generate the configuration file, in particular for "
+            "the savefluxes module.")
         self.spec['data_file'] = "string()"
 
         self.config['parameters_file'] = ""
@@ -90,17 +93,42 @@ class Configuration(object):
 
         self.config['sed_modules'] = []
         self.config.comments['sed_modules'] = ([""] +
-            ["Order of the modules use for SED creation. Available modules:"] +
-            ["SFH: sfh2exp, sfhdelayed, sfhfromfile, sfhperiodic"] +
-            ["SSP: bc03, m2005"] +
-            ["Nebular emission: nebular"] +
-            ["Dust attenuation: dustatt_calzleit, dustatt_powerlaw, "
-             "dustatt_2powerlaws"] +
-            ["Dust emission: casey2012, dale2014, dl2007, dl2014, themis"] +
-            ["AGN: dale2014, fritz2006"] +
-            ["Radio: radio"] +
-            ["Restframe parameters: restframe_parameters"] +
-            ["Redshift: redshifting (mandatory!)"])
+            ["Avaiable modules to compute the models. The order must be kept."
+            ] +
+            ["SFH:"] +
+            ["* sfh2exp (double exponential)"] +
+            ["* sfhdelayed (delayed SFH with optional exponential burst)"] +
+            ["* sfhdelayedbq (delayed SFH with optional constant burst/quench)"
+            ] +
+            ["* sfhfromfile (abitrary SFH read from an input file)"] +
+            ["* sfhperiodic (periodic SFH, exponential, rectangle or delayed"
+             ")"] +
+            ["SSP:"] +
+            ["* bc03 (Bruzual and Charlot 2003)"] +
+            ["* m2005 (Maraston 2005)"] +
+            ["Nebular emission:"] +
+            ["* nebular (continuum and line nebular emission)"] +
+            ["Dust attenuation:"] +
+            ["* dustatt_modified_CF00 (modified Charlot & Fall 2000 "
+             "attenuation law)"] +
+            ["* dustatt_modified_starburst (modified starburst attenuaton law)"
+            ] +
+            ["Dust emission:"] +
+            ["* casey2012 (Casey 2012 dust emission models)"] +
+            ["* dale2014 (Dale et al. 2014 dust emission templates)"] +
+            ["* dl2007 (Draine & Li 2007 dust emission models)"] +
+            ["* dl2014 (Draine et al. 2014 update of the previous models)"] +
+            ["* themis (Themis dust emission models from Jones et al. 2017)"] +
+            ["AGN:"] +
+            ["* fritz2006 (AGN models from Fritz et al. 2006)"] +
+            ["Radio:"] +
+            ["* radio (synchrotron emission)"] +
+            ["Restframe parameters:"] +
+            ["* restframe_parameters (UV slope, IRX-beta, D4000, EW, etc.)"] +
+            ["Redshift+IGM:"] +
+            ["* redshifting (mandatory, also includes the IGM from Meiksin "
+             "2006)"]
+        )
         self.spec['sed_modules'] = "cigale_string_list()"
 
         self.config['analysis_method'] = ""
@@ -170,6 +198,13 @@ class Configuration(object):
             "consider uncertainties too, the name of the band must be "
             "indicated with the _err suffix. For instance: FUV, FUV_err.")
         self.spec['bands'] = "cigale_string_list()"
+
+        self.config['properties'] = ''
+        self.config.comments['properties'] = [""] + wrap("Properties to be "
+            "considered. All properties are to be given in the rest frame "
+            "rather than the observed frame. This is the case for instance "
+            "the equivalent widths and for luminosity densities.")
+        self.spec['properties'] = "cigale_string_list()"
 
         # SED creation modules configurations. For each module, we generate
         # the configuration section from its parameter list.
@@ -258,13 +293,15 @@ class Configuration(object):
         unofficial module that is not in our list
         """
 
-        modules = OrderedDict((('SFH', ['sfh2exp', 'sfhdelayed', 'sfhfromfile',
-                                        'sfhperiodic']),
+        modules = OrderedDict((('SFH', ['sfh2exp', 'sfhdelayed', 'sfhdelayedbq',
+                                        'sfhfromfile', 'sfhperiodic']),
                                ('SSP', ['bc03', 'm2005']),
                                ('nebular', ['nebular']),
                                ('dust attenuation', ['dustatt_calzleit',
                                                      'dustatt_powerlaw',
-                                                     'dustatt_2powerlaws']),
+                                                     'dustatt_2powerlaws',
+                                                     'dustatt_modified_CF00',
+                                                     'dustatt_modified_starburst']),
                                ('dust emission', ['casey2012', 'dale2014',
                                                   'dl2007', 'dl2014',
                                                   'themis']),

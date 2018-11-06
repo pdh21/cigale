@@ -53,6 +53,7 @@ def _chi2_worker(obj_name, var_name):
     figure = plt.figure()
     ax = figure.add_subplot(111)
 
+    var_name = var_name.replace('/', '_')
     fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name, var_name))
     for fname in fnames:
         data = np.memmap(fname, dtype=np.float64)
@@ -79,8 +80,15 @@ def _pdf_worker(obj_name, var_name):
         Name of the analysed variable..
 
     """
-
-    fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name, var_name))
+    var_name = var_name.replace('/', '_')
+    if var_name.endswith('_log'):
+        fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name,
+                                                               var_name[:-4]))
+        log = True
+    else:
+        fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name,
+                                                               var_name))
+        log = False
     likelihood = []
     model_variable = []
     for fname in fnames:
@@ -91,10 +99,15 @@ def _pdf_worker(obj_name, var_name):
         model_variable.append(data[1, :])
     likelihood = np.concatenate(likelihood)
     model_variable = np.concatenate(model_variable)
+    if log is True:
+        model_variable = np.log10(model_variable)
+    w = np.where(np.isfinite(likelihood) & np.isfinite(model_variable))
+    likelihood = likelihood[w]
+    model_variable = model_variable[w]
 
     Npdf = 100
-    min_hist = np.nanmin(model_variable)
-    max_hist = np.nanmax(model_variable)
+    min_hist = np.min(model_variable)
+    max_hist = np.max(model_variable)
     Nhist = min(Npdf, len(np.unique(model_variable)))
 
     if min_hist == max_hist:
@@ -151,7 +164,10 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
         obs_fluxes_err = np.array([obs[filt+'_err']
                                    for filt in filters.keys()])
         mod_fluxes = np.array([mod["best."+filt] for filt in filters.keys()])
-        z = np.around(obs['redshift'], decimals=2)
+        if obs['redshift'] >= 0:
+            z = obs['redshift']
+        else:  # Redshift mode
+            z = mod['best.universe.redshift']
         DL = mod['best.universe.luminosity_distance']
 
         if sed_type == 'lum':
@@ -329,8 +345,7 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
             plt.setp(ax1.get_xticklabels(), visible=False)
             plt.setp(ax1.get_yticklabels()[1], visible=False)
             figure.suptitle("Best model for {} at z = {}. Reduced $\chi^2$={}".
-                            format(obs['id'], np.round(obs['redshift'],
-                                   decimals=3),
+                            format(obs['id'], np.round(z, decimals=3),
                                    np.round(mod['best.reduced_chi_square'],
                                             decimals=2)))
             if nologo is False:
@@ -400,6 +415,8 @@ def chi2(config):
     """
     input_data = read_table(config.configuration['data_file'])
     chi2_vars = config.configuration['analysis_params']['variables']
+    chi2_vars += [band for band in config.configuration['bands']
+                  if band.endswith('_err') is False]
 
     with mp.Pool(processes=config.configuration['cores']) as pool:
         items = product(input_data['id'], chi2_vars)
@@ -413,6 +430,8 @@ def pdf(config):
     """
     input_data = read_table(config.configuration['data_file'])
     pdf_vars = config.configuration['analysis_params']['variables']
+    pdf_vars += [band for band in config.configuration['bands']
+                 if band.endswith('_err') is False]
 
     with mp.Pool(processes=config.configuration['cores']) as pool:
         items = product(input_data['id'], pdf_vars)
@@ -430,7 +449,7 @@ def sed(config, sed_type, nologo):
     with Database() as base:
         filters = OrderedDict([(name, base.get_filter(name))
                                for name in config.configuration['bands']
-                               if not name.endswith('_err')])
+                               if not (name.endswith('_err') or name.startswith('line')) ])
 
     with mp.Pool(processes=config.configuration['cores']) as pool:
         pool.starmap(_sed_worker, zip(obs, mod, repeat(filters),

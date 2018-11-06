@@ -64,6 +64,7 @@ class SED(object):
         self.contribution_names = []
         self.luminosity = None
         self.luminosities = None
+        self.lines = dict()
         self.info = dict()
         self.mass_proportional_info = set()
 
@@ -286,6 +287,13 @@ class SED(object):
                 key = (wavelength.size, filter_name, 0.)
             dist = 10. * parsec
 
+        if filter_name.startswith('line.'):
+            lum = 0
+            for name in filter_name.split('+'):
+                line = self.lines[name.split('.', maxsplit=1)[1]]
+                lum += line[1] + line[2]  # Young and old components
+            return utils.luminosity_to_flux(lum, dist)
+
         if key in self.cache_filters:
             wavelength_r, transmission_r, lambda_piv = self.cache_filters[key]
         else:
@@ -293,8 +301,17 @@ class SED(object):
                 filter_ = db.get_filter(filter_name)
             trans_table = filter_.trans_table
             lambda_piv = filter_.pivot_wavelength
-            lambda_min = filter_.trans_table[0][0]
-            lambda_max = filter_.trans_table[0][-1]
+            lambda_min = trans_table[0][0]
+            lambda_max = trans_table[0][-1]
+            if filter_name.startswith('linefilter.'):
+                if 'universe.redshift' in self.info:
+                    zp1 = 1. + self.info['universe.redshift']
+                else:
+                    zp1 = 1.
+                trans_table[0] *= zp1
+                lambda_piv *= zp1
+                lambda_min *= zp1
+                lambda_max *= zp1
 
             # Test if the filter covers all the spectrum extent. If not then
             # the flux is not defined
@@ -373,6 +390,7 @@ class SED(object):
             sed.luminosity = self.luminosity.copy()
             sed.luminosities = self.luminosities.copy()
         sed.contribution_names = self.contribution_names[:]
+        sed.lines = self.lines.copy()
         sed.info = self.info.copy()
         sed.mass_proportional_info = self.mass_proportional_info.copy()
 

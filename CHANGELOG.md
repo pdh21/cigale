@@ -1,5 +1,35 @@
 # Change Log
 
+## 2018.0 (2018-11-06)
+### Added
+- It is now possible to optionally indicate the distance in Mpc in the input file. If present it will be used in lieu of the distance computed from the redshift. This is especially useful in the nearby universe where the redshift is a very poor indicator of the actual distance. (Médéric Boquien)
+- It is now possible to fit any physical property indicated by the code (e.g. equivalent width, dust luminosity, etc.). For this the physical property needs to be given in the input file and the properties to be fitted must be given in the properties filed in pcigale.ini. (Héctor Salas & Médéric Boquien)
+- It is now possible to fit emission lines. For this the line has to be indicated in the same way as any other band both in the input flux file (in units of W/m²) and in the list of bands in `pcigale.ini`. Lines are prefixed with `line.` followed by the name of the line, for instance `line.H-alpha` for Hɑ. The following lines are supported at the moment: `Ly-alpha`, `CII-133.5`, `SiIV-139.7`, `CIV-154.9`, `HeII-164.0`, `OIII-166.5`, `CIII-190.9`, `CII-232.6`, `MgII-279.8`, `OII-372.7`, `H-10`, `H-9`, `NeIII-386.9` `HeI-388.9`, `H-epsilon`, `SII-407.0`, `H-delta`, `H-gamma`, `H-beta`, `OIII-495.9`, `OIII-500.7`, `OI-630.0`, `NII-654.8`, `H-alpha`, `NII-658.4`, `SII-671.6`, `SII-673.1`. (Médéric Boquien)
+- When emission lines are not corrected for absorption lines (e.g., in the case of very low resolution spectroscopy) the previous method, which computes the theoretical line fluxes, is not optimal. Rather we offer the possibility to measure the fluxes through special filters that are used like regular filters. The idea is to define filters with a positive part on the line, a negative part on the continuum, and a zero-valued integral. In such case the integration over the spectrum directly gives the flux of the integral. So this works at all redshifts, the filter is automatically redshifted at runtime. (Médéric Boquien & David Corre)
+- Two new dust attenuation modules have been added: `dustatt\_modified\_CF00` and `dustatt\_modified\_starburst`. The former implements a modified 2-component Charlot & Fall (2000) model whereas the latter implements a modified starburst law with the continuum attenuated with a Calzetti (2000) curve and the lines extincted with a Milky Way or a Magellanic Cloud law. The previous models `dustatt\_powerlaw`, `dustatt\_2powerlaws`, and `dustatt\_calzleit` are still available but are deprecated. (Médéric Boquien & David Corre)
+- In addition to the physical properties, the fluxes are now also estimated through a Bayesian analysis. (Médéric Boquien)
+- The module `sfhdelayedbq` has been added. It implements a delayed SFH with a burst/quench. It is fully described in Ciesla et al. (2017).
+
+### Changed
+- The `sfhdelayed` module has been extended to optionally include an exponential burst to model the latest episode of star formation. (Médéric Boquien & Barbara Lo Faro)
+- On Linux platforms the method to start the parallel processes has been changed from "spawn" to "fork". This allows for a much faster startup. On other platforms is remains unchanged as Windows does not support "fork" and MacOS is bugged when using "fork", resulting in a free of cigale. (Médéric Boquien)
+- The list of modules has been made more explicit in the `pcigale.ini` file. (Médéric Boquien)
+
+### Fixed
+- The histogram bin width was not computed optimally when some models were invalid. (David Corre & Médéric Boquien)
+- Missing import in the `m2005` module. (Médéric Boquien, reported by Dominika Wylezalek)
+- The plot of the PDF could not be generated for physical properties estimated in log (Médéric Boquien)
+- We do not attempt anymore to estimate the physical properties of galaxies with insanely large χ² that lead to an underflow in the computation of the likelihood. (Médéric Boquien)
+- The best fit is now plotted at the exact redshift rather than at the rounded redshift. (Médéric Boquien)
+- It is now possible to plot the best fit obtained in redshifting mode. (Médéric Boquien)
+
+### Optimised
+- The estimation of the physical properties is made a bit faster when all the models are valid. (Médéric Boquien)
+- The access to the module cache has been made faster and the model cache has been made much simpler, avoiding plenty of complex computations. This results in a speedup of at least ~6% in the computation of the models. The speedup can be higher when using few photometric bands. At the same time it considerably reduces the number of page faults seen in some rare circumstances. (Médéric Boquien)
+- The models counter was a bottleneck when using many cores as updating it could stall other parallel processes. Now the internal counter is updated much less frequently. The speedup goes from between negligible (few cores) up to a factor of a few (many cores). The downside is the the updates on the screen may be a bit irregular. (Médéric Boquien)
+- It turns out that elevating an array to some power is an especially slow operation in python. The `dustatt_calzleit` module has been optimised leading to a massive speed improvement. This speedup is especially large for models that do not include dust emission. (Médéric Boquien)
+- Making copies of partially computed SED when storing them to the cache can be slow. Now we avoid making copies of the redshifted SED. The speedup should be especially noticeable when computing a set of models with numerous redshifts. (Médéric Boquien)
+
 ## 0.12.1 (2018-02-27)
 ### Fixed
 - The best fit could not be computed in photo-z mode because the redshift was negative. (Médéric Boquien)

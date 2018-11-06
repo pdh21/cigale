@@ -4,6 +4,7 @@
 # Author: Médéric Boquien <mboquien@ast.cam.ac.uk>
 
 from collections import OrderedDict
+from copy import deepcopy
 
 import numpy as np
 import scipy.constants as cst
@@ -11,6 +12,34 @@ import scipy.constants as cst
 from pcigale.data import Database
 from . import SedModule
 
+default_lines = ['Ly-alpha',
+                 'CII-133.5',
+                 'SiIV-139.7',
+                 'CIV-154.9',
+                 'HeII-164.0',
+                 'OIII-166.5',
+                 'CIII-190.9',
+                 'CII-232.6',
+                 'MgII-279.8',
+                 'OII-372.7',
+                 'H-10',
+                 'H-9',
+                 'NeIII-386.9',
+                 'HeI-388.9',
+                 'H-epsilon',
+                 'SII-407.0',
+                 'H-delta',
+                 'H-gamma',
+                 'H-beta',
+                 'OIII-495.9',
+                 'OIII-500.7',
+                 'OI-630.0',
+                 'NII-654.8',
+                 'H-alpha',
+                 'NII-658.4',
+                 'SII-671.6',
+                 'SII-673.1'
+                 ]
 
 class NebularEmission(SedModule):
     """
@@ -80,14 +109,16 @@ class NebularEmission(SedModule):
 
         if self.emission:
             with Database() as db:
+                metallicities = db.get_nebular_continuum_parameters()['metallicity']
                 self.lines_template = {m: db.get_nebular_lines(m, self.logU)
-                                    for m in db.get_nebular_lines_parameters()
-                                    ['metallicity']
-                                    }
+                                    for m in metallicities}
                 self.cont_template = {m: db.get_nebular_continuum(m, self.logU)
-                                    for m in db.get_nebular_continuum_parameters()
-                                    ['metallicity']
-                                    }
+                                    for m in metallicities}
+
+            self.linesdict = {m: dict(zip(self.lines_template[m].name,
+                                          zip(self.lines_template[m].wave,
+                                              self.lines_template[m].ratio)))
+                              for m in metallicities}
 
             for lines in self.lines_template.values():
                 new_wave = np.array([])
@@ -155,11 +186,20 @@ class NebularEmission(SedModule):
         if self.emission:
             NLy_old = sed.info['stellar.n_ly_old']
             NLy_young = sed.info['stellar.n_ly_young']
-            lines = self.lines_template[sed.info['stellar.metallicity']]
-            cont = self.cont_template[sed.info['stellar.metallicity']]
+            NLy_tot = NLy_old + NLy_young
+            metallicity = sed.info['stellar.metallicity']
+            lines = self.lines_template[metallicity]
+            linesdict = self.linesdict[metallicity]
+            cont = self.cont_template[metallicity]
 
             sed.add_info('nebular.lines_width', self.lines_width)
             sed.add_info('nebular.logU', self.logU)
+
+            for line in default_lines:
+                wave, ratio = linesdict[line]
+                sed.lines[line] = (wave,
+                                   ratio * NLy_old * self.corr,
+                                   ratio * NLy_young * self.corr)
 
             sed.add_contribution('nebular.lines_old', lines.wave,
                                  lines.ratio * NLy_old * self.corr)

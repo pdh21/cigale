@@ -1,25 +1,24 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2013-2015 Centre de données Astrophysiques de Marseille
-# Copyright (C) 2014 Laboratoire d'Astrophysique de Marseille
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
-# Author: Yannick Roehlly, Véronique Buat, Denis Burgarella, Barabara Lo Faro
 
 """
-Double power law attenuation module
+Modified Charlot & Fall 2000 dust attenuation module
 ===================================
 
 This module implements an attenuation law combining the birth cloud (BC)
 attenuation and the interstellar medium (ISM) attenuation, each one modelled by
 a power law. The young star emission is attenuated by the BC and the ISM
-attenuations whereas the old star emission is only affected by the ISM.
+attenuations whereas the old star emission is only affected by the ISM. This
+simple model was proposed by Charlot & Fall (2000). This module is described in
+more detail in Lo Faro et al. (2017).
 
 Parameters available for analysis
 ---------------------------------
 
-- attenuation.Av_BC: Av attenuation in the birth clouds
-- attenuation.slope_BC: Slope of the power law in the birth clouds
-- attenuation.BC_to_ISM_factor: Av in the ISM / Av in birth clouds
-- attenuation.slope_ISM: Slope of the power law in the ISM
+- attenuation.Av_ISM: Av attenuation in the interstellar medium
+- attenuation.mu: Av_ISM / (Av_BV+Av_ISM)
+- attenuation.slope_BC: slope of the power law in the birth clouds
+- attenuation.slope_ISM: slope of the power law in the ISM
 - attenuation.<NAME>: amount of total attenuation in the luminosity
     contribution <NAME>
 - attenuation.<FILTER>: total attenuation in the filter
@@ -32,47 +31,18 @@ import numpy as np
 from . import SedModule
 
 
-def power_law(wavelength, delta):
-    """Compute the power law (λ / λv)^δ
-
-    Parameters
-    ----------
-    wavelength: array of float
-        Wavelength grid in nm.
-    delta: float
-        Power law slope.
-
-    Returns
-    -------
-    a numpy array of floats
-
-    """
-    wave = np.array(wavelength)
-    return (wave / 550) ** delta
-
-
-def alambda_av(wavelengths, delta, delta_sec=None, factor=None):
+def alambda_av(wl, delta):
     """Compute the complete attenuation curve A(λ)/Av
 
-    The attenuation curve is a power law (λ / λv) ** δ. If a factor and
-    a second delta are given, another power law is added multiplied by the
-    given factor.  For instance, for the young star population the delta will
-    be the slope of the birth cloud attenuation and the delta_sec will be the
-    slope of the ISM attenuation.
-
-    The Lyman continuum is not attenuated.
+    Attenuation curve of the form (λ / 550 nm) ** δ. The Lyman continuum is not
+    attenuated.
 
     Parameters
     ----------
-    wavelengths: array of floats
-        The wavelength grid (in nm) to compute the attenuation curve on.
+    wl: array of floats
+        The wavelength grid in nm.
     delta: float
-        Slope of the main power law.
-    delta_sec: float
-        Slope of the secondary power law.
-    factor: float
-        Factor by which the secondary power law is multiplied before being
-        added to the main one.
+        Slope of the power law.
 
     Returns
     -------
@@ -80,50 +50,46 @@ def alambda_av(wavelengths, delta, delta_sec=None, factor=None):
         The A(λ)/Av attenuation at each wavelength of the grid.
 
     """
-    wave = np.array(wavelengths)
-
-    attenuation = power_law(wave, delta)
-
-    if factor:
-        attenuation += factor * power_law(wave, delta_sec)
+    attenuation = (wl / 550.) ** delta
 
     # Lyman continuum not attenuated.
-    attenuation[wave <= 91.2] = 0.
+    attenuation[wl <= 91.2] = 0.
 
     return attenuation
 
 
-class TwoPowerLawAtt(SedModule):
+class ModCF00Att(SedModule):
     """Two power laws attenuation module
 
     Attenuation module combining the birth cloud (BC) attenuation and the
     interstellar medium (ISM) one.
 
     The attenuation can be computed on the whole spectrum or on a specific
-    contribution and is added to the SED as a negative contribution.
+    contribution and is added to the SED as a negative contribution. See
+    Lo Faro et al. (2017).
 
     """
 
     parameter_list = OrderedDict([
-        ("Av_BC", (
+        ("Av_ISM", (
             "cigale_list(minvalue=0)",
-            "V-band attenuation in the birth clouds.",
+            "V-band attenuation in the interstellar medium.",
             1.
         )),
-        ("slope_BC", (
-            "cigale_list()",
-            "Power law slope of the attenuation in the birth clouds.",
-            -1.3
-        )),
-        ("BC_to_ISM_factor", (
-            "cigale_list(minvalue=0., maxvalue=1.)",
-            "Av ISM / Av BC (<1).",
+        ("mu", (
+            "cigale_list(minvalue=.0001, maxvalue=1.)",
+            "Av_ISM / (Av_BC+Av_ISM)",
             0.44
         )),
         ("slope_ISM", (
             "cigale_list()",
             "Power law slope of the attenuation in the ISM.",
             -0.7
+        )),
+        ("slope_BC", (
+            "cigale_list()",
+            "Power law slope of the attenuation in the birth clouds.",
+            -1.3
         )),
         ("filters", (
             "string()",
@@ -135,17 +101,16 @@ class TwoPowerLawAtt(SedModule):
     ])
 
     def _init_code(self):
-        self.Av_BC = float(self.parameters['Av_BC'])
-        self.slope_BC = float(self.parameters['slope_BC'])
-        self.BC_to_ISM_factor = float(self.parameters['BC_to_ISM_factor'])
+        self.Av_ISM = float(self.parameters['Av_ISM'])
+        self.mu = float(self.parameters['mu'])
         self.slope_ISM = float(self.parameters['slope_ISM'])
+        self.slope_BC = float(self.parameters['slope_BC'])
         self.filter_list = [item.strip() for item in
                             self.parameters["filters"].split("&")]
-        self.Av_ISM = self.Av_BC / self.BC_to_ISM_factor
-        # We cannot compute the attenuation until we know the wavelengths. Yet,
-        # we reserve the object.
+        self.Av_BC = self.Av_ISM * (1. - self.mu) / self.mu
         self.contatt = {}
         self.lineatt = {}
+
 
     def process(self, sed):
         """Add the dust attenuation to the SED.
@@ -201,9 +166,10 @@ class TwoPowerLawAtt(SedModule):
             sed.lines[name] = (linewl, old * self.lineatt[name][0],
                                young * self.lineatt[name][1])
 
+        sed.add_info('attenuation.Av_ISM', self.Av_ISM)
         sed.add_info('attenuation.Av_BC', self.Av_BC)
+        sed.add_info('attenuation.mu', self.mu)
         sed.add_info('attenuation.slope_BC', self.slope_BC)
-        sed.add_info('attenuation.BC_to_ISM_factor', self.BC_to_ISM_factor)
         sed.add_info('attenuation.slope_ISM', self.slope_ISM)
 
         # Total attenuation
@@ -218,9 +184,9 @@ class TwoPowerLawAtt(SedModule):
 
         # Attenuation in each filter
         for filt in self.filter_list:
-            sed.add_info("attenuation." + filt,
-                         -2.5 * np.log10(flux_att[filt] / flux_noatt[filt]))
+            att = -2.5 * np.log10(flux_att[filt] / flux_noatt[filt])
+            sed.add_info("attenuation." + filt, max(0., att))
 
 
 # CreationModule to be returned by get_module
-Module = TwoPowerLawAtt
+Module = ModCF00Att

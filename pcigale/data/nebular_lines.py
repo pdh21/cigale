@@ -12,7 +12,7 @@ class NebularLines(object):
 
     """
 
-    def __init__(self, metallicity, logU, wave, ratio):
+    def __init__(self, metallicity, logU, name, wave, ratio):
         """Create a new nebular lines template
 
         Parameters
@@ -21,6 +21,8 @@ class NebularLines(object):
             Gas phase metallicity
         logU: float
             Ionisation parameter
+        name: array
+            Name of each line
         wave: array
             Vector of the λ grid used in the templates [nm]
         ratio: array
@@ -30,5 +32,6 @@ class NebularLines(object):
 
         self.metallicity = metallicity
         self.logU = logU
+        self.name = name
         self.wave = wave
         self.ratio = ratio

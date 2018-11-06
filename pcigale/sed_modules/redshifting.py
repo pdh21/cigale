@@ -22,7 +22,7 @@ from collections import OrderedDict
 
 import numpy as np
 from scipy.constants import parsec
-from scipy.misc import factorial
+from scipy.special import factorial
 from astropy.cosmology import WMAP7 as cosmology
 
 from . import SedModule
@@ -146,8 +146,8 @@ class Redshifting(SedModule):
     parameter_list = OrderedDict([
         ("redshift", (
             "cigale_list(minvalue=0.)",
-            "Redshift to apply to the galaxy. Leave empty to use the redshifts"
-            " from the input file.",
+            "Redshift of the objects. Leave empty to use the redshifts from the"
+            " input file.",
             None
         ))
     ])

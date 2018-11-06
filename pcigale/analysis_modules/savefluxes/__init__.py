@@ -17,9 +17,9 @@ The data file is used only to get the list of fluxes to be computed.
 
 from collections import OrderedDict
 import multiprocessing as mp
-import time
 
 from .. import AnalysisModule
+from ..utils import Counter
 from .workers import init_fluxes as init_worker_fluxes
 from .workers import fluxes as worker_fluxes
 from ...managers.models import ModelsManager
@@ -75,10 +75,15 @@ class SaveFluxes(AnalysisModule):
                                                                nblocks))
 
             models = ModelsManager(conf, obs, params, iblock)
+            counter = Counter(len(params.blocks[iblock]), 50, 250)
 
-            initargs = (models, time.time(), mp.Value('i', 0))
+            initargs = (models, counter)
             self._parallel_job(worker_fluxes, params.blocks[iblock], initargs,
                                init_worker_fluxes, conf['cores'])
+
+            # Print the final value as it may not otherwise be printed
+            if counter.global_counter.value % 250 != 0:
+                counter.pprint(len(params.blocks[iblock]))
 
             print("Saving the models ....")
             models.save('models-block-{}'.format(iblock))

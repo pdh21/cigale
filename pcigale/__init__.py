@@ -64,8 +64,12 @@ def main():
     # We set the sub processes start method to spawn because it solves
     # deadlocks when a library cannot handle being used on two sides of a
     # forked process. This happens on modern Macs with the Accelerate library
-    # for instance.
-    mp.set_start_method('spawn')
+    # for instance. On Linux we should be pretty safe with a fork, which allows
+    # to start processes much more rapidly.
+    if sys.platform.startswith('linux'):
+        mp.set_start_method('fork')
+    else:
+        mp.set_start_method('spawn')
 
     parser = argparse.ArgumentParser()
 
