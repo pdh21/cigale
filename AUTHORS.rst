@@ -12,6 +12,7 @@ with their current email address and affiliation.
   Laboratoire d'Astrophysique de Marseille, France
 * David Corre <david.corre@lam.fr>
   Laboratoire d'Astrophysique de Marseille, France
-* Yannick Roehlly <yannick@iaora.eu>
+* Yannick Roehlly <yannick.roehlly@lam.fr>
+  Laboratoire d'Astrophysique de Marseille, France
 * Héctor Salas Olave <hector.salas.o@gmail.com>
   Universidad de Antofagasta, Chile
