@@ -397,7 +397,7 @@ class ResultsManager(object):
                                     name="best."+prop))
 
         for band in self.obs.bands:
-            if band.startswith('line.') or band.startswith('linefilter.''):
+            if band.startswith('line.') or band.startswith('linefilter.'):
                 unit = 'W/m^2'
             else:
                 unit = 'mJy'
