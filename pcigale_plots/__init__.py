@@ -405,7 +405,7 @@ def _mock_worker(exact, estimated, param, nologo):
         plt.figimage(image, 510, 55, origin='upper', zorder=10, alpha=1)
 
     plt.tight_layout()
-    plt.savefig('out/mock_{}.pdf'.format(param))
+    plt.savefig('out/mock_{}.pdf'.format(param.replace('/', '_'))
 
     plt.close()
 

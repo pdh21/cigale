@@ -4,6 +4,7 @@
 ### Added
 ### Changed
 ### Fixed
+- Make sure we can plot the PDF of equivalent widths. (Médéric Boquien)
 ### Optimised
 
 ## 2018.0 (2018-11-06)
