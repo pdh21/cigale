@@ -235,7 +235,7 @@ class ObservationsManagerPassbands(object):
                                                 np.fabs(self.table[err]))
         for prop in self.intprops:
             err = prop + '_err'
-            self.table[name] = np.random.normal(fits.best.intprop[prop],
+            self.table[prop] = np.random.normal(fits.best.intprop[prop],
                                                 np.fabs(self.table[err]))
         for prop in self.extprops:
             err = prop + '_err'

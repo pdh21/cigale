@@ -5,6 +5,7 @@
 ### Changed
 ### Fixed
 - Make sure we can plot the PDF of equivalent widths. (Médéric Boquien)
+- Fix a crash when generating a mock catalogue containing intensive properties. (Médéric Boquien)
 ### Optimised
 
 ## 2018.0 (2018-11-06)
