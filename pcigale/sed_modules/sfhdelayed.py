@@ -63,7 +63,8 @@ class SFHDelayed(SedModule):
         )),
         ("sfr_A", (
             "cigale_list(minvalue=0.)",
-            "Value of SFR at t = 0 in M_sun/yr.",
+            "Multiplicative factor controlling the SFR if normalise is False. "
+            "For instance without any burst: SFR(t)=sfr_A×t×exp(-t/τ)/τ²",
             1.
         )),
         ("normalise", (

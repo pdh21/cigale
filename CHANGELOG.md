@@ -6,6 +6,7 @@
 ### Fixed
 - Make sure we can plot the PDF of equivalent widths. (Médéric Boquien)
 - Fix a crash when generating a mock catalogue containing intensive properties. (Médéric Boquien)
+- In the `sfhdelayed` and `sfhdelayedbq` modules, provide the correct description for the sfr_A parameter (Médéric Boquien & Laure Ciesla)
 ### Optimised
 
 ## 2018.0 (2018-11-06)
