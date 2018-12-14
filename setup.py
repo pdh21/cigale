@@ -48,7 +48,7 @@ setup(
 
     cmdclass={"build": custom_build},
     package_data={'pcigale': ['data/data.db'],
-                  'pcigale_plots': ['data/CIGALE.png']},
+                  'pcigale_plots': ['resources/CIGALE.png']},
 
     author="The CIGALE team",
     author_email="cigale@lam.fr",
