@@ -11,10 +11,10 @@ import sys
 import multiprocessing as mp
 
 from pcigale.session.configuration import Configuration
-from .parsers.chi2 import chi2 as chi2_action
-from .parsers.pdf import pdf as pdf_action
-from .parsers.sed import sed as sed_action
-from .parsers.mock import mock as mock_action
+from .plot_types.chi2 import chi2 as chi2_action
+from .plot_types.pdf import pdf as pdf_action
+from .plot_types.sed import sed as sed_action
+from .plot_types.mock import mock as mock_action
 
 __version__ = "0.1-alpha"
 
