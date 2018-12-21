@@ -1,5 +1,4 @@
 
-import logging
 from itertools import repeat
 from collections import OrderedDict
 
@@ -16,8 +15,6 @@ from scipy.constants import c
 from pcigale.data import Database
 from pcigale.utils import read_table
 import matplotlib.gridspec as gridspec
-
-logger = logging.getLogger(__name__)
 
 # Name of the file containing the best models information
 BEST_RESULTS = "results.fits"
@@ -73,7 +70,6 @@ def _sed_worker(obs, mod, filters, sed_type, logo, outdir):
         The absolute path to outdir
 
     """
-    logger.debug("Starting worker")
     id_best_model_file = path.join(outdir, '{}_best_model.fits'.format(obs['id']))
     if path.isfile(id_best_model_file):
 
@@ -116,7 +112,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, outdir):
                                (c / (wavelength_spec * 1e-9)) /
                                (4. * np.pi * DL * DL))
         else:
-            logger.error("Unknown plot type")
+            print("Unknown plot type")
 
         filters_wl /= 1000.
         wavelength_spec /= 1000.
@@ -278,6 +274,6 @@ def _sed_worker(obs, mod, filters, sed_type, logo, outdir):
             figure.savefig(path.join(outdir, '{}_best_model.pdf'.format(obs['id'])))
             plt.close(figure)
         else:
-            logger.error("No valid best SED found for {}. No plot created.".format(obs['id']))
+            print("No valid best SED found for {}. No plot created.".format(obs['id']))
     else:
-        logger.error("No SED found for {}. No plot created.".format(obs['id']))
+        print("No SED found for {}. No plot created.".format(obs['id']))
