@@ -10,7 +10,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import multiprocessing as mp
 import numpy as np
-import os
+from os import path
 import pkg_resources
 from scipy.constants import c
 from pcigale.data import Database
@@ -19,33 +19,37 @@ import matplotlib.gridspec as gridspec
 
 logger = logging.getLogger(__name__)
 
+# Name of the file containing the best models information
+BEST_RESULTS = "results.fits"
+MOCK_RESULTS = "results_mock.fits"
+
 # Wavelength limits (restframe) when plotting the best SED.
 PLOT_L_MIN = 0.1
 PLOT_L_MAX = 5e5
 
 
-def sed(config, sed_type, best_results_file, nologo):
+def sed(config, sed_type, nologo, outdir):
     """Plot the best SED with associated observed and modelled fluxes.
     """
-    obs = read_table(config.configuration['data_file'])
-    mod = Table.read(best_results_file)
+    obs = read_table(path.join(path.dirname(outdir), config.configuration['data_file']))
+    mod = Table.read(path.join(outdir, BEST_RESULTS))
 
     with Database() as base:
         filters = OrderedDict([(name, base.get_filter(name))
                                for name in config.configuration['bands']
-                               if not (name.endswith('_err') or name.startswith('line')) ])
+                               if not (name.endswith('_err') or name.startswith('line'))])
 
     logo = False if nologo else plt.imread(pkg_resources.resource_filename(__name__,
                                                                "../resources/CIGALE.png"))
 
     with mp.Pool(processes=config.configuration['cores']) as pool:
         pool.starmap(_sed_worker, zip(obs, mod, repeat(filters),
-                                      repeat(sed_type), repeat(logo)))
+                                      repeat(sed_type), repeat(logo), repeat(outdir)))
         pool.close()
         pool.join()
 
 
-def _sed_worker(obs, mod, filters, sed_type, logo):
+def _sed_worker(obs, mod, filters, sed_type, logo, outdir):
     """Plot the best SED with the associated fluxes in bands
 
     Parameters
@@ -65,13 +69,15 @@ def _sed_worker(obs, mod, filters, sed_type, logo):
         (M, N, 3) for RGB images.
         (M, N, 4) for RGBA images.
         Do not add the logo when set to False.
+    outdir: string
+        The absolute path to outdir
 
     """
     logger.debug("Starting worker")
+    id_best_model_file = path.join(outdir, '{}_best_model.fits'.format(obs['id']))
+    if path.isfile(id_best_model_file):
 
-    if os.path.isfile("out/{}_best_model.fits".format(obs['id'])):
-
-        sed = Table.read("out/{}_best_model.fits".format(obs['id']))
+        sed = Table.read(id_best_model_file)
 
         filters_wl = np.array([filt.pivot_wavelength
                                for filt in filters.values()])
@@ -269,7 +275,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo):
                 figure.figimage(logo, 12, figure_height - 67, origin='upper', zorder=0,
                                 alpha=1)
 
-            figure.savefig("out/{}_best_model.pdf".format(obs['id']))
+            figure.savefig(path.join(outdir, '{}_best_model.pdf'.format(obs['id'])))
             plt.close(figure)
         else:
             logger.error("No valid best SED found for {}. No plot created.".format(obs['id']))

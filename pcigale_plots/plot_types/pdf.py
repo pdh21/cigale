@@ -2,6 +2,7 @@
 import glob
 from itertools import product
 import matplotlib
+from os import path
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -10,22 +11,22 @@ import numpy as np
 from pcigale.utils import read_table
 
 
-def pdf(config):
+def pdf(config, outdir):
     """Plot the PDF of analysed variables.
     """
-    input_data = read_table(config.configuration['data_file'])
+    input_data = read_table(path.join(path.dirname(outdir), config.configuration['data_file']))
     pdf_vars = config.configuration['analysis_params']['variables']
     pdf_vars += [band for band in config.configuration['bands']
                  if band.endswith('_err') is False]
 
     with mp.Pool(processes=config.configuration['cores']) as pool:
-        items = product(input_data['id'], pdf_vars)
+        items = product(input_data['id'], pdf_vars, outdir)
         pool.starmap(_pdf_worker, items)
         pool.close()
         pool.join()
 
 
-def _pdf_worker(obj_name, var_name):
+def _pdf_worker(obj_name, var_name, outdir):
     """Plot the PDF associated with a given analysed variable
 
     Parameters
@@ -34,15 +35,17 @@ def _pdf_worker(obj_name, var_name):
         Name of the object.
     var_name: string
         Name of the analysed variable..
+    outdir: string
+        The absolute path to outdir
 
     """
     var_name = var_name.replace('/', '_')
     if var_name.endswith('_log'):
-        fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name,
+        fnames = glob.glob("{}/{}_{}_chi2-block-*.npy".format(outdir, obj_name,
                                                                var_name[:-4]))
         log = True
     else:
-        fnames = glob.glob("out/{}_{}_chi2-block-*.npy".format(obj_name,
+        fnames = glob.glob("{}/{}_{}_chi2-block-*.npy".format(outdir, obj_name,
                                                                var_name))
         log = False
     likelihood = []
@@ -86,5 +89,5 @@ def _pdf_worker(obj_name, var_name):
     ax.minorticks_on()
     figure.suptitle("Probability distribution function of {} for {}"
                     .format(var_name, obj_name))
-    figure.savefig("out/{}_{}_pdf.pdf".format(obj_name, var_name))
+    figure.savefig("{}/{}_{}_pdf.pdf".format(outdir, obj_name, var_name))
     plt.close(figure)

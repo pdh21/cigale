@@ -1,6 +1,7 @@
 from astropy.table import Table
 import matplotlib
 import sys
+from os import path
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -9,10 +10,15 @@ import numpy as np
 import pkg_resources
 from scipy import stats
 
+# Name of the file containing the best models information
+BEST_RESULTS = "results.fits"
+MOCK_RESULTS = "results_mock.fits"
 
-def mock(config, mock_results_file, best_results_file, nologo):
+def mock(config, nologo, outdir):
     """Plot the comparison of input/output values of analysed variables.
     """
+    best_results_file = path.abspath(path.join(outdir, BEST_RESULTS))
+    mock_results_file = path.abspath(path.join(outdir, MOCK_RESULTS))
 
     try:
         exact = Table.read(best_results_file)
@@ -36,7 +42,7 @@ def mock(config, mock_results_file, best_results_file, nologo):
     logo = False if nologo else plt.imread(pkg_resources.resource_filename(__name__,
                                                                            "../resources/CIGALE.png"))
 
-    arguments = ((exact["best."+param], estimated["bayes."+param], param, logo)
+    arguments = ((exact["best."+param], estimated["bayes."+param], param, logo, outdir)
                  for param in params)
 
     with mp.Pool(processes=config.configuration['cores']) as pool:
@@ -45,7 +51,7 @@ def mock(config, mock_results_file, best_results_file, nologo):
         pool.join()
 
 
-def _mock_worker(exact, estimated, param, logo):
+def _mock_worker(exact, estimated, param, logo, outdir):
     """Plot the exact and estimated values of a parameter for the mock analysis
 
     Parameters
@@ -58,6 +64,8 @@ def _mock_worker(exact, estimated, param, logo):
         Name of the parameter
     nologo: boolean
         Do not add the logo when set to true.
+    outdir: string
+        The absolute path to outdir
 
     """
 
@@ -87,6 +95,6 @@ def _mock_worker(exact, estimated, param, logo):
         plt.figimage(logo, 510, 55, origin='upper', zorder=10, alpha=1)
 
     plt.tight_layout()
-    plt.savefig('out/mock_{}.pdf'.format(param))
+    plt.savefig('{}/mock_{}.pdf'.format(outdir, param))
 
     plt.close()
