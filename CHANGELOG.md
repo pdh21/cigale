@@ -1,5 +1,14 @@
 # Change Log
 
+## Unreleased
+### Added
+### Changed
+### Fixed
+- Make sure we can plot the PDF of equivalent widths. (Médéric Boquien)
+- Fix a crash when generating a mock catalogue containing intensive properties. (Médéric Boquien)
+- In the `sfhdelayed` and `sfhdelayedbq` modules, provide the correct description for the sfr_A parameter (Médéric Boquien & Laure Ciesla)
+### Optimised
+
 ## 2018.0 (2018-11-06)
 ### Added
 - It is now possible to optionally indicate the distance in Mpc in the input file. If present it will be used in lieu of the distance computed from the redshift. This is especially useful in the nearby universe where the redshift is a very poor indicator of the actual distance. (Médéric Boquien)

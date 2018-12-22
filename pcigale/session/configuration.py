@@ -100,7 +100,7 @@ class Configuration(object):
             ["* sfhdelayed (delayed SFH with optional exponential burst)"] +
             ["* sfhdelayedbq (delayed SFH with optional constant burst/quench)"
             ] +
-            ["* sfhfromfile (abitrary SFH read from an input file)"] +
+            ["* sfhfromfile (arbitrary SFH read from an input file)"] +
             ["* sfhperiodic (periodic SFH, exponential, rectangle or delayed"
              ")"] +
             ["SSP:"] +
