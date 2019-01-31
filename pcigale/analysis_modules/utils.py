@@ -66,6 +66,6 @@ class Counter:
 
     def pprint(self, n):
         dt = time.time() - self.t0
-        print("{}/{} computed in {:.1f} seconds ({:.1f}/s)".
+        print("{}/{} performed in {:.1f} seconds ({:.1f}/s)".
               format(n, self.nmodels, dt, n / dt),
               end="\n" if n == self.nmodels else "\r")
