@@ -22,6 +22,7 @@ from scipy.constants import c
 from pcigale.data import Database
 from pcigale.utils import read_table
 import matplotlib.gridspec as gridspec
+from pcigale.analysis_modules.utils import Counter, nothread
 
 # Name of the file containing the best models information
 BEST_RESULTS = "results.fits"
@@ -30,6 +31,19 @@ MOCK_RESULTS = "results_mock.fits"
 # Wavelength limits (restframe) when plotting the best SED.
 PLOT_L_MIN = 0.1
 PLOT_L_MAX = 5e5
+
+
+def pool_initializer(counter):
+    """Initializer of the pool of processes to share variables between workers.
+    Parameters
+    ----------
+    :param counter: Counter class object for the number of models plotted
+    """
+    global gbl_counter
+    # Limit the number of threads to 1 if we use MKL in order to limit the
+    # oversubscription of the CPU/RAM.
+    nothread()
+    gbl_counter = counter
 
 
 def sed(config, sed_type, nologo, outdir):
@@ -46,7 +60,9 @@ def sed(config, sed_type, nologo, outdir):
     logo = False if nologo else plt.imread(pkg_resources.resource_filename(__name__,
                                                                "../resources/CIGALE.png"))
 
-    with mp.Pool(processes=config.configuration['cores']) as pool:
+    counter = Counter(len(obs))
+    with mp.Pool(processes=config.configuration['cores'], initializer=pool_initializer,
+                 initargs=(counter,)) as pool:
         pool.starmap(_sed_worker, zip(obs, mod, repeat(filters),
                                       repeat(sed_type), repeat(logo), repeat(outdir)))
         pool.close()
@@ -77,6 +93,8 @@ def _sed_worker(obs, mod, filters, sed_type, logo, outdir):
         The absolute path to outdir
 
     """
+    gbl_counter.inc()
+
     id_best_model_file = path.join(outdir, '{}_best_model.fits'.format(obs['id']))
     if path.isfile(id_best_model_file):
 

@@ -17,18 +17,35 @@ import matplotlib.pyplot as plt
 import multiprocessing as mp
 import numpy as np
 from pcigale.utils import read_table
+from pcigale.analysis_modules.utils import Counter, nothread
+
+
+def pool_initializer(counter):
+    """Initializer of the pool of processes to share variables between workers.
+    Parameters
+    ----------
+    :param counter: Counter class object for the number of models plotted
+    """
+    global gbl_counter
+    # Limit the number of threads to 1 if we use MKL in order to limit the
+    # oversubscription of the CPU/RAM.
+    nothread()
+    gbl_counter = counter
 
 
 def chi2(config, outdir):
     """Plot the χ² values of analysed variables.
     """
-    input_data = read_table(path.join(path.dirname(outdir), config.configuration['data_file']))
+    file = path.join(path.dirname(outdir), config.configuration['data_file'])
+    input_data = read_table(file)
     chi2_vars = config.configuration['analysis_params']['variables']
     chi2_vars += [band for band in config.configuration['bands']
                   if band.endswith('_err') is False]
 
-    with mp.Pool(processes=config.configuration['cores']) as pool:
-        items = product(input_data['id'], chi2_vars, outdir)
+    items = list(product(input_data['id'], chi2_vars, [outdir]))
+    counter = Counter(len(items))
+    with mp.Pool(processes=config.configuration['cores'], initializer=pool_initializer,
+                 initargs=(counter,)) as pool:
         pool.starmap(_chi2_worker, items)
         pool.close()
         pool.join()
@@ -47,6 +64,7 @@ def _chi2_worker(obj_name, var_name, outdir):
         The absolute path to outdir
 
     """
+    gbl_counter.inc()
     figure = plt.figure()
     ax = figure.add_subplot(111)
 

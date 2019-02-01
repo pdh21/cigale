@@ -16,6 +16,20 @@ import matplotlib.pyplot as plt
 import multiprocessing as mp
 import numpy as np
 from pcigale.utils import read_table
+from pcigale.analysis_modules.utils import Counter, nothread
+
+
+def pool_initializer(counter):
+    """Initializer of the pool of processes to share variables between workers.
+    Parameters
+    ----------
+    :param counter: Counter class object for the number of models plotted
+    """
+    global gbl_counter
+    # Limit the number of threads to 1 if we use MKL in order to limit the
+    # oversubscription of the CPU/RAM.
+    nothread()
+    gbl_counter = counter
 
 
 def pdf(config, outdir):
@@ -26,8 +40,10 @@ def pdf(config, outdir):
     pdf_vars += [band for band in config.configuration['bands']
                  if band.endswith('_err') is False]
 
-    with mp.Pool(processes=config.configuration['cores']) as pool:
-        items = product(input_data['id'], pdf_vars, outdir)
+    items = list(product(input_data['id'], pdf_vars, [outdir]))
+    counter = Counter(len(items))
+    with mp.Pool(processes=config.configuration['cores'], initializer=pool_initializer,
+                 initargs=(counter,)) as pool:
         pool.starmap(_pdf_worker, items)
         pool.close()
         pool.join()
@@ -46,6 +62,7 @@ def _pdf_worker(obj_name, var_name, outdir):
         The absolute path to outdir
 
     """
+    gbl_counter.inc()
     var_name = var_name.replace('/', '_')
     if var_name.endswith('_log'):
         fnames = glob.glob("{}/{}_{}_chi2-block-*.npy".format(outdir, obj_name,

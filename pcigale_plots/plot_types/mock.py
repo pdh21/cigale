@@ -17,10 +17,25 @@ import multiprocessing as mp
 import numpy as np
 import pkg_resources
 from scipy import stats
+from pcigale.analysis_modules.utils import Counter, nothread
 
 # Name of the file containing the best models information
 BEST_RESULTS = "results.fits"
 MOCK_RESULTS = "results_mock.fits"
+
+
+def pool_initializer(counter):
+    """Initializer of the pool of processes to share variables between workers.
+    Parameters
+    ----------
+    :param counter: Counter class object for the number of models plotted
+    """
+    global gbl_counter
+    # Limit the number of threads to 1 if we use MKL in order to limit the
+    # oversubscription of the CPU/RAM.
+    nothread()
+    gbl_counter = counter
+
 
 def mock(config, nologo, outdir):
     """Plot the comparison of input/output values of analysed variables.
@@ -50,10 +65,12 @@ def mock(config, nologo, outdir):
     logo = False if nologo else plt.imread(pkg_resources.resource_filename(__name__,
                                                                            "../resources/CIGALE.png"))
 
-    arguments = ((exact["best."+param], estimated["bayes."+param], param, logo, outdir)
-                 for param in params)
+    arguments = [(exact["best."+param], estimated["bayes."+param], param, logo, outdir)
+                 for param in params]
 
-    with mp.Pool(processes=config.configuration['cores']) as pool:
+    counter = Counter(len(arguments))
+    with mp.Pool(processes=config.configuration['cores'], initializer=pool_initializer,
+                 initargs=(counter,)) as pool:
         pool.starmap(_mock_worker, arguments)
         pool.close()
         pool.join()
@@ -76,7 +93,7 @@ def _mock_worker(exact, estimated, param, logo, outdir):
         The absolute path to outdir
 
     """
-
+    gbl_counter.inc()
     range_exact = np.linspace(np.min(exact), np.max(exact), 100)
 
     # We compute the linear regression
