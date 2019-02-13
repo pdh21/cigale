@@ -277,7 +277,7 @@ def build_m2005(base):
         spec_table = spec_table[1:]
 
         # Extract the wavelength and convert from Å to nm
-        ssp_wave = spec_table[0][:1221] * 0.1
+        ssp_wave = spec_table[0][:29000] * 0.1
         spec_table = spec_table[1:]
 
         # Extra the fluxes and convert from erg/s/Å to W/nm
@@ -299,18 +299,21 @@ def build_m2005(base):
         # To avoid the creation of waves when interpolating, we refine the grid
         # beyond 10 μm following a log scale in wavelength. The interpolation
         # is also done in log space as the spectrum is power-law-like
-        ssp_wave_resamp = np.around(np.logspace(np.log10(10000),
-                                                   np.log10(160000), 50))
-        argmin = np.argmin(10000.-ssp_wave > 0)-1
-        ssp_lumin_resamp = 10.**interpolate.interp1d(
-                                    np.log10(ssp_wave[argmin:]),
-                                    np.log10(ssp_lumin_interp[argmin:, :]),
-                                    assume_sorted=True,
-                                    axis=0)(np.log10(ssp_wave_resamp))
+        #ssp_wave_resamp = np.around(np.logspace(np.log10(10000),
+                                                   #np.log10(160000), 50))
+        #argmin = np.argmin(10000.-ssp_wave > 0)-1
+        #ssp_lumin_resamp = 10.**interpolate.interp1d(
+                                    #np.log10(ssp_wave[argmin:]),
+                                    #np.log10(ssp_lumin_interp[argmin:, :]),
+                                    #assume_sorted=True,
+                                    #axis=0)(np.log10(ssp_wave_resamp))
 
-        ssp_wave = np.hstack([ssp_wave[:argmin+1], ssp_wave_resamp])
-        ssp_lumin = np.vstack([ssp_lumin_interp[:argmin+1, :],
-                               ssp_lumin_resamp])
+        #ssp_wave = np.hstack([ssp_wave[:argmin+1], ssp_wave_resamp])
+        #ssp_lumin = np.vstack([ssp_lumin_interp[:argmin+1, :],
+                               #ssp_lumin_resamp])
+
+        ssp_wave = ssp_wave
+        ssp_lumin = ssp_lumin_interp
 
         # Use Z value for metallicity, not log([Z/H])
         metallicity = {-1.35: 0.001,
@@ -318,6 +321,7 @@ def build_m2005(base):
                        0.0: 0.02,
                        0.35: 0.04}[metallicity]
 
+        #import IPython; IPython.embed()
         base.add_m2005(M2005(imf, metallicity, time_grid, ssp_wave,
                              mass_table, ssp_lumin))
 
