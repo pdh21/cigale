@@ -277,7 +277,7 @@ def build_m2005(base):
         spec_table = spec_table[1:]
 
         # Extract the wavelength and convert from Å to nm
-        ssp_wave = spec_table[0][:29000] * 0.1
+        ssp_wave = spec_table[0][:14501] * 0.1
         spec_table = spec_table[1:]
 
         # Extra the fluxes and convert from erg/s/Å to W/nm
@@ -321,7 +321,6 @@ def build_m2005(base):
                        0.0: 0.02,
                        0.35: 0.04}[metallicity]
 
-        #import IPython; IPython.embed()
         base.add_m2005(M2005(imf, metallicity, time_grid, ssp_wave,
                              mass_table, ssp_lumin))
 
