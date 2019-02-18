@@ -83,7 +83,6 @@ class _M2005(BASE):
     time_grid = Column(PickleType)
     wavelength_grid = Column(PickleType)
     info_table = Column(PickleType)
-    spec_table = Column(PickleType)
 
     def __init__(self, ssp):
         self.imf = ssp.imf
@@ -91,7 +90,6 @@ class _M2005(BASE):
         self.time_grid = ssp.time_grid
         self.wavelength_grid = ssp.wavelength_grid
         self.info_table = ssp.info_table
-        self.spec_table = ssp.spec_table
 
 
 class _BC03(BASE):
@@ -329,6 +327,10 @@ class Database(object):
             self.session.add(ssp)
             try:
                 self.session.commit()
+                # Save the spec_table to a file
+                filename = "m2005_%s_%s.npy" % (ssp.imf, ssp.metallicity)
+                filepath = pkg_resources.resource_filename(__name__, filename)
+                np.save(filepath, ssp_m2005.spec_table)
             except exc.IntegrityError:
                 self.session.rollback()
                 raise DatabaseInsertError('The SSP is already in the base.')
@@ -362,9 +364,13 @@ class Database(object):
             .filter(_M2005.metallicity == metallicity)\
             .first()
         if result:
+            # Load the spec_table from file
+            filename = "m2005_%s_%s.npy" % (result.imf, result.metallicity)
+            filepath = pkg_resources.resource_filename(__name__, filename)
+            spec_table = np.load(filepath)
             return M2005(result.imf, result.metallicity, result.time_grid,
                          result.wavelength_grid, result.info_table,
-                         result.spec_table)
+                         spec_table)
         else:
             raise DatabaseLookupError(
                 "The M2005 SSP for imf <{0}> and metallicity <{1}> is not in "
