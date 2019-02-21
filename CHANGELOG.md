@@ -2,6 +2,7 @@
 
 ## Unreleased
 ### Added
+- The (1+z1)/(1+z2) factor between observed and grid flux densities caused by the differential redshifting is now taken into account. With a default grid redshift rounding of two decimals this yields a difference of at most 0.5% in the estimated physical properties at z=0 and even less at higher z. (Médéric Boquien)
 ### Changed
 ### Fixed
 - Make sure we can plot the PDF of equivalent widths. (Médéric Boquien)

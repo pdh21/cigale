@@ -142,7 +142,7 @@ def analysis(idx, obs):
         z = np.array(
             gbl_models.conf['sed_modules_params']['redshifting']['redshift'])
         wz = slice(np.abs(obs.redshift-z).argmin(), None, z.size)
-        corr_dz = compute_corr_dz(z[wz.start], obs.distance)
+        corr_dz = compute_corr_dz(z[wz.start], obs)
     else:  # We do not know the redshift so we use the full grid
         wz = slice(0, None, 1)
         corr_dz = 1.
@@ -236,7 +236,7 @@ def bestfit(oidx, obs):
     params = deepcopy(gbl_params.from_index(best_index))
     if obs.redshift >= 0.:
         params[gbl_params.modules.index('redshifting')]['redshift'] = obs.redshift
-        corr_dz = compute_corr_dz(obs.redshift, obs.distance)
+        corr_dz = compute_corr_dz(obs.redshift, obs)
     else:  # The model redshift is always exact in redhisfting mode
         corr_dz = 1.
     sed = gbl_warehouse.get_sed(gbl_params.modules, params)
