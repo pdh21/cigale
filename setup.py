@@ -11,21 +11,24 @@ from setuptools import find_packages, setup
 class custom_build(build):
     user_options = [
         ('bc03res=', None, 'Resolution of the BC03 models, hr or lr.'),
+        ('bpassres=', None, 'Resolution of the BPASS models, hr or lr.')
         ]
     description = 'Build the pcigale database.'
 
     def initialize_options(self):
         build.initialize_options(self)
         self.bc03res = 'lr'
+        self.bpassres = 'lr'
 
     def finalize_options(self):
         assert self.bc03res in ('lr', 'hr'), 'bc03res must be hr or lr!'
+        assert self.bpassres in ('lr', 'hr'), 'bpassres must be hr or lr!'
         build.finalize_options(self)
 
     def run(self):
         # Build the database.
         import database_builder
-        database_builder.build_base(self.bc03res)
+        database_builder.build_base(self.bc03res, self.bpassres)
 
         # Proceed with the build
         build.run(self)

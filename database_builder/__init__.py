@@ -20,7 +20,7 @@ import numpy as np
 from scipy import interpolate
 import scipy.constants as cst
 from astropy.table import Table
-from pcigale.data import (Database, Filter, M2005, BC03, Fritz2006,
+from pcigale.data import (Database, Filter, M2005, BC03, BPASSv2, Fritz2006,
                           Dale2014, DL2007, DL2014, NebularLines,
                           NebularContinuum, Schreiber2016, THEMIS)
 
@@ -407,6 +407,100 @@ def build_bc2003(base, res):
             time_grid,
             ssp_wave,
             color_table,
+            ssp_lumin
+        ))
+
+
+def build_bpassv2(base, bpassres):
+    bpass_dir = os.path.join(os.path.dirname(__file__), 'bpassv2.2/')
+
+    # Time grid (1 Myr to 13.7 Gyr with 1 Myr step)
+    ssp_timegrid = np.arange(1, 13700)
+
+    # The wavelength grid of the BPASS models is extremely refined. This is too
+    # refined for our purpose. By default we interpolate on the grid of the low
+    # resolution BC03 models. We remove the wavelengths beyond 10 microns as
+    # they are out of the range covered by BPASS.
+    spec_wave_lr = base.get_bc03('salp', 0.02).wavelength_grid
+    spec_wave_lr = spec_wave_lr[spec_wave_lr <= 10000.]
+
+    # Metallicities associated to each key
+    metal = {
+        "em5": 0.00001,
+        "em4": 0.0001,
+        "001": 0.001,
+        "002": 0.002,
+        "003": 0.003,
+        "004": 0.004,
+        "006": 0.006,
+        "008": 0.008,
+        "010": 0.010,
+        "014": 0.014,
+        "020": 0.020,
+        "030": 0.030,
+        "040": 0.040
+    }
+
+    # IMF associated to each key
+    imf = {
+        "100_100": 0,
+        "100_300": 1,
+        "135_100": 2,
+        "135_300": 3,
+        "135all_100": 4,
+        "170_100": 5,
+        "170_300": 6,
+        "chab100": 7,
+        "chab300": 8
+    }
+
+    basename = "{}{}/{}-{}-imf_{}.z{}.dat.gz"
+
+    for key_metal, key_imf, binary in itertools.product(metal, imf,
+                                                        ['bin', 'sin']):
+        specname = basename.format(bpass_dir, key_imf, 'spectra', binary,
+                                   key_imf, key_metal)
+        ionname = basename.format(bpass_dir, key_imf, 'ionizing', binary,
+                                   key_imf, key_metal)
+        massname = basename.format(bpass_dir, key_imf, 'starmass', binary,
+                                   key_imf, key_metal)
+        print("Importing {}...".format(specname))
+
+        spec = np.genfromtxt(specname)
+
+        # Get the wavelengths and them from Å to nm
+        spec_wave = spec[:, 0] * 0.1
+
+        # Get the ionizing flux and normalize it from 10⁶ Msun to 1 Msun
+        ion = 10**np.genfromtxt(ionname)[:, 1] * 1e-6
+
+        # Get the stellar mass and normalize it from 10⁶ Msun to 1 Msun
+        mass = np.genfromtxt(massname)[:, 1] * 1e-6
+
+        # Convert from Lsun/Å for 10⁶ Msun to W/nm for 1 Msun
+        spec = spec[:, 1:] * (10. * 3.828e26 * 1e-6)
+
+        if bpassres == 'lr':
+            spec = 10**interpolate.interp1d(np.log10(spec_wave), np.log10(spec),
+                                        axis=0, assume_sorted=True)(np.log10(spec_wave_lr))
+            spec[np.where(np.isnan(spec))] = 0.
+
+        # Timegrid from the models in Myr
+        spec_timegrid = np.logspace(0., 5., spec.shape[1])
+
+        ssp_lumin = interpolate.interp1d(spec_timegrid, spec)(ssp_timegrid)
+        ssp_mass = interpolate.interp1d(spec_timegrid, mass)(ssp_timegrid)
+        ssp_ion = interpolate.interp1d(spec_timegrid, ion)(ssp_timegrid)
+
+        ssp_info = np.array([ssp_mass, ssp_ion])
+
+        base.add_bpassv2(BPASSv2(
+            imf[key_imf],
+            metal[key_metal],
+            True if 'bin' in binary else False,
+            ssp_timegrid,
+            spec_wave_lr if bpassres == 'lr' else spec_wave,
+            ssp_info,
             ssp_lumin
         ))
 
@@ -843,7 +937,7 @@ def build_themis(base):
     base.add_themis(models)
 
 
-def build_base(bc03res='lr'):
+def build_base(bc03res='lr', bpassres='lr'):
     base = Database(writable=True)
     base.upgrade_base()
 
@@ -864,32 +958,37 @@ def build_base(bc03res='lr'):
     print("\nDONE\n")
     print('#' * 78)
 
-    print("4- Importing Draine and Li (2007) models\n")
+    print("4- Importing the BPASS v2.2 SSP\n")
+    build_bpassv2(base, bpassres)
+    print("\nDONE\n")
+    print('#' * 78)
+
+    print("5- Importing Draine and Li (2007) models\n")
     build_dl2007(base)
     print("\nDONE\n")
     print('#' * 78)
 
-    print("5- Importing the updated Draine and Li (2007 models)\n")
+    print("6- Importing the updated Draine and Li (2014 models)\n")
     build_dl2014(base)
     print("\nDONE\n")
     print('#' * 78)
 
-    print("6- Importing Fritz et al. (2006) models\n")
+    print("7- Importing Fritz et al. (2006) models\n")
     build_fritz2006(base)
     print("\nDONE\n")
     print('#' * 78)
 
-    print("7- Importing Dale et al (2014) templates\n")
+    print("8- Importing Dale et al (2014) templates\n")
     build_dale2014(base)
     print("\nDONE\n")
     print('#' * 78)
 
-    print("8- Importing nebular lines and continuum\n")
+    print("9- Importing nebular lines and continuum\n")
     build_nebular(base)
     print("\nDONE\n")
     print('#' * 78)
 
-    print("9- Importing Schreiber et al (2016) models\n")
+    print("10- Importing Schreiber et al (2016) models\n")
     build_schreiber2016(base)
     print("\nDONE\n")
     print('#' * 78)

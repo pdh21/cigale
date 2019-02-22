@@ -16,7 +16,8 @@ SqlAlchemy ORM to store the data in a unique SQLite3 database.
 """
 
 import pkg_resources
-from sqlalchemy import create_engine, exc, Column, String,  Float, PickleType
+from sqlalchemy import create_engine, exc, Column, String, Float, PickleType
+from sqlalchemy import Integer, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import class_mapper, sessionmaker
 import numpy as np
@@ -24,6 +25,7 @@ import numpy as np
 from .filters import Filter
 from .m2005 import M2005
 from .bc03 import BC03
+from .bpassv2 import BPASSv2
 from .dale2014 import Dale2014
 from .dl2007 import DL2007
 from .dl2014 import DL2014
@@ -115,6 +117,28 @@ class _BC03(BASE):
         self.info_table = ssp.info_table
         self.spec_table = ssp.spec_table
 
+class _BPASSv2(BASE):
+    """Storage for the BPASS v2 SSP
+    """
+
+    __tablename__ = "bpassv2"
+
+    imf = Column(Integer, primary_key=True)
+    metallicity = Column(Float, primary_key=True)
+    binary = Column(Boolean, primary_key=True)
+    time_grid = Column(PickleType)
+    wavelength_grid = Column(PickleType)
+    info_table = Column(PickleType)
+    spec_table = Column(PickleType)
+
+    def __init__(self, ssp):
+        self.imf = ssp.imf
+        self.metallicity = ssp.metallicity
+        self.binary = ssp.binary
+        self.time_grid = ssp.time_grid
+        self.wavelength_grid = ssp.wavelength_grid
+        self.info_table = ssp.info_table
+        self.spec_table = ssp.spec_table
 
 class _Dale2014(BASE):
     """Storage for Dale et al (2014) infra-red templates
@@ -443,6 +467,36 @@ class Database(object):
             dictionary of parameters and their values
         """
         return self._get_parameters(_BC03)
+
+    def add_bpassv2(self, ssp_bpassv2):
+        if self.is_writable:
+            ssp = _BPASSv2(ssp_bpassv2)
+            self.session.add(ssp)
+            try:
+                self.session.commit()
+            except exc.IntegrityError:
+                self.session.rollback()
+                raise DatabaseInsertError('The SSP is already in the base.')
+        else:
+            raise Exception('The database is not writable.')
+
+    def get_bpassv2(self, imf, metallicity, binary):
+        result = self.session.query(_BPASSv2)\
+            .filter(_BPASSv2.imf == imf)\
+            .filter(_BPASSv2.metallicity == metallicity)\
+            .filter(_BPASSv2.binary == binary)\
+            .first()
+        if result:
+            return BPASSv2(result.imf, result.metallicity, result.binary,
+                         result.time_grid, result.wavelength_grid,
+                         result.info_table, result.spec_table)
+        else:
+            raise DatabaseLookupError(
+                "The BPASS SSP for imf {}, metallicity {}, and binary {} "
+                "is not in the database.".format(imf, metallicity, binary))
+
+    def get_bpassv2_parameters(self):
+        return self.get_parameters(_BPASSv2)
 
     def add_dl2007(self, models):
         """
