@@ -49,8 +49,10 @@ def compute_corr_dz(model_z, obs):
 
     """
     if model_z == 0.:
-        return (obs.distance / (10. * parsec)) ** 2. / (1. + obs.redshift)
-    return (obs.distance / cosmo.luminosity_distance(model_z).value) ** 2. * \
+        mod_distance = 10. * parsec
+    else:
+        mod_distance = cosmo.luminosity_distance(model_z).value * 1e6 * parsec
+    return (obs.distance / mod_distance) ** 2. * \
            (1. + model_z) / (1. + obs.redshift)
 
 

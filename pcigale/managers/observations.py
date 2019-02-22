@@ -304,7 +304,8 @@ class Observation(object):
             if self.redshift == 0.:
                 self.distance = 10. * parsec
             elif self.redshift > 0.:
-                self.distance = cosmo.luminosity_distance(self.redshift).value
+                self.distance = cosmo.luminosity_distance(self.redshift).value \
+                                * 1e6 * parsec
             else:
                 self.distance = np.nan
         self.flux = {k: row[k] for k in cls.bands
