@@ -235,16 +235,32 @@ def bestfit(oidx, obs):
     # difference between the object and the grid redshifts.
     params = deepcopy(gbl_params.from_index(best_index))
     if obs.redshift >= 0.:
+        model_z = params[gbl_params.modules.index('redshifting')]['redshift']
         params[gbl_params.modules.index('redshifting')]['redshift'] = obs.redshift
-        corr_dz = compute_corr_dz(obs.redshift, obs)
+        # Correct fluxes for the fact that the scaling factor was computed on
+        # the grid redshift. Because of the difference in redshift the distance
+        # is different and must be reflected in the scaling
+        corr_scaling = compute_corr_dz(model_z, obs) / \
+                       compute_corr_dz(obs.redshift, obs)
     else:  # The model redshift is always exact in redhisfting mode
-        corr_dz = 1.
+        corr_scaling = 1.
+
     sed = gbl_warehouse.get_sed(gbl_params.modules, params)
-    scaling = gbl_results.best.scaling[oidx]
+
+    # Handle the case where the distance does not correspond to the redshift.
+    if obs.redshift >= 0.:
+        corr_dz = (obs.distance / sed.info['universe.luminosity_distance']) ** 2
+    else:
+        corr_dz = 1.
+
+    scaling = gbl_results.best.scaling[oidx] * corr_scaling
 
     for band in gbl_results.best.flux:
         gbl_results.best.flux[band][oidx] = sed.compute_fnu(band) * scaling
 
+    # If the distance is user defined, the redshift-based luminosity distance
+    # of the model is probably incorrect so we replace it
+    sed.add_info('universe.luminosity_distance', obs.distance, force=True)
     for prop in gbl_results.best.intprop:
         gbl_results.best.intprop[prop][oidx] = sed.info[prop]
 
