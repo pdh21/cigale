@@ -19,10 +19,6 @@ from .plot_types.mock import mock as mock_action
 
 __version__ = "0.2-alpha"
 
-# Wavelength limits (restframe) when plotting the best SED.
-PLOT_L_MIN = 0.1
-PLOT_L_MAX = 5e5
-
 
 def main():
 
