@@ -32,7 +32,7 @@ def pool_initializer(counter):
     gbl_counter = counter
 
 
-def pdf(config, outdir):
+def pdf(config, format, outdir):
     """Plot the PDF of analysed variables.
     """
     input_data = read_table(path.join(path.dirname(outdir), config.configuration['data_file']))
@@ -40,7 +40,7 @@ def pdf(config, outdir):
     pdf_vars += [band for band in config.configuration['bands']
                  if band.endswith('_err') is False]
 
-    items = list(product(input_data['id'], pdf_vars, [outdir]))
+    items = list(product(input_data['id'], pdf_vars, [format], [outdir]))
     counter = Counter(len(items))
     with mp.Pool(processes=config.configuration['cores'], initializer=pool_initializer,
                  initargs=(counter,)) as pool:
@@ -49,7 +49,7 @@ def pdf(config, outdir):
         pool.join()
 
 
-def _pdf_worker(obj_name, var_name, outdir):
+def _pdf_worker(obj_name, var_name, format, outdir):
     """Plot the PDF associated with a given analysed variable
 
     Parameters
@@ -113,5 +113,5 @@ def _pdf_worker(obj_name, var_name, outdir):
     ax.minorticks_on()
     figure.suptitle("Probability distribution function of {} for {}"
                     .format(var_name, obj_name))
-    figure.savefig("{}/{}_{}_pdf.pdf".format(outdir, obj_name, var_name))
+    figure.savefig("{}/{}_{}_pdf.{}".format(outdir, obj_name, var_name, format))
     plt.close(figure)

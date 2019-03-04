@@ -33,7 +33,7 @@ def pool_initializer(counter):
     gbl_counter = counter
 
 
-def chi2(config, outdir):
+def chi2(config, format, outdir):
     """Plot the χ² values of analysed variables.
     """
     file = path.join(path.dirname(outdir), config.configuration['data_file'])
@@ -42,7 +42,7 @@ def chi2(config, outdir):
     chi2_vars += [band for band in config.configuration['bands']
                   if band.endswith('_err') is False]
 
-    items = list(product(input_data['id'], chi2_vars, [outdir]))
+    items = list(product(input_data['id'], chi2_vars, [format], [outdir]))
     counter = Counter(len(items))
     with mp.Pool(processes=config.configuration['cores'], initializer=pool_initializer,
                  initargs=(counter,)) as pool:
@@ -51,7 +51,7 @@ def chi2(config, outdir):
         pool.join()
 
 
-def _chi2_worker(obj_name, var_name, outdir):
+def _chi2_worker(obj_name, var_name, format, outdir):
     """Plot the reduced χ² associated with a given analysed variable
 
     Parameters
@@ -80,5 +80,5 @@ def _chi2_worker(obj_name, var_name, outdir):
     ax.minorticks_on()
     figure.suptitle("Reduced $\chi^2$ distribution of {} for {}."
                     .format(var_name, obj_name))
-    figure.savefig("{}/{}_{}_chi2.pdf".format(outdir, obj_name, var_name))
+    figure.savefig("{}/{}_{}_chi2.{}".format(outdir, obj_name, var_name, format))
     plt.close(figure)

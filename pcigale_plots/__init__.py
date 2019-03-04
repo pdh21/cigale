@@ -53,16 +53,19 @@ def main():
     subparsers = parser.add_subparsers(help="List of commands")
 
     pdf_parser = subparsers.add_parser('pdf', help=pdf_action.__doc__)
+    pdf_parser.add_argument('--format', dest='format', default='pdf')
     pdf_parser.add_argument('--outdir', dest='outdir', default='out')
     pdf_parser.set_defaults(parser='pdf')
 
     chi2_parser = subparsers.add_parser('chi2', help=chi2_action.__doc__)
+    chi2_parser.add_argument('--format', dest='format', default='pdf')
     chi2_parser.add_argument('--outdir', dest='outdir', default='out')
     chi2_parser.set_defaults(parser='chi2')
 
     sed_parser = subparsers.add_parser('sed', help=sed_action.__doc__)
     sed_parser.add_argument('--type', default='mJy')
     sed_parser.add_argument('--nologo', action='store_true')
+    sed_parser.add_argument('--format', dest='format', default='pdf')
     sed_parser.add_argument('--outdir', dest='outdir', default='out')
     sed_parser.add_argument('--xrange', dest='xrange', default=':',
                             type=parser_range,
@@ -76,6 +79,7 @@ def main():
 
     mock_parser = subparsers.add_parser('mock', help=mock_action.__doc__)
     mock_parser.add_argument('--nologo', action='store_true')
+    mock_parser.add_argument('--format', dest='format', default='pdf')
     mock_parser.add_argument('--outdir', dest='outdir', default='out')
     mock_parser.set_defaults(parser='mock')
 
@@ -91,9 +95,9 @@ def main():
         parser.print_usage()
     else:
         if args.parser == 'chi2':
-            chi2_action(config, outdir)
+            chi2_action(config, args.format, outdir)
         elif args.parser == 'pdf':
-            pdf_action(config, outdir)
+            pdf_action(config, args.format, outdir)
         elif args.parser == 'sed':
             if not args.series:
                 series = AVAILABLE_SERIES
@@ -103,6 +107,6 @@ def main():
                 else:
                     series = args.series
             sed_action(config, args.type, args.nologo, args.xrange, args.yrange,
-                       series, outdir)
+                       series, args.format, outdir)
         elif args.parser == 'mock':
             mock_action(config, args.nologo, outdir)

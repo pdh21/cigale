@@ -56,7 +56,7 @@ def pool_initializer(counter):
     gbl_counter = counter
 
 
-def sed(config, sed_type, nologo, xrange, yrange, series, outdir):
+def sed(config, sed_type, nologo, xrange, yrange, series, format, outdir):
     """Plot the best SED with associated observed and modelled fluxes.
     """
     obs = read_table(path.join(path.dirname(outdir), config.configuration['data_file']))
@@ -75,12 +75,12 @@ def sed(config, sed_type, nologo, xrange, yrange, series, outdir):
                  initargs=(counter,)) as pool:
         pool.starmap(_sed_worker, zip(
             obs, mod, repeat(filters), repeat(sed_type), repeat(logo),
-            repeat(xrange), repeat(yrange), repeat(series), repeat(outdir)))
+            repeat(xrange), repeat(yrange), repeat(series), repeat(format), repeat(outdir)))
         pool.close()
         pool.join()
 
 
-def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, outdir):
+def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, format, outdir):
     """Plot the best SED with the associated fluxes in bands
 
     Parameters
@@ -103,6 +103,8 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, outdi
     xrange: tuple(float|boolean, float|boolean)
     yrange: tuple(float|boolean, float|boolean)
     series: list
+    format: string
+        One of png, pdf, ps, eps or svg.
     outdir: string
         The absolute path to outdir
 
@@ -332,7 +334,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, outdi
                 figure.figimage(logo, 12, figure_height - 67, origin='upper', zorder=0,
                                 alpha=1)
 
-            figure.savefig(path.join(outdir, '{}_best_model.pdf'.format(obs['id'])))
+            figure.savefig(path.join(outdir, '{}_best_model.{}'.format(obs['id'], format)))
             plt.close(figure)
         else:
             print("No valid best SED found for {}. No plot created.".format(obs['id']))
