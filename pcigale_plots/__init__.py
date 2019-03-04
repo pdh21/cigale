@@ -14,7 +14,7 @@ import multiprocessing as mp
 from pcigale.session.configuration import Configuration
 from .plot_types.chi2 import chi2 as chi2_action
 from .plot_types.pdf import pdf as pdf_action
-from .plot_types.sed import sed as sed_action
+from .plot_types.sed import sed as sed_action, AVAILABLE_SERIES
 from .plot_types.mock import mock as mock_action
 
 __version__ = "0.2-alpha"
@@ -70,6 +70,8 @@ def main():
     sed_parser.add_argument('--yrange', dest='yrange', default=':',
                             type=parser_range,
                             help='Format [<min>]:[<max>], for plot flux axis')
+    sed_parser.add_argument('--series', dest='series', nargs='*')
+    sed_parser.add_argument('--seriesdisabled', dest='seriesdisabled', action='store_true')
     sed_parser.set_defaults(parser='sed')
 
     mock_parser = subparsers.add_parser('mock', help=mock_action.__doc__)
@@ -93,6 +95,14 @@ def main():
         elif args.parser == 'pdf':
             pdf_action(config, outdir)
         elif args.parser == 'sed':
-            sed_action(config, args.type, args.nologo, args.xrange, args.yrange, outdir)
+            if not args.series:
+                series = AVAILABLE_SERIES
+            else:
+                if args.seriesdisabled:
+                    series = [series for series in AVAILABLE_SERIES if series not in args.series]
+                else:
+                    series = args.series
+            sed_action(config, args.type, args.nologo, args.xrange, args.yrange,
+                       series, outdir)
         elif args.parser == 'mock':
             mock_action(config, args.nologo, outdir)
