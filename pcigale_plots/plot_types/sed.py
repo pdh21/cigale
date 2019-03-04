@@ -46,7 +46,7 @@ def pool_initializer(counter):
     gbl_counter = counter
 
 
-def sed(config, sed_type, nologo, outdir):
+def sed(config, sed_type, nologo, xrange, yrange, outdir):
     """Plot the best SED with associated observed and modelled fluxes.
     """
     obs = read_table(path.join(path.dirname(outdir), config.configuration['data_file']))
@@ -63,13 +63,14 @@ def sed(config, sed_type, nologo, outdir):
     counter = Counter(len(obs))
     with mp.Pool(processes=config.configuration['cores'], initializer=pool_initializer,
                  initargs=(counter,)) as pool:
-        pool.starmap(_sed_worker, zip(obs, mod, repeat(filters),
-                                      repeat(sed_type), repeat(logo), repeat(outdir)))
+        pool.starmap(_sed_worker, zip(
+            obs, mod, repeat(filters), repeat(sed_type), repeat(logo),
+            repeat(xrange), repeat(yrange), repeat(outdir)))
         pool.close()
         pool.join()
 
 
-def _sed_worker(obs, mod, filters, sed_type, logo, outdir):
+def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, outdir):
     """Plot the best SED with the associated fluxes in bands
 
     Parameters
@@ -89,6 +90,8 @@ def _sed_worker(obs, mod, filters, sed_type, logo, outdir):
         (M, N, 3) for RGB images.
         (M, N, 4) for RGBA images.
         Do not add the logo when set to False.
+    xrange: tuple(float|boolean, float|boolean)
+    yrange: tuple(float|boolean, float|boolean)
     outdir: string
         The absolute path to outdir
 
@@ -113,10 +116,10 @@ def _sed_worker(obs, mod, filters, sed_type, logo, outdir):
             z = mod['best.universe.redshift']
         DL = mod['best.universe.luminosity_distance']
 
-        if sed_type == 'lum':
-            xmin = PLOT_L_MIN
-            xmax = PLOT_L_MAX
+        xmin = PLOT_L_MIN if xrange[0] is False else xrange[0]
+        xmax = PLOT_L_MAX if xrange[1] is False else xrange[1]
 
+        if sed_type == 'lum':
             k_corr_SED = 1e-29 * (4.*np.pi*DL*DL) * c / (filters_wl*1e-9)
             obs_fluxes *= k_corr_SED
             obs_fluxes_err *= k_corr_SED
@@ -128,8 +131,8 @@ def _sed_worker(obs, mod, filters, sed_type, logo, outdir):
             filters_wl /= 1. + z
             wavelength_spec /= 1. + z
         elif sed_type == 'mJy':
-            xmin = PLOT_L_MIN * (1. + z)
-            xmax = PLOT_L_MAX * (1. + z)
+            xmin = xmin * (1. + z)
+            xmax = xmax * (1. + z)
             k_corr_SED = 1.
 
             for cname in sed.colnames[1:]:
@@ -262,17 +265,31 @@ def _sed_worker(obs, mod, filters, sed_type, logo, outdir):
             figure.subplots_adjust(hspace=0., wspace=0.)
 
             ax1.set_xlim(xmin, xmax)
-            ymin = min(np.min(obs_fluxes[mask_ok]),
-                       np.min(mod_fluxes[mask_ok]))
-            if not mask_uplim.any() == False:
-                ymax = max(max(np.max(obs_fluxes[mask_ok]),
+
+            if yrange[0] is not False:
+                ymin = yrange[0]
+            else:
+                ymin = min(np.min(obs_fluxes[mask_ok]),
+                           np.min(mod_fluxes[mask_ok]))
+                ymin *= 1e-1
+
+            if yrange[1] is not False:
+                ymax = yrange[1]
+            else:
+                if not mask_uplim.any() == False:
+                    ymax = max(max(np.max(obs_fluxes[mask_ok]),
                                np.max(obs_fluxes[mask_uplim])),
                            max(np.max(mod_fluxes[mask_ok]),
                                np.max(mod_fluxes[mask_uplim])))
-            else:
-                ymax = max(np.max(obs_fluxes[mask_ok]),
+                else:
+                    ymax = max(np.max(obs_fluxes[mask_ok]),
                            np.max(mod_fluxes[mask_ok]))
-            ax1.set_ylim(1e-1*ymin, 1e1*ymax)
+                ymax *= 1e1
+
+            xmin = xmin if xmin < xmax else xmax - 1e1
+            ymin = ymin if ymin < ymax else ymax - 1e1
+
+            ax1.set_ylim(ymin, ymax)
             ax2.set_xlim(xmin, xmax)
             ax2.set_ylim(-1.0, 1.0)
             if sed_type == 'lum':

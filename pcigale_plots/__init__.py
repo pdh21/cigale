@@ -20,6 +20,23 @@ from .plot_types.mock import mock as mock_action
 __version__ = "0.2-alpha"
 
 
+def parser_range(range_str):
+    """
+    Auxiliary parser for plot X and Y ranges
+    :param range_str: a string like [<min>]:[<max>]
+    :return:
+    """
+    rmin, rmax = range_str.split(':')
+    try:
+        rmin = float(rmin) if rmin else False
+        rmax = float(rmax) if rmax else False
+    except ValueError:
+        msg = '{} has not the format [<min>]:[<max>], where ' \
+              'min and max are either float or empty'.format(range_str)
+        raise argparse.ArgumentTypeError(msg)
+    return rmin, rmax
+
+
 def main():
 
     if sys.version_info[:2] >= (3, 4):
@@ -47,6 +64,12 @@ def main():
     sed_parser.add_argument('--type', default='mJy')
     sed_parser.add_argument('--nologo', action='store_true')
     sed_parser.add_argument('--outdir', dest='outdir', default='out')
+    sed_parser.add_argument('--xrange', dest='xrange', default=':',
+                            type=parser_range,
+                            help='Format [<min>]:[<max>], for plot observed wavelength axis')
+    sed_parser.add_argument('--yrange', dest='yrange', default=':',
+                            type=parser_range,
+                            help='Format [<min>]:[<max>], for plot flux axis')
     sed_parser.set_defaults(parser='sed')
 
     mock_parser = subparsers.add_parser('mock', help=mock_action.__doc__)
@@ -70,6 +93,6 @@ def main():
         elif args.parser == 'pdf':
             pdf_action(config, outdir)
         elif args.parser == 'sed':
-            sed_action(config, args.type, args.nologo, outdir)
+            sed_action(config, args.type, args.nologo, args.xrange, args.yrange, outdir)
         elif args.parser == 'mock':
             mock_action(config, args.nologo, outdir)
