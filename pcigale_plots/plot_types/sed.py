@@ -283,6 +283,9 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, forma
             ax2.set_xscale('log')
             ax2.minorticks_on()
 
+            ax1.tick_params(direction='in', axis='both', which='both', top=True, left=True, right=True, bottom=False)
+            ax2.tick_params(direction='in', axis='both', which='both', right=True)
+
             figure.subplots_adjust(hspace=0., wspace=0.)
 
             ax1.set_xlim(xmin, xmax)
@@ -318,11 +321,11 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, forma
                 ax1.set_ylabel("Luminosity [W]")
                 ax2.set_ylabel("Relative residual luminosity")
             else:
-                ax2.set_xlabel("Observed wavelength [$\mu$m]")
-                ax1.set_ylabel("Flux [mJy]")
-                ax2.set_ylabel("Relative residual flux")
-            ax1.legend(fontsize=6, loc='best', fancybox=True, framealpha=0.5)
-            ax2.legend(fontsize=6, loc='best', fancybox=True, framealpha=0.5)
+                ax2.set_xlabel("Observed $\lambda$ ($\mu$m)")
+                ax1.set_ylabel("S$_\\nu$ (mJy)")
+                ax2.set_ylabel("Relative residual S$_\\nu$")
+            ax1.legend(fontsize=6, loc='best', frameon=False)#, fancybox=True, framealpha=0.5)
+            ax2.legend(fontsize=6, loc='best', frameon=False)#, fancybox=True, framealpha=0.5)
             plt.setp(ax1.get_xticklabels(), visible=False)
             plt.setp(ax1.get_yticklabels()[1], visible=False)
             figure.suptitle("Best model for {} at z = {}. Reduced $\chi^2$={}".
