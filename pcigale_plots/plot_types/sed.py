@@ -324,8 +324,8 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, forma
                 ax2.set_xlabel("Observed $\lambda$ ($\mu$m)")
                 ax1.set_ylabel("S$_\\nu$ (mJy)")
                 ax2.set_ylabel("Relative residual S$_\\nu$")
-            ax1.legend(fontsize=6, loc='best', frameon=False)#, fancybox=True, framealpha=0.5)
-            ax2.legend(fontsize=6, loc='best', frameon=False)#, fancybox=True, framealpha=0.5)
+            ax1.legend(fontsize=6, loc='best', frameon=False)
+            ax2.legend(fontsize=6, loc='best', frameon=False)
             plt.setp(ax1.get_xticklabels(), visible=False)
             plt.setp(ax1.get_yticklabels()[1], visible=False)
             figure.suptitle("Best model for {} at z = {}. Reduced $\chi^2$={}".
