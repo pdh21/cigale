@@ -153,7 +153,7 @@ def analysis(idx, obs):
     if np.any(chi2 < -np.log(np.finfo(np.float64).tiny) * 2.):
         # We use the exponential probability associated with the χ² as
         # likelihood function.
-        likelihood = np.exp(-chi2 / 2.)
+        likelihood = np.exp(-.5 * chi2)
         wlikely = np.where(np.isfinite(likelihood))
         # If all the models are valid, it is much more efficient to use a slice
         if likelihood.size == wlikely[0].size:

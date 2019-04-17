@@ -12,6 +12,7 @@
 - As the best-fit properties are computed at the exact observed redshift, correct the scaling factor as it is computed at the grid redshift. This corrects for slight offsets on the best-fit properties when the input redshift has more decimals than the grid redshift. (Médéric Boquien)
 - Fix the pip install by making pcigale.managers discoverable. (Yannick Roehlly)
 ### Optimised
+- Slight speedup of the computation of the likelihood from the χ² (Médéric Boquien)
 
 ## 2018.0 (2018-11-06)
 ### Added
