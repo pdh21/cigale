@@ -20,7 +20,7 @@ import numpy as np
 from scipy import interpolate
 import scipy.constants as cst
 from astropy.table import Table
-from pcigale.data import (Database, Filter, M2005, BC03, Fritz2006,
+from pcigale.data import (Database, Filter, M2005, BC03, BC03_SSP, Fritz2006,
                           Dale2014, DL2007, DL2014, NebularLines,
                           NebularContinuum, Schreiber2016, THEMIS)
 
@@ -410,6 +410,48 @@ def build_bc2003(base, res):
             ssp_lumin
         ))
 
+def build_bc2003_ssp(base, res):
+    bc03_dir = os.path.join(os.path.dirname(__file__), 'bc03/')
+
+    # Metallicities associated to each key
+    metallicity = {
+        "m22": 0.0001,
+        "m32": 0.0004,
+        "m42": 0.004,
+        "m52": 0.008,
+        "m62": 0.02,
+        "m72": 0.05
+    }
+
+    for key, imf in itertools.product(metallicity, ["salp", "chab"]):
+        ssp_filename = "{}bc2003_{}_{}_{}_ssp.ised_ASCII".format(bc03_dir, res,
+                                                                 key, imf)
+        color3_filename = "{}bc2003_lr_{}_{}_ssp.3color".format(bc03_dir, key,
+                                                                imf)
+        color4_filename = "{}bc2003_lr_{}_{}_ssp.4color".format(bc03_dir, key,
+                                                                imf)
+
+        print("Importing {}...".format(ssp_filename))
+
+        # Read the desired information from the color files
+        color_table = []
+        color3_table = np.genfromtxt(color3_filename).transpose()
+        color4_table = np.genfromtxt(color4_filename).transpose()
+        color_table.append(color4_table[6])        # Mstar
+        color_table.append(color4_table[7])        # Mgas
+        color_table.append(10 ** color3_table[5])  # NLy
+        color_table = np.array(color_table)
+
+        ssp_time, ssp_wave, ssp_lumin = read_bc03_ssp(ssp_filename)
+
+        base.add_bc03_ssp(BC03_SSP(
+            imf,
+            metallicity[key],
+            ssp_time,
+            ssp_wave,
+            color_table,
+            ssp_lumin
+        ))
 
 def build_dale2014(base):
     models = []
@@ -860,6 +902,7 @@ def build_base(bc03res='lr'):
     print('#' * 78)
 
     print("3- Importing Bruzual and Charlot 2003 SSP\n")
+    build_bc2003_ssp(base, bc03res)
     build_bc2003(base, bc03res)
     print("\nDONE\n")
     print('#' * 78)
