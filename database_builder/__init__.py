@@ -22,7 +22,8 @@ import scipy.constants as cst
 from astropy.table import Table
 from pcigale.data import (Database, Filter, M2005, BC03, BC03_SSP, Fritz2006,
                           Dale2014, DL2007, DL2014, NebularLines,
-                          NebularContinuum, Schreiber2016, THEMIS)
+                          NebularContinuum, Schreiber2016, THEMIS,
+                          Yggdrasil_SSP)
 
 
 def read_bc03_ssp(filename):
@@ -452,6 +453,42 @@ def build_bc2003_ssp(base, res):
             color_table,
             ssp_lumin
         ))
+
+def build_yggdrasil_ssp(base):
+    yggdrasil_dir = os.path.join(os.path.dirname(__file__), 'yggdrasil/')
+
+    # Metallicities associated to each key
+    metallicities = ["0.004", "0.008", "0.02"]
+
+    for Z in metallicities:
+        filename = f"{yggdrasil_dir}Z={Z}_kroupa_IMF_fcov_0.5_SFR_inst_Spectra"
+        print(f"Importing {filename}...")
+
+        with open(filename) as f:
+            specallages = "".join(f.readlines()[2::]).split('\n\n')[:-1]
+        for i in range(len(specallages)):
+            specallages[i] = specallages[i].split('\n')
+
+        ssp_time = np.array([float(item[0].split()[-1]) for item in specallages])
+        ssp_info = np.array([float(item[2].split()[-1]) for item in specallages])
+
+        # Normalisation from 10⁶ to 1 Msun
+        ssp_info *= 1e-6
+
+        minwlsize = int(np.min([float(item[3].split()[-1]) for item in specallages]))
+        ssp_wave = np.array([float(line.split(' ')[0]) for line in specallages[0][7:]])[-minwlsize:]
+
+        # Conversion from Å to nm
+        ssp_wave *= .1
+
+        ssp_lumin = np.empty((minwlsize, ssp_time.size))
+        for i, spec in enumerate(specallages):
+            ssp_lumin[:, i] = np.array([float(line.split(' ')[-1]) for line in spec[7:]])[-minwlsize:]
+
+        # Conversion from erg/s/Å/10⁶ Msun to W/nm/Msun
+        ssp_lumin *= 1e-7 * 10 * 1e-6
+        base.add_yggdrasil_ssp(Yggdrasil_SSP(float(Z), ssp_time, ssp_wave,
+                                             ssp_info, ssp_lumin))
 
 def build_dale2014(base):
     models = []
@@ -942,6 +979,7 @@ def build_base(bc03res='lr'):
     print("\nDONE\n")
     print('#' * 78)
 
+    build_yggdrasil_ssp(base)
     base.session.close_all()
 
 

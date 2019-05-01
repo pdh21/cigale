@@ -33,6 +33,7 @@ from .nebular_continuum import NebularContinuum
 from .nebular_lines import NebularLines
 from .schreiber2016 import Schreiber2016
 from .themis import THEMIS
+from .yggdrasil_ssp import Yggdrasil_SSP
 
 DATABASE_FILE = pkg_resources.resource_filename(__name__, 'data.db')
 
@@ -132,6 +133,26 @@ class _BC03_SSP(BASE):
 
     def __init__(self, ssp):
         self.imf = ssp.imf
+        self.metallicity = ssp.metallicity
+        self.time_grid = ssp.time_grid
+        self.wavelength_grid = ssp.wavelength_grid
+        self.info_table = ssp.info_table
+        self.spec_table = ssp.spec_table
+
+
+class _Yggdrasil_SSP(BASE):
+    """Storage for the Yggdrasil SSP
+    """
+
+    __tablename__ = "yggdrasil_ssp"
+
+    metallicity = Column(Float, primary_key=True)
+    time_grid = Column(PickleType)
+    wavelength_grid = Column(PickleType)
+    info_table = Column(PickleType)
+    spec_table = Column(PickleType)
+
+    def __init__(self, ssp):
         self.metallicity = ssp.metallicity
         self.time_grid = ssp.time_grid
         self.wavelength_grid = ssp.wavelength_grid
@@ -531,6 +552,42 @@ class Database(object):
             dictionary of parameters and their values
         """
         return self._get_parameters(_BC03_SSP)
+
+    def add_yggdrasil_ssp(self, ssp_yggdrasil):
+        """
+        Add a Bruzual and Charlot 2003 SSP to pcigale database
+
+        Parameters
+        ----------
+        ssp: pcigale.data.SspBC03
+
+        """
+        if self.is_writable:
+            ssp = _Yggdrasil_SSP(ssp_yggdrasil)
+            self.session.add(ssp)
+            try:
+                self.session.commit()
+            except exc.IntegrityError:
+                self.session.rollback()
+                raise DatabaseInsertError('The SSP is already in the base.')
+        else:
+            raise Exception('The database is not writable.')
+
+    def get_yggdrasil_ssp(self, metallicity):
+        result = self.session.query(_Yggdrasil_SSP)\
+            .filter(_Yggdrasil_SSP.metallicity == metallicity)\
+            .first()
+        if result:
+            return Yggdrasil_SSP(result.metallicity, result.time_grid,
+                                 result.wavelength_grid, result.info_table,
+                                 result.spec_table)
+        else:
+            raise DatabaseLookupError(
+                "The Yggdrasil SSP for  metallicity <{}> is not in the "
+                "database.".format(metallicity))
+
+    def get_yggdrasil_ssp_parameters(self):
+        return self._get_parameters(_Yggdrasil_SSP)
 
     def add_dl2007(self, models):
         """
