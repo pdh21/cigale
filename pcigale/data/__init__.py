@@ -31,6 +31,7 @@ from .fritz2006 import Fritz2006
 from .nebular_continuum import NebularContinuum
 from .nebular_lines import NebularLines
 from .schreiber2016 import Schreiber2016
+from .skirtor2016 import SKIRTOR2016
 from .themis import THEMIS
 
 DATABASE_FILE = pkg_resources.resource_filename(__name__, 'data.db')
@@ -200,6 +201,35 @@ class _Fritz2006(BASE):
         self.lumin_therm = agn.lumin_therm
         self.lumin_scatt = agn.lumin_scatt
         self.lumin_agn = agn.lumin_agn
+
+
+class _SKIRTOR2016(BASE):
+    """Storage for SKIRTOR 2016 models
+    """
+
+    __tablename__ = 'skirtor2016'
+    t = Column(Float, primary_key=True)
+    pl = Column(Float, primary_key=True)
+    q = Column(Float, primary_key=True)
+    oa = Column(Float, primary_key=True)
+    R = Column(Float, primary_key=True)
+    Mcl = Column(Float, primary_key=True)
+    i = Column(Float, primary_key=True)
+    wave = Column(PickleType)
+    disk = Column(PickleType)
+    dust = Column(PickleType)
+
+    def __init__(self, agn):
+        self.t = agn.t
+        self.pl = agn.pl
+        self.q = agn.q
+        self.oa = agn.oa
+        self.R = agn.R
+        self.Mcl = agn.Mcl
+        self.i = agn.i
+        self.wave = agn.wave
+        self.disk = agn.disk
+        self.dust = agn.dust
 
 
 class _NebularLines(BASE):
@@ -736,6 +766,96 @@ class Database(object):
             dictionary of parameters and their values
         """
         return self._get_parameters(_Fritz2006)
+
+    def add_skirtor2016(self, models):
+        """
+        Add a SKIRTOR 2016 (Stalevski et al., 2016) AGN model to the database.
+
+        Parameters
+        ----------
+        models: list of pcigale.data.SKIRTOR2016 objects
+
+        """
+        if self.is_writable:
+            for model in models:
+                self.session.add(_SKIRTOR2016(model))
+            try:
+                self.session.commit()
+            except exc.IntegrityError:
+                self.session.rollback()
+                raise DatabaseInsertError(
+                    'The agn model is already in the base.')
+        else:
+            raise Exception('The database is not writable.')
+
+    def get_skirtor2016(self, t, pl, q, oa, R, Mcl, i):
+        """
+        Get the SKIRTOR 2016 AGN model corresponding to a given set of
+        parameters.
+
+        Parameters
+        ----------
+        t: float
+            average edge-on optical depth at 9.7 micron; the actual one along
+            the line of sight may vary depending on the clumps distribution
+        pl: float
+            power-law exponent that sets radial gradient of dust density
+        q: float
+            index that sets dust density gradient with polar angle
+        oa: float
+            angle measured between the equatorial plan and edge of the torus.
+            Half-opening angle of the dust-free cone is 90-oa
+        R: float
+            ratio of outer to inner radius, R_out/R_in
+        Mcl: float
+            Angle between AGN axis and line of sight.
+        i: float
+            inclination, i.e. viewing angle, i.e. position of the instrument
+            w.r.t. the AGN axis. i=0: face-on, type 1 view; i=90: edge-on, type
+            2 view.
+        wave: array of float
+            Wavelength grid in nm.
+        disk: array of flaot
+            Luminosity of the accretion disk in W/nm
+        dust: array of float
+            Luminosity of the dust in W/nm
+
+        Returns
+        -------
+        agn: pcigale.data.SKIRTOR2016
+            The AGN model.
+
+        Raises
+        ------
+        DatabaseLookupError: if the requested template is not in the database.
+
+        """
+        result = (self.session.query(_SKIRTOR2016).
+                  filter(_SKIRTOR2016.t == t).
+                  filter(_SKIRTOR2016.pl == pl).
+                  filter(_SKIRTOR2016.q == q).
+                  filter(_SKIRTOR2016.oa == oa).
+                  filter(_SKIRTOR2016.R == R).
+                  filter(_SKIRTOR2016.Mcl == Mcl).
+                  filter(_SKIRTOR2016.i == i).
+                  first())
+        if result:
+            return SKIRTOR2016(result.t, result.pl, result.q, result.oa,
+                               result.R, result.Mcl, result.i, result.wave,
+                               result.disk, result.dust)
+        else:
+            raise DatabaseLookupError(
+                "The SKIRTOR2016 model is not in the database.")
+
+    def get_skirtor2016_parameters(self):
+        """Get parameters for the SKIRTOR 2016 AGN models.
+
+        Returns
+        -------
+        paramaters: dictionary
+            dictionary of parameters and their values
+        """
+        return self._get_parameters(_SKIRTOR2016)
 
     def add_nebular_lines(self, models):
         """
