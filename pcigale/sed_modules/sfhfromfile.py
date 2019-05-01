@@ -59,9 +59,12 @@ class SfhFromFile(SedModule):
 
     def _init_code(self):
         filename = self.parameters['filename']
-        normalise = bool(self.parameters["normalise"])
         age = int(self.parameters['age'])
         self.sfr_column_number = int(self.parameters['sfr_column'])
+        if type(self.parameters["normalise"]) is str:
+            normalise = self.parameters["normalise"].lower() == 'true'
+        else:
+            normalise = bool(self.parameters["normalise"])
 
         table = read_table(filename)
         self.sfr = table.columns[self.sfr_column_number].data.astype(np.float)

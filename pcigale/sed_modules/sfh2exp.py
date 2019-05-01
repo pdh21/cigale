@@ -73,7 +73,10 @@ class Sfh2Exp(SedModule):
         self.burst_age = int(self.parameters["burst_age"])
         age = int(self.parameters["age"])
         sfr_0 = float(self.parameters["sfr_0"])
-        normalise = bool(self.parameters["normalise"])
+        if type(self.parameters["normalise"]) is str:
+            normalise = self.parameters["normalise"].lower() == 'true'
+        else:
+            normalise = bool(self.parameters["normalise"])
 
         # Time grid and age. If needed, the age is rounded to the inferior Myr
         time_grid = np.arange(age)
