@@ -269,6 +269,6 @@ def bestfit(oidx, obs):
                                                    * corr_dz
 
     if gbl_conf['analysis_params']["save_best_sed"]:
-        sed.to_fits('out/{}'.format(obs.id), scaling)
+        sed.to_fits('out/{}'.format(obs.id), scaling * corr_dz)
 
     gbl_counter.inc()
