@@ -81,7 +81,10 @@ class SFHDelayed(SedModule):
         self.age_burst = int(self.parameters["age_burst"])
         self.f_burst = float(self.parameters["f_burst"])
         sfr_A = float(self.parameters["sfr_A"])
-        normalise = bool(self.parameters["normalise"])
+        if type(self.parameters["normalise"]) is str:
+            normalise = self.parameters["normalise"].lower() == 'true'
+        else:
+            normalise = bool(self.parameters["normalise"])
 
         # Time grid for each component
         t = np.arange(self.age_main)

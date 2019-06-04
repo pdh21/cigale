@@ -64,7 +64,10 @@ class MBB(SedModule):
         self.epsilon = float(self.parameters["epsilon_mbb"])
         self.T = float(self.parameters["t_mbb"])
         self.beta = float(self.parameters["beta_mbb"])
-        self.energy_balance = bool(self.parameters["energy_balance"])
+        if type(self.parameters["energy_balance"]) is str:
+            self.energy_balance = self.parameters["energy_balance"].lower() == 'true'
+        else:
+            self.energy_balance = bool(self.parameters["energy_balance"])
 
         if self.epsilon < 0.:
             raise Exception("Error, epsilon_mbb must be ≥ 0.")

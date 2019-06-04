@@ -52,7 +52,10 @@ class SfhQuenchTrunk(SedModule):
     def _init_code(self):
         self.quenching_age = int(self.parameters["quenching_age"])
         self.quenching_factor = float(self.parameters["quenching_factor"])
-        self.normalise = bool(self.parameters["normalise"])
+        if type(self.parameters["normalise"]) is str:
+            normalise = self.parameters["normalise"].lower() == 'true'
+        else:
+            normalise = bool(self.parameters["normalise"])
 
     def process(self, sed):
         """

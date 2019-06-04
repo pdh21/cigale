@@ -11,6 +11,8 @@
 - Internally the luminosity distance was erroneously stored in Mpc rather than in m for non-zero redshifts. This has now been standardised to m. (Médéric Boquien)
 - As the best-fit properties are computed at the exact observed redshift, correct the scaling factor as it is computed at the grid redshift. This corrects for slight offsets on the best-fit properties when the input redshift has more decimals than the grid redshift. (Médéric Boquien)
 - Fix the pip install by making pcigale.managers discoverable. (Yannick Roehlly)
+- When using a parameters file, Boolean values were not correctly interpreted. (Médéric Boquien, reported by Eric Martínez, INAOE)
+- Make sure that the best-fit models are stored with the correct scaling factor when the distance is given explicitly (Médéric Boquien)
 ### Optimised
 - Slight speedup of the computation of the likelihood from the χ² (Médéric Boquien)
 
