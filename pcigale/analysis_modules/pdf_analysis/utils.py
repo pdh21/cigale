@@ -30,26 +30,30 @@ def save_chi2(obs, variable, models, chi2, values):
 
 
 @lru_cache(maxsize=None)
-def compute_corr_dz(model_z, obs_dist):
+def compute_corr_dz(model_z, obs):
     """The mass-dependent physical properties are computed assuming the
     redshift of the model. However because we round the observed redshifts to
     two decimals, there can be a difference of 0.005 in redshift between the
-    models and the actual observation. At low redshift, this can cause a
+    models and the actual observation. This causes two issues. First there is a
+    difference in the luminosity distance. At low redshift, this can cause a
     discrepancy in the mass-dependent physical properties: ~0.35 dex at z=0.010
-    vs 0.015 for instance. Therefore we correct these physical quantities by
-    multiplying them by corr_dz.
+    vs 0.015 for instance. In addition, the 1+z dimming will be different.
+    We compute here the correction factor for these two effects.
 
     Parameters
     ----------
     model_z: float
         Redshift of the model.
-    obs_dist: float
-        Luminosity distance of the observed object.
+    obs: instance of the Observation class
+        Object containing the distance and redshift of an object
 
     """
     if model_z == 0.:
-        return (obs_dist / (10. * parsec)) ** 2.
-    return (obs_dist / cosmo.luminosity_distance(model_z).value) ** 2.
+        mod_distance = 10. * parsec
+    else:
+        mod_distance = cosmo.luminosity_distance(model_z).value * 1e6 * parsec
+    return (obs.distance / mod_distance) ** 2. * \
+           (1. + model_z) / (1. + obs.redshift)
 
 
 def dchi2_over_ds2(s, obsdata, obsdata_err, obslim, obslim_err, moddata,

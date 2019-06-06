@@ -95,7 +95,10 @@ class NebularEmission(SedModule):
         self.fesc = float(self.parameters['f_esc'])
         self.fdust = float(self.parameters['f_dust'])
         self.lines_width = float(self.parameters['lines_width'])
-        self.emission = bool(self.parameters["emission"])
+        if type(self.parameters["emission"]) is str:
+            self.emission = self.parameters["emission"].lower() == 'true'
+        else:
+            self.emission = bool(self.parameters["emission"])
 
         if self.fesc < 0. or self.fesc > 1:
             raise Exception("Escape fraction must be between 0 and 1")

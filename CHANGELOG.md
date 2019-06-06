@@ -2,12 +2,20 @@
 
 ## Unreleased
 ### Added
+- The (1+z1)/(1+z2) factor between observed and grid flux densities caused by the differential redshifting is now taken into account. With a default grid redshift rounding of two decimals this yields a difference of at most 0.5% in the estimated physical properties at z=0 and even less at higher z. (Médéric Boquien)
 ### Changed
 ### Fixed
 - Make sure we can plot the PDF of equivalent widths. (Médéric Boquien)
 - Fix a crash when generating a mock catalogue containing intensive properties. (Médéric Boquien)
 - In the `sfhdelayed` and `sfhdelayedbq` modules, provide the correct description for the sfr_A parameter (Médéric Boquien & Laure Ciesla)
+- Internally the luminosity distance was erroneously stored in Mpc rather than in m for non-zero redshifts. This has now been standardised to m. (Médéric Boquien)
+- As the best-fit properties are computed at the exact observed redshift, correct the scaling factor as it is computed at the grid redshift. This corrects for slight offsets on the best-fit properties when the input redshift has more decimals than the grid redshift. (Médéric Boquien)
+- Fix the pip install by making pcigale.managers discoverable. (Yannick Roehlly)
+- When using a parameters file, Boolean values were not correctly interpreted. (Médéric Boquien, reported by Eric Martínez, INAOE)
+- Make sure that the best-fit models are stored with the correct scaling factor when the distance is given explicitly (Médéric Boquien)
 ### Optimised
+- Slight speedup of the computation of the likelihood from the χ² (Médéric Boquien)
+- The the fritz2006 module should now run faster thanks to an optimisation of the computation of the luminosity of the various AGN components (Médéric Boquien & Guang Yang)
 
 ## 2018.0 (2018-11-06)
 ### Added
@@ -153,7 +161,7 @@
 - The output files providing estimates of the physical properties are now generated both in the form of text and FITS files. (Médéric Boquien)
 - When using the `dustatt_calzleit module`, choosing ẟ≠0 leads to an effective E(B-V) different from the one set by the user. Now the E(B-V) will always correspond to the one specified by the user. This means that at fixed E(B-V), A(V) depends on ẟ. (Médéric Boquien)
 - The pcigale-mock tool has been merged into pcigale-plots; the mock plots can be obtained with the "mock" command. (Médéric Boquien)
-- The `sfhdelayed` module is now initialised with _init_code() to be consistent with the way things are done in other modules. This should give a slight speedup under some sircumstances too. (Médéric Boquien)
+- The `sfhdelayed` module is now initialised with \_init_code() to be consistent with the way things are done in other modules. This should give a slight speedup under some sircumstances too. (Médéric Boquien)
 - In `sfhfromfile`, the specification of the time grid was vague and therefore could lead to incorrect results if it was not properly formatted by the end user. The description has been clarified and we now check that the time starts from 0 and that the time step is always 1 Myr. If it is not the case we raise an exception. (Médéric Boquien)
 - When the redshift is not indicated in pcigale.ini, the analysis module fills the list of redshifts from the redshifts indicated in the input flux file. This is inefficient as analysis modules should not have to modify the configuration. Now this is done when interpreting pcigale.ini before calling the relevant analysis module. As a side effect, "pigale check" now returns the total number of models that cigale will compute rather than the number of models per redshift bin. (Médéric Boquien)
 - The optionally saved spectra in the `pdf_analysis` and `savefluxes` modules were saved in the VO-table format. The most important downside is that it is very slow to write to, which proves to be a major bottleneck in the computing speed. To overcome this issue, we rather save the spectra using the FITS formation. Instead of having one file containing the spectra (including the various components) and the SFH in a single file, now we have one file for the spectra and one file for the SFH.
@@ -187,7 +195,7 @@
 
 ## 0.8.0 (2015-12-01)
 ### Added
-- The evaluation of the parameters is always done linearly. This can be a problem when estimating the SFR or the stellar mass for instance as it is usual to estimate their log rather. Because the log is non-linear, the likelihood-weighted mean of the log is not the log of the likelihood-weighted mean. Therefore the estimation of the log of these parameters has to be done during the analysis step. This is now possible. The variables to be analysed in log just need to be indicated with the suffix "_log", for instance "stellar.m\_star\_log". (Médéric Boquien, idea suggested by Samir Salim)
+- The evaluation of the parameters is always done linearly. This can be a problem when estimating the SFR or the stellar mass for instance as it is usual to estimate their log rather. Because the log is non-linear, the likelihood-weighted mean of the log is not the log of the likelihood-weighted mean. Therefore the estimation of the log of these parameters has to be done during the analysis step. This is now possible. The variables to be analysed in log just need to be indicated with the suffix "\_log", for instance "stellar.m\_star\_log". (Médéric Boquien, idea suggested by Samir Salim)
 
 ### Fixed
 - Running the scripts in parallel trigger a deadlock on OS X with python 3.5. A workaround has been implemented. (Médéric Boquien)

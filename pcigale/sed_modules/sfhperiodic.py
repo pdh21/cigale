@@ -73,7 +73,10 @@ class SfhPeriodic(SedModule):
         self.tau_bursts = float(self.parameters["tau_bursts"])
         age = int(self.parameters["age"])
         sfr_A = float(self.parameters["sfr_A"])
-        normalise = bool(self.parameters["normalise"])
+        if type(self.parameters["normalise"]) is str:
+            normalise = self.parameters["normalise"].lower() == 'true'
+        else:
+            normalise = bool(self.parameters["normalise"])
 
         time_grid = np.arange(0, age)
         self.sfr = np.zeros_like(time_grid, dtype=np.float)
