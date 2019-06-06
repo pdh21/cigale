@@ -15,6 +15,7 @@
 - Make sure that the best-fit models are stored with the correct scaling factor when the distance is given explicitly (Médéric Boquien)
 ### Optimised
 - Slight speedup of the computation of the likelihood from the χ² (Médéric Boquien)
+- The the fritz2006 module should now run faster thanks to an optimisation of the computation of the luminosity of the various AGN components (Médéric Boquien & Guang Yang)
 
 ## 2018.0 (2018-11-06)
 ### Added
