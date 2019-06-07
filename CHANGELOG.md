@@ -4,7 +4,8 @@
 ### Added
 - The (1+z1)/(1+z2) factor between observed and grid flux densities caused by the differential redshifting is now taken into account. With a default grid redshift rounding of two decimals this yields a difference of at most 0.5% in the estimated physical properties at z=0 and even less at higher z. (Médéric Boquien)
 ### Changed
-- The logo has now been moved to the lower-right corner of the figure so that it does not overlap with any information and it has been updated for a less pixelated version (Médéric Boquien & Rodrigo González Castillo)
+- The logo has now been moved to the lower-right corner of the figure so that it does not overlap with any information and it has been updated for a less pixelated version. (Médéric Boquien & Rodrigo González Castillo)
+- The wavelength range in SED plots is now dynamically adapted to cover the observed wavelengths. (Médéric Boquien)
 ### Fixed
 - Make sure we can plot the PDF of equivalent widths. (Médéric Boquien)
 - Fix a crash when generating a mock catalogue containing intensive properties. (Médéric Boquien)

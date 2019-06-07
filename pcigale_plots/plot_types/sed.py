@@ -28,10 +28,6 @@ from pcigale.analysis_modules.utils import Counter, nothread
 BEST_RESULTS = "results.fits"
 MOCK_RESULTS = "results_mock.fits"
 
-# Wavelength limits (restframe) when plotting the best SED.
-PLOT_L_MIN = 0.1
-PLOT_L_MAX = 5e5
-
 AVAILABLE_SERIES = [
     'stellar_attenuated',
     'stellar_unattenuated',
@@ -129,8 +125,8 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, forma
             z = mod['best.universe.redshift']
         DL = mod['best.universe.luminosity_distance']
 
-        xmin = PLOT_L_MIN if xrange[0] is False else xrange[0]
-        xmax = PLOT_L_MAX if xrange[1] is False else xrange[1]
+        xmin = 0.9 * np.min(filters_wl) if xrange[0] is False else xrange[0]
+        xmax = 1.1 * np.max(filters_wl) if xrange[1] is False else xrange[1]
 
         if sed_type == 'lum':
             k_corr_SED = 1e-29 * (4.*np.pi*DL*DL) * c / (filters_wl*1e-9)
