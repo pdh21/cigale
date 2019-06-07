@@ -55,7 +55,8 @@ def pool_initializer(counter):
 def sed(config, sed_type, nologo, xrange, yrange, series, format, outdir):
     """Plot the best SED with associated observed and modelled fluxes.
     """
-    obs = read_table(path.join(path.dirname(outdir), config.configuration['data_file']))
+    obs = read_table(path.join(path.dirname(outdir),
+                               config.configuration['data_file']))
     mod = Table.read(path.join(outdir, BEST_RESULTS))
 
     with Database() as base:
@@ -63,20 +64,26 @@ def sed(config, sed_type, nologo, xrange, yrange, series, format, outdir):
                                for name in config.configuration['bands']
                                if not (name.endswith('_err') or name.startswith('line'))])
 
-    logo = False if nologo else plt.imread(pkg_resources.resource_filename(__name__,
-                                                               "../resources/CIGALE.png"))
+    if nologo is True:
+        logo = False
+    else:
+        logo = plt.imread(pkg_resources.resource_filename(__name__,
+                                                          "../resources/CIGALE.png"))
 
     counter = Counter(len(obs))
-    with mp.Pool(processes=config.configuration['cores'], initializer=pool_initializer,
-                 initargs=(counter,)) as pool:
-        pool.starmap(_sed_worker, zip(
-            obs, mod, repeat(filters), repeat(sed_type), repeat(logo),
-            repeat(xrange), repeat(yrange), repeat(series), repeat(format), repeat(outdir)))
+    with mp.Pool(processes=config.configuration['cores'],
+                 initializer=pool_initializer, initargs=(counter,)) as pool:
+        pool.starmap(_sed_worker, zip(obs, mod, repeat(filters),
+                                      repeat(sed_type), repeat(logo),
+                                      repeat(xrange), repeat(yrange),
+                                      repeat(series), repeat(format),
+                                      repeat(outdir)))
         pool.close()
         pool.join()
 
 
-def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, format, outdir):
+def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
+                format, outdir):
     """Plot the best SED with the associated fluxes in bands
 
     Parameters
@@ -223,6 +230,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, forma
                             sed['agn.fritz2006_agn'][wsed]),
                            label="AGN emission", color='g', marker=None,
                            nonposy='clip', linestyle='-', linewidth=0.5)
+
             # Radio emission
             if 'radio' in series and 'radio_nonthermal' in sed.columns:
                 ax1.loglog(wavelength_spec[wsed],
@@ -275,8 +283,10 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, forma
             ax2.set_xscale('log')
             ax2.minorticks_on()
 
-            ax1.tick_params(direction='in', axis='both', which='both', top=True, left=True, right=True, bottom=False)
-            ax2.tick_params(direction='in', axis='both', which='both', right=True)
+            ax1.tick_params(direction='in', axis='both', which='both', top=True,
+                            left=True, right=True, bottom=False)
+            ax2.tick_params(direction='in', axis='both', which='both',
+                            right=True)
 
             figure.subplots_adjust(hspace=0., wspace=0.)
 
@@ -294,12 +304,12 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, forma
             else:
                 if not mask_uplim.any() == False:
                     ymax = max(max(np.max(obs_fluxes[mask_ok]),
-                               np.max(obs_fluxes[mask_uplim])),
-                           max(np.max(mod_fluxes[mask_ok]),
-                               np.max(mod_fluxes[mask_uplim])))
+                                   np.max(obs_fluxes[mask_uplim])),
+                               max(np.max(mod_fluxes[mask_ok]),
+                                   np.max(mod_fluxes[mask_uplim])))
                 else:
                     ymax = max(np.max(obs_fluxes[mask_ok]),
-                           np.max(mod_fluxes[mask_ok]))
+                               np.max(mod_fluxes[mask_ok]))
                 ymax *= 1e1
 
             xmin = xmin if xmin < xmax else xmax - 1e1
@@ -309,18 +319,18 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, forma
             ax2.set_xlim(xmin, xmax)
             ax2.set_ylim(-1.0, 1.0)
             if sed_type == 'lum':
-                ax2.set_xlabel("Rest-frame wavelength [$\mu$m]")
+                ax2.set_xlabel(r"Rest-frame wavelength [$\mu$m]")
                 ax1.set_ylabel("Luminosity [W]")
                 ax2.set_ylabel("Relative residual luminosity")
             else:
-                ax2.set_xlabel("Observed $\lambda$ ($\mu$m)")
-                ax1.set_ylabel("S$_\\nu$ (mJy)")
-                ax2.set_ylabel("Relative residual S$_\\nu$")
+                ax2.set_xlabel(r"Observed $\lambda$ ($\mu$m)")
+                ax1.set_ylabel(r"S$_\nu$ (mJy)")
+                ax2.set_ylabel(r"Relative residual S$_\nu$")
             ax1.legend(fontsize=6, loc='best', frameon=False)
             ax2.legend(fontsize=6, loc='best', frameon=False)
             plt.setp(ax1.get_xticklabels(), visible=False)
             plt.setp(ax1.get_yticklabels()[1], visible=False)
-            figure.suptitle("Best model for {} at z = {}. Reduced $\chi^2$={}".
+            figure.suptitle(r"Best model for {} at z = {}. Reduced $\chi^2$={}".
                             format(obs['id'], np.round(z, decimals=3),
                                    np.round(mod['best.reduced_chi_square'],
                                             decimals=2)))
