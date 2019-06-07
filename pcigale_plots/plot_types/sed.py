@@ -333,11 +333,14 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, forma
                                    np.round(mod['best.reduced_chi_square'],
                                             decimals=2)))
             if logo is not False:
-                figure_height = figure.get_figheight() * figure.dpi
-                figure.figimage(logo, 12, figure_height - 67, origin='upper', zorder=0,
-                                alpha=1)
+                # Multiplying the dpi by 2 is a hack so the figure is small
+                # and not too pixelated
+                figwidth = figure.get_figwidth() * figure.dpi * 2.
+                figure.figimage(logo, figwidth-logo.shape[0], 0,
+                                origin='upper', zorder=0, alpha=1)
 
-            figure.savefig(path.join(outdir, '{}_best_model.{}'.format(obs['id'], format)))
+            figure.savefig(path.join(outdir, '{}_best_model.{}'.format(obs['id'], format)),
+                           dpi=figure.dpi * 2.)
             plt.close(figure)
         else:
             print("No valid best SED found for {}. No plot created.".format(obs['id']))
