@@ -54,12 +54,9 @@ def run(config):
 
 
 def main():
-    if sys.version_info[:2] < (3, 5):
-        raise Exception("Python {}.{} is unsupported. Please upgrade to "
-                        "Python 3.5 or later.".format(*sys.version_info[:2]))
     if sys.version_info[:2] < (3, 6):
-        print("Python {}.{} detected. For better performance we recommend "
-              "Python 3.6 or later.".format(*sys.version_info[:2]))
+        raise Exception("Python {}.{} is unsupported. Please upgrade to "
+                        "Python 3.6 or later.".format(*sys.version_info[:2]))
 
     # We set the sub processes start method to spawn because it solves
     # deadlocks when a library cannot handle being used on two sides of a
