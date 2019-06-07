@@ -109,12 +109,11 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, forma
 
     id_best_model_file = path.join(outdir, '{}_best_model.fits'.format(obs['id']))
     if path.isfile(id_best_model_file):
-
         sed = Table.read(id_best_model_file)
 
         filters_wl = np.array([filt.pivot_wavelength
-                               for filt in filters.values()])
-        wavelength_spec = sed['wavelength']
+                               for filt in filters.values()]) * 1e-3
+        wavelength_spec = sed['wavelength'] * 1e-3
         obs_fluxes = np.array([obs[filt] for filt in filters.keys()])
         obs_fluxes_err = np.array([obs[filt+'_err']
                                    for filt in filters.keys()])
@@ -123,36 +122,33 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series, forma
             z = obs['redshift']
         else:  # Redshift mode
             z = mod['best.universe.redshift']
-        DL = mod['best.universe.luminosity_distance']
+        zp1 = 1. + z
+        surf = 4. * np.pi * mod['best.universe.luminosity_distance'] ** 2
 
         xmin = 0.9 * np.min(filters_wl) if xrange[0] is False else xrange[0]
         xmax = 1.1 * np.max(filters_wl) if xrange[1] is False else xrange[1]
 
         if sed_type == 'lum':
-            k_corr_SED = 1e-29 * (4.*np.pi*DL*DL) * c / (filters_wl*1e-9)
+            k_corr_SED = 1e-29 * surf * c / (filters_wl * 1e-6)
             obs_fluxes *= k_corr_SED
             obs_fluxes_err *= k_corr_SED
             mod_fluxes *= k_corr_SED
 
             for cname in sed.colnames[1:]:
-                sed[cname] *= wavelength_spec
+                sed[cname] *= wavelength_spec * 1e3
 
-            filters_wl /= 1. + z
-            wavelength_spec /= 1. + z
+            filters_wl /= zp1
+            wavelength_spec /= zp1
         elif sed_type == 'mJy':
-            xmin = xmin * (1. + z)
-            xmax = xmax * (1. + z)
+            xmin *= zp1
+            xmax *= zp1
             k_corr_SED = 1.
 
+            fact = 1e29 * 1e-3 * wavelength_spec**2 / c / surf
             for cname in sed.colnames[1:]:
-                sed[cname] *= (wavelength_spec * 1e29 /
-                               (c / (wavelength_spec * 1e-9)) /
-                               (4. * np.pi * DL * DL))
+                sed[cname] *= fact
         else:
             print("Unknown plot type")
-
-        filters_wl /= 1000.
-        wavelength_spec /= 1000.
 
         wsed = np.where((wavelength_spec > xmin) & (wavelength_spec < xmax))
         figure = plt.figure()
