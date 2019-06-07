@@ -69,7 +69,7 @@ def _chi2_worker(obj_name, var_name, format, outdir):
     ax = figure.add_subplot(111)
 
     var_name = var_name.replace('/', '_')
-    fnames = glob.glob("{}/{}_{}_chi2-block-*.npy".format(outdir, obj_name, var_name))
+    fnames = glob.glob(f"{outdir}/{obj_name}_{var_name}_chi2-block-*.npy")
     for fname in fnames:
         data = np.memmap(fname, dtype=np.float64)
         data = np.memmap(fname, dtype=np.float64, shape=(2, data.size // 2))
@@ -78,7 +78,7 @@ def _chi2_worker(obj_name, var_name, format, outdir):
     ax.set_ylabel("Reduced $\chi^2$")
     ax.set_ylim(0., )
     ax.minorticks_on()
-    figure.suptitle("Reduced $\chi^2$ distribution of {} for {}."
-                    .format(var_name, obj_name))
-    figure.savefig("{}/{}_{}_chi2.{}".format(outdir, obj_name, var_name, format))
+    figure.suptitle(f"Reduced $\chi^2$ distribution of {var_name} for "
+                    f"{obj_name}.")
+    figure.savefig(f"{outdir}/{obj_name}_{var_name}_chi2.{format}")
     plt.close(figure)

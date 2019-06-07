@@ -46,13 +46,13 @@ def mock(config, nologo, outdir):
     try:
         exact = Table.read(best_results_file)
     except FileNotFoundError:
-        print("Best models file {} not found.".format(best_results_file))
+        print(f"Best models file {best_results_file} not found.")
         sys.exit(1)
 
     try:
         estimated = Table.read(mock_results_file)
     except FileNotFoundError:
-        print("Mock models file {} not found.".format(mock_results_file))
+        print(f"Mock models file {mock_results_file} not found.")
         sys.exit(1)
 
     params = config.configuration['analysis_params']['variables']
@@ -109,7 +109,7 @@ def _mock_worker(exact, estimated, param, logo, outdir):
                  linestyle='None', capsize=0.)
     plt.plot(range_exact, range_exact, color='r', label='1-to-1')
     plt.plot(range_exact, slope * range_exact + intercept, color='b',
-             label='exact-fit $r^2$ = {:.2f}'.format(r_value**2))
+             label=f'exact-fit $r^2$ = {r_value**2:.2f}')
     plt.xlabel('Exact')
     plt.ylabel('Estimated')
     plt.title(param)
@@ -120,6 +120,6 @@ def _mock_worker(exact, estimated, param, logo, outdir):
         plt.figimage(logo, 510, 55, origin='upper', zorder=10, alpha=1)
 
     plt.tight_layout()
-    plt.savefig('{}/mock_{}.pdf'.format(outdir, param))
+    plt.savefig(f'{outdir}/mock_{param}.pdf')
 
     plt.close()

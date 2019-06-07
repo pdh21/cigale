@@ -65,12 +65,11 @@ def _pdf_worker(obj_name, var_name, format, outdir):
     gbl_counter.inc()
     var_name = var_name.replace('/', '_')
     if var_name.endswith('_log'):
-        fnames = glob.glob("{}/{}_{}_chi2-block-*.npy".format(outdir, obj_name,
-                                                               var_name[:-4]))
+        fnames = glob.glob(f"{outdir}/{obj_name}_{var_name[:-4]}_chi2-block-"
+                           f"*.npy")
         log = True
     else:
-        fnames = glob.glob("{}/{}_{}_chi2-block-*.npy".format(outdir, obj_name,
-                                                               var_name))
+        fnames = glob.glob(f"{outdir}/{obj_name}_{var_name}_chi2-block-*.npy")
         log = False
     likelihood = []
     model_variable = []
@@ -111,7 +110,7 @@ def _pdf_worker(obj_name, var_name, format, outdir):
     ax.set_xlabel(var_name)
     ax.set_ylabel("Probability density")
     ax.minorticks_on()
-    figure.suptitle("Probability distribution function of {} for {}"
-                    .format(var_name, obj_name))
-    figure.savefig("{}/{}_{}_pdf.{}".format(outdir, obj_name, var_name, format))
+    figure.suptitle(f"Probability distribution function of {var_name} for "
+                    f"{obj_name}")
+    figure.savefig(f"{outdir}/{obj_name}_{var_name}_pdf.{format}")
     plt.close(figure)

@@ -114,7 +114,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
     """
     gbl_counter.inc()
 
-    id_best_model_file = path.join(outdir, '{}_best_model.fits'.format(obs['id']))
+    id_best_model_file = path.join(outdir, f"{obs['id']}_best_model.fits")
     if path.isfile(id_best_model_file):
         sed = Table.read(id_best_model_file)
 
@@ -330,10 +330,8 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
             ax2.legend(fontsize=6, loc='best', frameon=False)
             plt.setp(ax1.get_xticklabels(), visible=False)
             plt.setp(ax1.get_yticklabels()[1], visible=False)
-            figure.suptitle(r"Best model for {} at z = {}. Reduced $\chi^2$={}".
-                            format(obs['id'], np.round(z, decimals=3),
-                                   np.round(mod['best.reduced_chi_square'],
-                                            decimals=2)))
+            figure.suptitle(f"Best model for {obs['id']} at z = {z:.3}. "
+                            f"Reduced χ²={mod['best.reduced_chi_square']:.2}")
             if logo is not False:
                 # Multiplying the dpi by 2 is a hack so the figure is small
                 # and not too pixelated
@@ -341,10 +339,11 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                 figure.figimage(logo, figwidth-logo.shape[0], 0,
                                 origin='upper', zorder=0, alpha=1)
 
-            figure.savefig(path.join(outdir, '{}_best_model.{}'.format(obs['id'], format)),
+            figure.savefig(path.join(outdir,
+                                     f"{obs['id']}_best_model.{format}"),
                            dpi=figure.dpi * 2.)
             plt.close(figure)
         else:
-            print("No valid best SED found for {}. No plot created.".format(obs['id']))
+            print(f"No valid best SED found for {obs['id']}. No plot created.")
     else:
-        print("No SED found for {}. No plot created.".format(obs['id']))
+        print(f"No SED found for {obs['id']}. No plot created.")
