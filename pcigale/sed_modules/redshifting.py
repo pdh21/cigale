@@ -160,8 +160,8 @@ class Redshifting(SedModule):
         # Raise an error when applying a negative redshift. This module is
         # not for blue-shifting.
         if self.redshift < 0.:
-            raise Exception("The redshift provided is negative <{}>."
-                            .format(self.redshift))
+            raise Exception(f"The redshift provided is negative "
+                            f"({self.redshift}).")
 
         self.universe_age = cosmology.age(self.redshift).value * 1000.
         if self.redshift == 0.:
@@ -188,8 +188,8 @@ class Redshifting(SedModule):
         # If the SED is already redshifted, raise an error.
         if ('universe.redshift' in sed.info and
             sed.info['universe.redshift'] > 0.):
-            raise Exception("The SED is already redshifted <z={}>."
-                            .format(sed.info['universe.redshift']))
+            raise Exception(f"The SED is already redshifted (z="
+                            f"{sed.info['universe.redshift']}).")
 
         if redshift > 0.:
             # We redshift directly the SED wavelength grid

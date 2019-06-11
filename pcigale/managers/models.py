@@ -66,6 +66,6 @@ class ModelsManager(object):
         for prop in sorted(self.intprop.keys()):
             table.add_column(Column(self.intprop[prop], name=prop))
 
-        table.write("out/{}.fits".format(filename))
-        table.write("out/{}.txt".format(filename), format='ascii.fixed_width',
+        table.write(f"out/{filename}.fits")
+        table.write(f"out/{filename}.txt", format='ascii.fixed_width',
                     delimiter=None)

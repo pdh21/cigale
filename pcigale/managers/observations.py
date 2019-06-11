@@ -103,15 +103,15 @@ class ObservationsManagerPassbands(object):
         """
         for item in self.tofit + self.tofit_err:
             if item not in self.table.colnames:
-                raise Exception("{} to be taken in the fit but not present "
-                                "in the observation table.".format(item))
+                raise Exception(f"{item} to be taken in the fit but not present"
+                                f" in the observation table.")
 
         for item in self.table.colnames:
             if (item != 'id' and item != 'redshift' and item != 'distance' and
                     item not in self.tofit + self.tofit_err):
                 self.table.remove_column(item)
-                print("Warning: {} in the input file but not to be taken into"
-                      " account in the fit.".format(item))
+                print(f"Warning: {item} in the input file but not to be taken "
+                      f"into account in the fit.")
 
     def _check_errors(self, defaulterror=0.1):
         """Check whether the error columns are present. If not, add them.
@@ -148,9 +148,8 @@ class ObservationsManagerPassbands(object):
                                 name=error)
                 self.table.add_column(colerr,
                                       index=self.table.colnames.index(item)+1)
-                print("Warning: {}% of {} taken as errors.".format(defaulterror *
-                                                                   100.,
-                                                                   item))
+                print(f"Warning: {defaulterror * 100}% of {item} taken as "
+                      f"errors.")
 
     def _check_invalid(self, upperlimits=False, threshold=-9990.):
         """Check whether invalid data are correctly marked as such.
@@ -194,8 +193,7 @@ class ObservationsManagerPassbands(object):
                 self.extprops.remove(item)
                 self.extprops_err.remove(item + '_err')
             self.table.remove_columns([item, item + '_err'])
-            print("Warning: {} removed as no valid data was found.".format(
-                allinvalid))
+            print(f"Warning: {allinvalid} removed as no valid data was found.")
 
     def _add_model_error(self, modelerror=0.1):
         """Add in quadrature the error of the model to the input error.
@@ -256,9 +254,9 @@ class ObservationsManagerPassbands(object):
             Root of the filename where to save the observations.
 
         """
-        self.table.write('out/{}.fits'.format(filename))
-        self.table.write('out/{}.txt'.format(filename),
-                         format='ascii.fixed_width', delimiter=None)
+        self.table.write(f'out/{filename}.fits')
+        self.table.write(f'out/{filename}.txt', format='ascii.fixed_width',
+                         delimiter=None)
 
 
 class ObservationsManagerVirtual(object):

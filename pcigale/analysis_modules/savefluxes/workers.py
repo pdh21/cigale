@@ -67,6 +67,6 @@ def fluxes(idx, midx):
             gbl_models.intprop[prop][idx] = sed.info[prop]
 
     if gbl_save is True:
-        sed.to_fits("out/{}".format(midx))
+        sed.to_fits(f"out/{midx}")
 
     gbl_counter.inc()

@@ -313,9 +313,10 @@ class BestResultsManager(object):
         chi2_red = self.chi2 / (nobs - 1)
         # If low values of reduced chi^2, it means that the data are overfitted
         # Errors might be under-estimated or not enough valid data.
-        print("\n{}% of the objects have chi^2_red~0 and {}% chi^2_red<0.5"
-              .format(np.round((chi2_red < 1e-12).sum() / chi2_red.size, 1),
-                      np.round((chi2_red < 0.5).sum() / chi2_red.size, 1)))
+        print(f"\n{np.round((chi2_red < 1e-12).sum() / chi2_red.size, 1)}% of "
+              f"the objects have chi^2_red~0 and "
+              f"{np.round((chi2_red < 0.5).sum() / chi2_red.size, 1)}% "
+              f"chi^2_red<0.5")
 
 
 class ResultsManager(object):
@@ -405,6 +406,6 @@ class ResultsManager(object):
                                     name="best."+band, unit=unit))
 
 
-        table.write("out/{}.txt".format(filename), format='ascii.fixed_width',
+        table.write(f"out/{filename}.txt", format='ascii.fixed_width',
                     delimiter=None)
-        table.write("out/{}.fits".format(filename), format='fits')
+        table.write(f"out/{filename}.fits", format='fits')

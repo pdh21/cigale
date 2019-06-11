@@ -39,8 +39,8 @@ def read_table(file_):
         try:
             table = Table.read(file_, format="ascii", delimiter='\s')
         except InconsistentTableError:
-            raise Exception("The file <{}> can not be parsed as a data "
-                            "table.".format(file_))
+            raise Exception(f"The file {file_} can not be parsed as a data "
+                            "table.")
 
     # Convert all the integers to floats.
     return Table([

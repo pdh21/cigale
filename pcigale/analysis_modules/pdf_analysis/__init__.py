@@ -137,7 +137,7 @@ class PdfAnalysis(AnalysisModule):
         results = []
         nblocks = len(params.blocks)
         for iblock in range(nblocks):
-            print('\nProcessing block {}/{}...'.format(iblock + 1, nblocks))
+            print(f"\nProcessing block {iblock + 1}/{nblocks}...")
             # We keep the models if there is only one block. This allows to
             # avoid recomputing the models when we do a mock analysis
             if not hasattr(self, '_models'):
@@ -205,7 +205,7 @@ class PdfAnalysis(AnalysisModule):
 
             # For the mock analysis we do not save the ancillary files.
             for k in ['best_sed', 'chi2']:
-                conf['analysis_params']["save_{}".format(k)] = False
+                conf['analysis_params'][f"save_{k}"] = False
 
             # We replace the observations with a mock catalogue..
             obs.generate_mock(results)

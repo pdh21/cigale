@@ -209,9 +209,9 @@ def analysis(idx, obs):
                                        gbl_models.block.start)
     else:
         # It sometimes happens because models are older than the Universe's age
-        print("No suitable model found for the object {}. It may be that "
-              "models are older than the Universe or that your chi² are very "
-              "large.".format(obs.id))
+        print(f"No suitable model found for the object {obs.id}. It may be that"
+              f" models are older than the Universe or that your chi² are very "
+              f"large.")
 
     gbl_counter.inc()
 
@@ -269,6 +269,6 @@ def bestfit(oidx, obs):
                                                    * corr_dz
 
     if gbl_conf['analysis_params']["save_best_sed"]:
-        sed.to_fits('out/{}'.format(obs.id), scaling * corr_dz)
+        sed.to_fits(f"out/{obs.id}", scaling * corr_dz)
 
     gbl_counter.inc()

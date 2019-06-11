@@ -139,8 +139,8 @@ class Configuration(object):
 
         self.config['cores'] = ""
         self.config.comments['cores'] = [""] + wrap(
-            "Number of CPU cores available. This computer has {} cores."
-            .format(mp.cpu_count()))
+            f"Number of CPU cores available. This computer has "
+            f"{mp.cpu_count()} cores.")
         self.spec['cores'] = "integer(min=1)"
 
         self.config.write()
@@ -187,9 +187,8 @@ class Configuration(object):
             # band
             for band in bands:
                 if band.endswith('_err') and (band[:-4] not in bands):
-                    raise Exception("The observation table as a {} column "
-                                    "but no {} column.".format(band,
-                                                               band[:-4]))
+                    raise Exception(f"The observation table as a {band} column "
+                                    f"but no {band[:-4]} column.")
 
             self.config['bands'] = bands
         else:
@@ -276,10 +275,10 @@ class Configuration(object):
             for module, param, message in configobj.flatten_errors(self.config,
                                                                    validity):
                 if len(module) > 0:
-                    print("Module {}, parameter {}: {}".format('/'.join(module),
-                                                               param, message))
+                    print(f"Module {'/'.join(module)}, parameter {param}: "
+                          f"{message}")
                 else:
-                    print("Parameter {}: {}".format(param, message))
+                    print(f"Parameter {param}: {message}")
             print("Run the same command after having fixed pcigale.ini.")
 
             return None
@@ -327,8 +326,8 @@ class Configuration(object):
         for module in modules:
             if all([user_module not in modules[module] for user_module in
                     self.config['sed_modules']]):
-                print("{} Options are: {}.".
-                      format(comments[module], ', '.join(modules[module])))
+                print(f"{comments[module]} Options are: "
+                      f"{', '.join(modules[module])}.")
 
     def complete_redshifts(self):
         """Complete the configuration when the redshifts are missing from the
