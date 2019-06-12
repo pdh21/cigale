@@ -146,9 +146,9 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
 
             filters_wl /= zp1
             wavelength_spec /= zp1
+            xmin /= zp1
+            xmax /= zp1
         elif sed_type == 'mJy':
-            xmin *= zp1
-            xmax *= zp1
             k_corr_SED = 1.
 
             fact = 1e29 * 1e-3 * wavelength_spec**2 / c / surf
