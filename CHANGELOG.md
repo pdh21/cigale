@@ -16,6 +16,7 @@
 - Fix the pip install by making pcigale.managers discoverable. (Yannick Roehlly)
 - When using a parameters file, Boolean values were not correctly interpreted. (Médéric Boquien, reported by Eric Martínez, INAOE)
 - Make sure that the best-fit models are stored with the correct scaling factor when the distance is given explicitly (Médéric Boquien)
+- Some labels and the title for the SED plots has been improved to avoid overlaps and overflows. (Médéric Boquien)
 ### Optimised
 - Slight speedup of the computation of the likelihood from the χ² (Médéric Boquien)
 - The the fritz2006 module should now run faster thanks to an optimisation of the computation of the luminosity of the various AGN components (Médéric Boquien & Guang Yang)

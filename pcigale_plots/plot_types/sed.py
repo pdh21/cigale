@@ -321,17 +321,16 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
             if sed_type == 'lum':
                 ax2.set_xlabel(r"Rest-frame wavelength [$\mu$m]")
                 ax1.set_ylabel("Luminosity [W]")
-                ax2.set_ylabel("Relative residual luminosity")
             else:
                 ax2.set_xlabel(r"Observed $\lambda$ ($\mu$m)")
                 ax1.set_ylabel(r"S$_\nu$ (mJy)")
-                ax2.set_ylabel(r"Relative residual S$_\nu$")
+            ax2.set_ylabel("Relative\nresidual")
             ax1.legend(fontsize=6, loc='best', frameon=False)
             ax2.legend(fontsize=6, loc='best', frameon=False)
             plt.setp(ax1.get_xticklabels(), visible=False)
             plt.setp(ax1.get_yticklabels()[1], visible=False)
-            figure.suptitle(f"Best model for {obs['id']} at z = {z:.3}. "
-                            f"Reduced χ²={mod['best.reduced_chi_square']:.2}")
+            figure.suptitle(f"Best model for {obs['id']}\n (z={z:.3}, "
+                            f"reduced χ²={mod['best.reduced_chi_square']:.2})")
             if logo is not False:
                 # Multiplying the dpi by 2 is a hack so the figure is small
                 # and not too pixelated
