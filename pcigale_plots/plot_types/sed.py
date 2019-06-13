@@ -174,7 +174,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                                 sed['stellar.old'][wsed] +
                                 sed['attenuation.stellar.old'][wsed] +
                                 sed['nebular.absorption_old'][wsed]),
-                               label="Stellar attenuated ", color='orange',
+                               label="Stellar attenuated", color='gold',
                                marker=None, nonposy='clip', linestyle='-',
                                linewidth=1.0)
                 else:
@@ -183,7 +183,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                                 sed['attenuation.stellar.young'][wsed] +
                                 sed['stellar.old'][wsed] +
                                 sed['attenuation.stellar.old'][wsed]),
-                               label="Stellar attenuated ", color='orange',
+                               label="Stellar attenuated", color='gold',
                                marker=None, nonposy='clip', linestyle='-',
                                linewidth=1.0)
 
@@ -191,7 +191,8 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                 ax1.loglog(wavelength_spec[wsed],
                            (sed['stellar.old'][wsed] +
                             sed['stellar.young'][wsed]),
-                           label="Stellar unattenuated", color='b', marker=None,
+                           label="Stellar unattenuated",
+                           color='xkcd:deep sky blue', marker=None,
                            nonposy='clip', linestyle='--', linewidth=1.0)
 
             # Nebular emission
@@ -205,22 +206,24 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                             sed['attenuation.nebular.lines_old'][wsed] +
                             sed['attenuation.nebular.continuum_young'][wsed] +
                             sed['attenuation.nebular.continuum_old'][wsed]),
-                           label="Nebular emission", color='y', marker=None,
-                           nonposy='clip', linewidth=1.0)
+                           label="Nebular emission", color='xkcd:true green',
+                           marker=None, nonposy='clip', linewidth=1.0)
 
             # Dust emission Draine & Li
             if 'dust' in series and 'dust.Umin_Umin' in sed.columns:
                 ax1.loglog(wavelength_spec[wsed],
                            (sed['dust.Umin_Umin'][wsed] +
                             sed['dust.Umin_Umax'][wsed]),
-                           label="Dust emission", color='r', marker=None,
-                           nonposy='clip', linestyle='-', linewidth=1.0)
+                           label="Dust emission", color='xkcd:bright red',
+                           marker=None, nonposy='clip', linestyle='-',
+                           linewidth=1.0)
 
             # Dust emission Dale
             if 'dust' in series and 'dust' in sed.columns:
                 ax1.loglog(wavelength_spec[wsed], sed['dust'][wsed],
-                           label="Dust emission", color='r', marker=None,
-                           nonposy='clip', linestyle='-', linewidth=1.0)
+                           label="Dust emission", color='xkcd:bright red',
+                           marker=None, nonposy='clip', linestyle='-',
+                           linewidth=1.0)
 
             # AGN emission Fritz
             if 'agn' in series and 'agn.fritz2006_therm' in sed.columns:
@@ -228,8 +231,9 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                            (sed['agn.fritz2006_therm'][wsed] +
                             sed['agn.fritz2006_scatt'][wsed] +
                             sed['agn.fritz2006_agn'][wsed]),
-                           label="AGN emission", color='g', marker=None,
-                           nonposy='clip', linestyle='-', linewidth=1.0)
+                           label="AGN emission", color='xkcd:apricot',
+                           marker=None, nonposy='clip', linestyle='-',
+                           linewidth=1.0)
 
             # Radio emission
             if 'radio' in series and 'radio_nonthermal' in sed.columns:
@@ -250,13 +254,15 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
             mod_fluxes = mod_fluxes[s]
             obs_fluxes = obs_fluxes[s]
             obs_fluxes_err = obs_fluxes_err[s]
-            ax1.scatter(filters_wl, mod_fluxes, marker='o', color='r', s=8,
-                        zorder=3, label="Model fluxes")
+            ax1.scatter(filters_wl, mod_fluxes, marker='o',
+                        color='xkcd:strawberry', s=8, zorder=3,
+                        label="Model fluxes")
             mask_ok = np.logical_and(obs_fluxes > 0., obs_fluxes_err > 0.)
             ax1.errorbar(filters_wl[mask_ok], obs_fluxes[mask_ok],
                          yerr=obs_fluxes_err[mask_ok], ls='', marker='s',
                          label='Observed fluxes', markerfacecolor='None',
-                         markersize=6, markeredgecolor='b', capsize=0., lw=1)
+                         markersize=6, markeredgecolor='xkcd:pastel purple',
+                         color='xkcd:light indigo', capsize=0., zorder=3, lw=1)
             mask_uplim = np.logical_and(np.logical_and(obs_fluxes > 0.,
                                                        obs_fluxes_err < 0.),
                                         obs_fluxes_err > -9990. * k_corr_SED)

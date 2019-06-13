@@ -10,6 +10,7 @@
 - The uncertainties on the SED plots now correspond only to 1σ rather than 3σ so they do not appear exceedingly large. (Médéric Boquien)
 - The lines linking the different bands in the residual SED plot have been eliminated to improve the readability. (Médéric Boquien)
 - Some lines have been made slightly thicker in SED plots so the different components are more visible. (Médéric Boquien)
+- The colours in the SED plots have been tweaked for aesthetic reasons. (Médéric Boquien)
 ### Fixed
 - Make sure we can plot the PDF of equivalent widths. (Médéric Boquien)
 - Fix a crash when generating a mock catalogue containing intensive properties. (Médéric Boquien)
