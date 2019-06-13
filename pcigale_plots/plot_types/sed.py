@@ -259,9 +259,9 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                         label="Model fluxes")
             mask_ok = np.logical_and(obs_fluxes > 0., obs_fluxes_err > 0.)
             ax1.errorbar(filters_wl[mask_ok], obs_fluxes[mask_ok],
-                         yerr=obs_fluxes_err[mask_ok], ls='', marker='s',
+                         yerr=obs_fluxes_err[mask_ok], ls='', marker='o',
                          label='Observed fluxes', markerfacecolor='None',
-                         markersize=6, markeredgecolor='xkcd:pastel purple',
+                         markersize=5, markeredgecolor='xkcd:pastel purple',
                          color='xkcd:light indigo', capsize=0., zorder=3, lw=1)
             mask_uplim = np.logical_and(np.logical_and(obs_fluxes > 0.,
                                                        obs_fluxes_err < 0.),
@@ -276,15 +276,15 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                                         obs_fluxes_err < -9990. * k_corr_SED)
             if not mask_noerr.any() == False:
                 ax1.errorbar(filters_wl[mask_noerr], obs_fluxes[mask_noerr],
-                             ls='', marker='s', markerfacecolor='None',
-                             markersize=6, markeredgecolor='r',
+                             ls='', marker='p', markerfacecolor='None',
+                             markersize=5, markeredgecolor='r',
                              label='Observed fluxes, no errors', capsize=0.)
             mask = np.where(obs_fluxes > 0.)
             ax2.errorbar(filters_wl[mask],
                          (obs_fluxes[mask]-mod_fluxes[mask])/obs_fluxes[mask],
                          yerr=obs_fluxes_err[mask]/obs_fluxes[mask],
                          marker='_', label="(Obs-Mod)/Obs", color='k',
-                         capsize=0., ls='None')
+                         capsize=0., ls='None', lw=1)
             ax2.plot([xmin, xmax], [0., 0.], ls='--', color='k')
             ax2.set_xscale('log')
             ax2.minorticks_on()
