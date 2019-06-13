@@ -176,7 +176,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                                 sed['nebular.absorption_old'][wsed]),
                                label="Stellar attenuated ", color='orange',
                                marker=None, nonposy='clip', linestyle='-',
-                               linewidth=0.5)
+                               linewidth=1.0)
                 else:
                     ax1.loglog(wavelength_spec[wsed],
                                (sed['stellar.young'][wsed] +
@@ -185,14 +185,14 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                                 sed['attenuation.stellar.old'][wsed]),
                                label="Stellar attenuated ", color='orange',
                                marker=None, nonposy='clip', linestyle='-',
-                               linewidth=0.5)
+                               linewidth=1.0)
 
             if 'stellar_unattenuated' in series:
                 ax1.loglog(wavelength_spec[wsed],
                            (sed['stellar.old'][wsed] +
                             sed['stellar.young'][wsed]),
                            label="Stellar unattenuated", color='b', marker=None,
-                           nonposy='clip', linestyle='--', linewidth=0.5)
+                           nonposy='clip', linestyle='--', linewidth=1.0)
 
             # Nebular emission
             if 'nebular' in series and 'nebular.lines_young' in sed.columns:
@@ -206,7 +206,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                             sed['attenuation.nebular.continuum_young'][wsed] +
                             sed['attenuation.nebular.continuum_old'][wsed]),
                            label="Nebular emission", color='y', marker=None,
-                           nonposy='clip', linewidth=.5)
+                           nonposy='clip', linewidth=1.0)
 
             # Dust emission Draine & Li
             if 'dust' in series and 'dust.Umin_Umin' in sed.columns:
@@ -214,13 +214,13 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                            (sed['dust.Umin_Umin'][wsed] +
                             sed['dust.Umin_Umax'][wsed]),
                            label="Dust emission", color='r', marker=None,
-                           nonposy='clip', linestyle='-', linewidth=0.5)
+                           nonposy='clip', linestyle='-', linewidth=1.0)
 
             # Dust emission Dale
             if 'dust' in series and 'dust' in sed.columns:
                 ax1.loglog(wavelength_spec[wsed], sed['dust'][wsed],
                            label="Dust emission", color='r', marker=None,
-                           nonposy='clip', linestyle='-', linewidth=0.5)
+                           nonposy='clip', linestyle='-', linewidth=1.0)
 
             # AGN emission Fritz
             if 'agn' in series and 'agn.fritz2006_therm' in sed.columns:
@@ -229,7 +229,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                             sed['agn.fritz2006_scatt'][wsed] +
                             sed['agn.fritz2006_agn'][wsed]),
                            label="AGN emission", color='g', marker=None,
-                           nonposy='clip', linestyle='-', linewidth=0.5)
+                           nonposy='clip', linestyle='-', linewidth=1.0)
 
             # Radio emission
             if 'radio' in series and 'radio_nonthermal' in sed.columns:
@@ -237,7 +237,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                            sed['radio_nonthermal'][wsed],
                            label="Radio nonthermal", color='brown',
                            marker=None, nonposy='clip', linestyle='-',
-                           linewidth=0.5)
+                           linewidth=1.0)
 
             if 'model' in series:
                 ax1.loglog(wavelength_spec[wsed], sed['L_lambda_total'][wsed],
@@ -256,7 +256,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
             ax1.errorbar(filters_wl[mask_ok], obs_fluxes[mask_ok],
                          yerr=obs_fluxes_err[mask_ok], ls='', marker='s',
                          label='Observed fluxes', markerfacecolor='None',
-                         markersize=6, markeredgecolor='b', capsize=0.)
+                         markersize=6, markeredgecolor='b', capsize=0., lw=1)
             mask_uplim = np.logical_and(np.logical_and(obs_fluxes > 0.,
                                                        obs_fluxes_err < 0.),
                                         obs_fluxes_err > -9990. * k_corr_SED)
