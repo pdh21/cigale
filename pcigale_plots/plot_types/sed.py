@@ -254,7 +254,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                         zorder=3, label="Model fluxes")
             mask_ok = np.logical_and(obs_fluxes > 0., obs_fluxes_err > 0.)
             ax1.errorbar(filters_wl[mask_ok], obs_fluxes[mask_ok],
-                         yerr=obs_fluxes_err[mask_ok]*3, ls='', marker='s',
+                         yerr=obs_fluxes_err[mask_ok], ls='', marker='s',
                          label='Observed fluxes', markerfacecolor='None',
                          markersize=6, markeredgecolor='b', capsize=0.)
             mask_uplim = np.logical_and(np.logical_and(obs_fluxes > 0.,
@@ -262,8 +262,8 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                                         obs_fluxes_err > -9990. * k_corr_SED)
             if not mask_uplim.any() == False:
                 ax1.errorbar(filters_wl[mask_uplim], obs_fluxes[mask_uplim],
-                             yerr=obs_fluxes_err[mask_uplim]*3, ls='',
-                             marker='v', label='Observed upper limits',
+                             yerr=obs_fluxes_err[mask_uplim], ls='', marker='v',
+                             label='Observed upper limits',
                              markerfacecolor='None', markersize=6,
                              markeredgecolor='g', capsize=0.)
             mask_noerr = np.logical_and(obs_fluxes > 0.,
@@ -276,7 +276,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
             mask = np.where(obs_fluxes > 0.)
             ax2.errorbar(filters_wl[mask],
                          (obs_fluxes[mask]-mod_fluxes[mask])/obs_fluxes[mask],
-                         yerr=obs_fluxes_err[mask]/obs_fluxes[mask]*3,
+                         yerr=obs_fluxes_err[mask]/obs_fluxes[mask],
                          marker='_', label="(Obs-Mod)/Obs", color='k',
                          capsize=0.)
             ax2.plot([xmin, xmax], [0., 0.], ls='--', color='k')
