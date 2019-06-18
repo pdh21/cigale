@@ -246,6 +246,7 @@ def bestfit(oidx, obs):
         corr_scaling = 1.
 
     sed = gbl_warehouse.get_sed(gbl_params.modules, params)
+    sed = deepcopy(sed)
 
     # Handle the case where the distance does not correspond to the redshift.
     if obs.redshift >= 0.:
