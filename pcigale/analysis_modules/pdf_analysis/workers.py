@@ -245,7 +245,7 @@ def bestfit(oidx, obs):
     else:  # The model redshift is always exact in redhisfting mode
         corr_scaling = 1.
 
-    sed = gbl_warehouse.get_sed(gbl_params.modules, params)
+    sed = deepcopy(gbl_warehouse.get_sed(gbl_params.modules, params))
 
     # Handle the case where the distance does not correspond to the redshift.
     if obs.redshift >= 0.:
