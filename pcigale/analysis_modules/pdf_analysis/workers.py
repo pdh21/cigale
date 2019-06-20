@@ -112,7 +112,7 @@ def sed(idx, midx):
             gbl_models.intprop[prop][idx] = np.nan
     else:
         for band in gbl_models.flux:
-            gbl_models.flux[band][idx] = sed.compute_fnu(band)
+            gbl_models.flux[band][idx] = 2.5 * np.log10(sed.compute_fnu(band))
         for prop in gbl_models.extprop:
             gbl_models.extprop[prop][idx] = sed.info[prop]
         for prop in gbl_models.intprop:
@@ -191,7 +191,7 @@ def analysis(idx, obs):
             gbl_results.bayes.exterror[prop][idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
                 save_chi2(obs, prop, gbl_models, chi2,
-                          values * scaling * corr_dz)
+                          values * 10**(.4*scaling) * corr_dz)
 
         for band in gbl_results.bayes.fluxmean:
             values = gbl_models.flux[band][wz]
@@ -266,7 +266,7 @@ def bestfit(oidx, obs):
         gbl_results.best.intprop[prop][oidx] = sed.info[prop]
 
     for prop in gbl_results.best.extprop:
-        gbl_results.best.extprop[prop][oidx] = sed.info[prop] * scaling \
+        gbl_results.best.extprop[prop][oidx] = sed.info[prop] * 10**(.4*scaling) \
                                                    * corr_dz
 
     if gbl_conf['analysis_params']["save_best_sed"]:
