@@ -155,6 +155,47 @@ def _compute_scaling(models, obs, corr_dz, wz):
     return num/denom
 
 
+def _compute_scaling_mag(models, obs, corr_dz, wz):
+    """Compute the scaling factor to be applied to the model fluxes to best fit
+    the observations. Note that we look over the bands to avoid the creation of
+    an array of the same size as the model_fluxes array. Because we loop on the
+    bands and not on the models, the impact on the performance should be small.
+
+    Parameters
+    ----------
+    models: ModelsManagers class instance
+        Contains the models (fluxes, intensive, and extensive properties).
+    obs: Observation class instance
+        Contains the fluxes, intensive properties, extensive properties and
+        their errors, for a sigle observation.
+    corr_dz: float
+        Correction factor to scale the extensive properties to the right
+        distance
+    wz: slice
+        Selection of the models at the redshift of the observation or all the
+        redshifts in photometric-redshift mode.
+
+    Returns
+    -------
+    scaling: array
+        Scaling factors minimising the χ²
+    """
+
+    _ = list(models.flux.keys())[0]
+    num = np.zeros_like(models.flux[_][wz])
+    denom = np.zeros_like(models.flux[_][wz])
+
+    for band, flux in obs.flux.items():
+        # Multiplications are faster than divisions, so we directly use the
+        # inverse error
+        inv_err2 = 1. / obs.flux_err[band] ** 2.
+        model = models.flux[band][wz]
+        num += (model - flux) * inv_err2
+        denom += inv_err2
+
+    return num/denom
+
+
 def _correct_scaling_ul(scaling, mod, obs, wz):
     """Correct the scaling factor when one or more fluxes and/or properties are
     upper limits.
@@ -240,7 +281,7 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
         scaling of the models to obtain the minimum χ²
     """
     limits = lim_flag and (len(obs.flux_ul) > 0 or len(obs.extprop_ul) > 0)
-    scaling = _compute_scaling(models, obs, corr_dz, wz)
+    scaling = _compute_scaling_mag(models, obs, corr_dz, wz)
 
     # Some observations may not have flux values in some filter(s), but
     # they can have upper limit(s).
@@ -256,7 +297,7 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
         # inverse error
         inv_flux_err = 1. / obs.flux_err[band]
         model = models.flux[band][wz]
-        chi2 += ((flux - model * scaling) * inv_flux_err) ** 2.
+        chi2 += ((flux - model + scaling) * inv_flux_err) ** 2.
 
     # Computation of the χ² from intensive properties
     for name, prop in obs.intprop.items():

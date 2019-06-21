@@ -185,17 +185,17 @@ def analysis(idx, obs):
             else:
                 values = gbl_models.extprop[prop][wz]
                 _ = lambda x: x
-            mean, std = weighted_param(_(values[wlikely] * scaling_l * corr_dz),
+            mean, std = weighted_param(_(values[wlikely] * 10**(-.4*scaling_l) * corr_dz),
                                        likelihood)
             gbl_results.bayes.extmean[prop][idx] = mean
             gbl_results.bayes.exterror[prop][idx] = std
             if gbl_models.conf['analysis_params']['save_chi2'] is True:
                 save_chi2(obs, prop, gbl_models, chi2,
-                          values * 10**(.4*scaling) * corr_dz)
+                          values * 10**(-.4*scaling) * corr_dz)
 
         for band in gbl_results.bayes.fluxmean:
             values = gbl_models.flux[band][wz]
-            mean, std = weighted_param(values[wlikely] * scaling_l,
+            mean, std = weighted_param(values[wlikely] * 10**(-.4*scaling_l),
                                        likelihood)
             gbl_results.bayes.fluxmean[band][idx] = mean
             gbl_results.bayes.fluxerror[band][idx] = std
@@ -257,7 +257,7 @@ def bestfit(oidx, obs):
     scaling = gbl_results.best.scaling[oidx] * corr_scaling
 
     for band in gbl_results.best.flux:
-        gbl_results.best.flux[band][oidx] = sed.compute_fnu(band) * scaling
+        gbl_results.best.flux[band][oidx] = sed.compute_fnu(band) * 10**(-.4*scaling)
 
     # If the distance is user defined, the redshift-based luminosity distance
     # of the model is probably incorrect so we replace it
@@ -266,7 +266,7 @@ def bestfit(oidx, obs):
         gbl_results.best.intprop[prop][oidx] = sed.info[prop]
 
     for prop in gbl_results.best.extprop:
-        gbl_results.best.extprop[prop][oidx] = sed.info[prop] * 10**(.4*scaling) \
+        gbl_results.best.extprop[prop][oidx] = sed.info[prop] * 10**(-.4*scaling) \
                                                    * corr_dz
 
     if gbl_conf['analysis_params']["save_best_sed"]:

@@ -35,7 +35,7 @@ class ObservationsManagerPassbands(object):
     at each iteration.
     """
 
-    def __init__(self, config, params, defaulterror=0.1, modelerror=0.1,
+    def __init__(self, config, params, defaulterror=0.1, modelerror=0.,
                  threshold=-9990.):
 
         self.conf = config
