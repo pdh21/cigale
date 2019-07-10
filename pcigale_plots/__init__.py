@@ -103,7 +103,8 @@ def main():
                 series = AVAILABLE_SERIES
             else:
                 if args.seriesdisabled:
-                    series = [series for series in AVAILABLE_SERIES if series not in args.series]
+                    series = [series for series in AVAILABLE_SERIES
+                              if series not in args.series]
                 else:
                     series = args.series
             sed_action(config, args.type, args.nologo, args.xrange, args.yrange,
