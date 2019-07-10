@@ -52,35 +52,42 @@ def main():
 
     subparsers = parser.add_subparsers(help="List of commands")
 
+    fmtstr = 'format of the output files, for instance pdf or png.'
     pdf_parser = subparsers.add_parser('pdf', help=pdf_action.__doc__)
-    pdf_parser.add_argument('--format', dest='format', default='pdf')
-    pdf_parser.add_argument('--outdir', dest='outdir', default='out')
+    pdf_parser.add_argument('--format', default='pdf', help=fmtstr)
+    pdf_parser.add_argument('--outdir', default='out')
     pdf_parser.set_defaults(parser='pdf')
 
     chi2_parser = subparsers.add_parser('chi2', help=chi2_action.__doc__)
-    chi2_parser.add_argument('--format', dest='format', default='pdf')
-    chi2_parser.add_argument('--outdir', dest='outdir', default='out')
+    chi2_parser.add_argument('--format', default='pdf', help=fmtstr)
+    chi2_parser.add_argument('--outdir', default='out')
     chi2_parser.set_defaults(parser='chi2')
 
     sed_parser = subparsers.add_parser('sed', help=sed_action.__doc__)
-    sed_parser.add_argument('--type', default='mJy')
+    sed_parser.add_argument('--type', default='mJy',
+                             help='type of plot. Options are mJy (observed '
+                                  'frame in flux) and lum (rest-frame in '
+                                  'lumunosity).')
     sed_parser.add_argument('--nologo', action='store_true')
-    sed_parser.add_argument('--format', dest='format', default='pdf')
-    sed_parser.add_argument('--outdir', dest='outdir', default='out')
-    sed_parser.add_argument('--xrange', dest='xrange', default=':',
-                            type=parser_range,
-                            help='Format [<min>]:[<max>], for plot observed wavelength axis')
-    sed_parser.add_argument('--yrange', dest='yrange', default=':',
-                            type=parser_range,
-                            help='Format [<min>]:[<max>], for plot flux axis')
-    sed_parser.add_argument('--series', dest='series', nargs='*')
-    sed_parser.add_argument('--seriesdisabled', dest='seriesdisabled', action='store_true')
+    sed_parser.add_argument('--format', default='pdf', help=fmtstr)
+    sed_parser.add_argument('--outdir', default='out')
+    sed_parser.add_argument('--xrange', default=':', type=parser_range,
+                            help='Wavelength range [<min>]:[<max>] in nm.')
+    sed_parser.add_argument('--yrange', default=':', type=parser_range,
+                            help='y-axis range [<min>]:[<max>].')
+    sed_parser.add_argument('--series', nargs='*',
+                            help='components to plot. Options are: ' +
+                                 ', '.join(AVAILABLE_SERIES) + '.')
+    sed_parser.add_argument('--seriesdisabled',
+                            help='components not to plot. Options are: ' +
+                                 ', '.join(AVAILABLE_SERIES) + '.',
+                            action='store_true')
     sed_parser.set_defaults(parser='sed')
 
     mock_parser = subparsers.add_parser('mock', help=mock_action.__doc__)
     mock_parser.add_argument('--nologo', action='store_true')
-    mock_parser.add_argument('--format', dest='format', default='pdf')
-    mock_parser.add_argument('--outdir', dest='outdir', default='out')
+    mock_parser.add_argument('--format', default='pdf', help=fmtstr)
+    mock_parser.add_argument('--outdir', default='out')
     mock_parser.set_defaults(parser='mock')
 
     args = parser.parse_args()
