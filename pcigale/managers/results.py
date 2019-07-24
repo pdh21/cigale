@@ -112,10 +112,10 @@ class BayesResultsManager(object):
                     for band in merged.fluxerror}
         weight = np.array([result.weight for result in results])
 
-        totweight = np.sum(weight, axis=0)
+        totweight = np.nansum(weight, axis=0)
 
         for prop in merged.intmean:
-            merged.intmean[prop][:] = np.sum(
+            merged.intmean[prop][:] = np.nansum(
                 intmean[prop] * weight, axis=0) / totweight
 
             # We compute the merged standard deviation by combining the
@@ -123,11 +123,11 @@ class BayesResultsManager(object):
             # http://stats.stackexchange.com/a/10445 where the number of
             # datapoints has been substituted with the weights. In short we
             # exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
-            merged.interror[prop][:] = np.sqrt(np.sum(
+            merged.interror[prop][:] = np.sqrt(np.nansum(
                 weight * (interror[prop]**2. + (intmean[prop]-merged.intmean[prop])**2), axis=0) / totweight)
 
         for prop in merged.extmean:
-            merged.extmean[prop][:] = np.sum(
+            merged.extmean[prop][:] = np.nansum(
                 extmean[prop] * weight, axis=0) / totweight
 
             # We compute the merged standard deviation by combining the
@@ -135,7 +135,7 @@ class BayesResultsManager(object):
             # http://stats.stackexchange.com/a/10445 where the number of
             # datapoints has been substituted with the weights. In short we
             # exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
-            merged.exterror[prop][:] = np.sqrt(np.sum(
+            merged.exterror[prop][:] = np.sqrt(np.nansum(
                 weight * (exterror[prop]**2. + (extmean[prop]-merged.extmean[prop])**2), axis=0) / totweight)
 
         for prop in merged.extmean:
@@ -148,7 +148,7 @@ class BayesResultsManager(object):
                                merged.exterror[prop])
 
         for band in merged.fluxmean:
-            merged.fluxmean[band][:] = np.sum(
+            merged.fluxmean[band][:] = np.nansum(
                 fluxmean[band] * weight, axis=0) / totweight
 
             # We compute the merged standard deviation by combining the
@@ -156,7 +156,7 @@ class BayesResultsManager(object):
             # http://stats.stackexchange.com/a/10445 where the number of
             # datapoints has been substituted with the weights. In short we
             # exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
-            merged.fluxerror[band][:] = np.sqrt(np.sum(
+            merged.fluxerror[band][:] = np.sqrt(np.nansum(
                 weight * (fluxerror[band]**2. + (fluxmean[band]-merged.fluxmean[band])**2), axis=0) / totweight)
 
 
@@ -284,22 +284,22 @@ class BestResultsManager(object):
         if len(results) == 1:
             return results[0]
 
-        best = np.argmin([result.chi2 for result in results], axis=0)
-
+        chi2 = np.array([result.chi2 for result in results])
         merged = results[0]
-        for iobs, bestidx in enumerate(best):
-            for band in merged.flux:
-                merged.flux[band][iobs] = \
-                    results[bestidx].flux[band][iobs]
-            for prop in merged.intprop:
-                merged.intprop[prop][iobs] = \
-                    results[bestidx].intprop[prop][iobs]
-            for prop in merged.extprop:
-                merged.extprop[prop][iobs] = \
-                    results[bestidx].extprop[prop][iobs]
-            merged.chi2[iobs] = results[bestidx].chi2[iobs]
-            merged.scaling[iobs] = results[bestidx].scaling[iobs]
-            merged.index[iobs] = results[bestidx].index[iobs]
+        for iobs, bestidx in enumerate(np.argsort(chi2, axis=0)[0, :]):
+            if np.isfinite(bestidx):
+                for band in merged.flux:
+                    merged.flux[band][iobs] = \
+                        results[bestidx].flux[band][iobs]
+                for prop in merged.intprop:
+                    merged.intprop[prop][iobs] = \
+                        results[bestidx].intprop[prop][iobs]
+                for prop in merged.extprop:
+                    merged.extprop[prop][iobs] = \
+                        results[bestidx].extprop[prop][iobs]
+                merged.chi2[iobs] = results[bestidx].chi2[iobs]
+                merged.scaling[iobs] = results[bestidx].scaling[iobs]
+                merged.index[iobs] = results[bestidx].index[iobs]
 
         return merged
 

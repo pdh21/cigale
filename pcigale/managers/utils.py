@@ -49,6 +49,10 @@ class SharedArray(object):
         """
         self.raw = RawArray(ctypes.c_double, size)
         self.size = size
+        # By default RawArray initialises all the elements to 0. Setting them to
+        # np.nan is preferanble to in case for a reason some elements are never
+        # assigned a value during a run
+        self.array[:] = np.nan
 
     def __setitem__(self, idx, data):
         if isinstance(idx, slice):
