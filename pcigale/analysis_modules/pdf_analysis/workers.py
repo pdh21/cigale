@@ -207,11 +207,6 @@ def analysis(idx, obs):
         gbl_results.best.scaling[idx] = scaling[best_idx_z]
         gbl_results.best.index[idx] = (wz.start + best_idx_z*wz.step +
                                        gbl_models.block.start)
-    else:
-        # It sometimes happens because models are older than the Universe's age
-        print(f"No suitable model found for the object {obs.id}. It may be that"
-              f" models are older than the Universe or that your chi² are very "
-              f"large.")
 
     gbl_counter.inc()
 

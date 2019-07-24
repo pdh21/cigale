@@ -308,15 +308,23 @@ class BestResultsManager(object):
          objects seems to be overconstrainted.
 
         """
+        # If no best model has been found, it means none could be properly
+        # fitted. We warn the user in that case
+        bad = self.obs.table['id'][np.isnan(self.chi2)].tolist()
+        if len(bad) > 0:
+            print(f"No suitable model found for {', '.join(bad)}. It may be "
+                  f"that models are older than the universe or that your χ² are"
+                  f" very large.")
+
         obs = [self.obs.table[obs].data for obs in self.obs.tofit]
         nobs = np.count_nonzero(np.isfinite(obs), axis=0)
         chi2_red = self.chi2 / (nobs - 1)
         # If low values of reduced chi^2, it means that the data are overfitted
         # Errors might be under-estimated or not enough valid data.
-        print(f"\n{np.round((chi2_red < 1e-12).sum() / chi2_red.size, 1)}% of "
-              f"the objects have chi^2_red~0 and "
+        print(f"{np.round((chi2_red < 1e-12).sum() / chi2_red.size, 1)}% of "
+              f"the objects have χ²_red~0 and "
               f"{np.round((chi2_red < 0.5).sum() / chi2_red.size, 1)}% "
-              f"chi^2_red<0.5")
+              f"χ²_red<0.5")
 
 
 class ResultsManager(object):

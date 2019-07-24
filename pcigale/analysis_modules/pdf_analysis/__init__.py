@@ -195,6 +195,7 @@ class PdfAnalysis(AnalysisModule):
         obs.save('observations')
 
         results = self._compute(conf, obs, params)
+        print("\nSanity check of the analysis results...")
         results.best.analyse_chi2()
 
         print("\nSaving the analysis results...")
