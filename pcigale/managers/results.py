@@ -310,7 +310,7 @@ class BestResultsManager(object):
         """
         # If no best model has been found, it means none could be properly
         # fitted. We warn the user in that case
-        bad = self.obs.table['id'][np.isnan(self.chi2)].tolist()
+        bad = [str(id_) for id_ in self.obs.table['id'][np.isnan(self.chi2)]]
         if len(bad) > 0:
             print(f"No suitable model found for {', '.join(bad)}. It may be "
                   f"that models are older than the universe or that your χ² are"
