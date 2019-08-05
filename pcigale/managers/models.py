@@ -39,7 +39,8 @@ class ModelsManager(object):
                              self.allextpropnames & props_nolog)
         size = len(params.blocks[iblock])
 
-        self.flux = {band: SharedArray(size) for band in obs.bands}
+        self.flux = {band: SharedArray(size)
+                     for band in set(obs.bands+conf['analysis_params']['bands'])}
         self.intprop = {prop: SharedArray(size) for prop in self.intpropnames}
         self.extprop = {prop: SharedArray(size) for prop in self.extpropnames}
 

@@ -36,6 +36,7 @@ class BayesResultsManager(object):
         intpropnames = [prop for prop in models.obs.conf['analysis_params']['variables']
                         if (prop in models.allintpropnames or
                             prop[:-4] in models.allintpropnames)]
+        fluxnames = [name for name in models.conf['analysis_params']['bands']]
         self.nproperties = len(intpropnames) + len(extpropnames)
 
         # Arrays where we store the data related to the models. For memory
@@ -47,8 +48,8 @@ class BayesResultsManager(object):
         self.interror = {prop: SharedArray(nobs) for prop in intpropnames}
         self.extmean = {prop: SharedArray(nobs) for prop in extpropnames}
         self.exterror = {prop: SharedArray(nobs) for prop in extpropnames}
-        self.fluxmean = {band: SharedArray(nobs) for band in models.flux}
-        self.fluxerror = {band: SharedArray(nobs) for band in models.flux}
+        self.fluxmean = {band: SharedArray(nobs) for band in fluxnames}
+        self.fluxerror = {band: SharedArray(nobs) for band in fluxnames}
         self.weight = SharedArray(nobs)
 
     @property

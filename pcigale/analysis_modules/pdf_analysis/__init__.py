@@ -55,6 +55,13 @@ class PdfAnalysis(AnalysisModule):
             "are many models).",
             ["sfh.sfr", "sfh.sfr10Myrs", "sfh.sfr100Myrs"]
         )),
+        ("bands", (
+            "cigale_string_list()",
+            "List of bands for which to estimate the fluxes. Note that this is "
+            "independent from the fluxes actually fitted to estimate the "
+            "physical properties.",
+            None
+        )),
         ("save_best_sed", (
             "boolean()",
             "If true, save the best SED for each observation to a file.",

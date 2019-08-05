@@ -247,6 +247,11 @@ class Configuration(object):
             self.config['analysis_params'].comments[name] = wrap(desc)
             self.spec['analysis_params'][name] = typ
 
+        if 'pdf_analysis' == module_name:
+            bands = [band for band in self.config['bands']
+                     if not band.endswith('_err')]
+            self.config['analysis_params']['bands'] = bands
+
         self.config.write()
         self.spec.write()
 
