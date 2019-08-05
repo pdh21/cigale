@@ -223,7 +223,7 @@ class RestframeParam(SedModule):
                 sed.add_info(f"param.EW({line[0]}/{line[1]})", EW)
 
         for filt in self.lumin_filters:
-            sed.add_info(f"param.restframe_Lnu({filt}",
+            sed.add_info(f"param.restframe_Lnu({filt})",
                          fluxes[filt] * self.to_lumin,
                          True)
         for filt1, filt2 in self.colours:
