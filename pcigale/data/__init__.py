@@ -147,6 +147,7 @@ class _Yggdrasil_SSP(BASE):
     __tablename__ = "yggdrasil_ssp"
 
     metallicity = Column(Float, primary_key=True)
+    fcov = Column(Float, primary_key=True)
     time_grid = Column(PickleType)
     wavelength_grid = Column(PickleType)
     info_table = Column(PickleType)
@@ -154,6 +155,7 @@ class _Yggdrasil_SSP(BASE):
 
     def __init__(self, ssp):
         self.metallicity = ssp.metallicity
+        self.fcov = ssp.fcov
         self.time_grid = ssp.time_grid
         self.wavelength_grid = ssp.wavelength_grid
         self.info_table = ssp.info_table
@@ -573,18 +575,19 @@ class Database(object):
         else:
             raise Exception('The database is not writable.')
 
-    def get_yggdrasil_ssp(self, metallicity):
+    def get_yggdrasil_ssp(self, metallicity, fcov):
         result = self.session.query(_Yggdrasil_SSP)\
             .filter(_Yggdrasil_SSP.metallicity == metallicity)\
+            .filter(_Yggdrasil_SSP.fcov == fcov)\
             .first()
         if result:
-            return Yggdrasil_SSP(result.metallicity, result.time_grid,
-                                 result.wavelength_grid, result.info_table,
-                                 result.spec_table)
+            return Yggdrasil_SSP(result.metallicity, result.fcov,
+                                 result.time_grid, result.wavelength_grid,
+                                 result.info_table, result.spec_table)
         else:
             raise DatabaseLookupError(
-                "The Yggdrasil SSP for  metallicity <{}> is not in the "
-                "database.".format(metallicity))
+                "The Yggdrasil SSP for metallicity <{}> and fcov <{}> is not in"
+                " the database.".format(metallicity, fcov))
 
     def get_yggdrasil_ssp_parameters(self):
         return self._get_parameters(_Yggdrasil_SSP)
