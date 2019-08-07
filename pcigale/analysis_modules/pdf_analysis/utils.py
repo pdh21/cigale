@@ -256,12 +256,12 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
         # inverse error
         inv_flux_err = 1. / obs.flux_err[band]
         model = models.flux[band][wz]
-        chi2 += ((flux - model * scaling) * inv_flux_err) ** 2.
+        chi2 += ((model * scaling - flux) * inv_flux_err) ** 2.
 
     # Computation of the χ² from intensive properties
     for name, prop in obs.intprop.items():
         model = models.intprop[name][wz]
-        chi2 += ((prop - model) * (1. / obs.intprop_err[name])) ** 2.
+        chi2 += ((model - prop) * (1. / obs.intprop_err[name])) ** 2.
 
     # Computation of the χ² from extensive properties
     for name, prop in obs.extprop.items():
@@ -269,7 +269,7 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
         # inverse error
         inv_prop_err = 1. / obs.extprop_err[name]
         model = models.extprop[name][wz]
-        chi2 += ((prop - (scaling * model) * corr_dz) * inv_prop_err) ** 2.
+        chi2 += (((scaling * model) * corr_dz - prop) * inv_prop_err) ** 2.
 
     # Finally take the presence of upper limits into account
     if limits is True:

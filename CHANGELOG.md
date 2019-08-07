@@ -26,6 +26,7 @@
 - Ensure that best models are properly computed when models are computed by blocks and that no fit could be made in one or more blocks. This can be case if all the models in the block are older than the age of the universe. (Médéric)
 ### Optimised
 - Slight speedup of the computation of the likelihood from the χ² (Médéric Boquien)
+- Speedup of the computation of the χ² by ~10% (Médéric Boquien)
 - The the fritz2006 module should now run faster thanks to an optimisation of the computation of the luminosity of the various AGN components (Médéric Boquien & Guang Yang)
 
 ## 2018.0 (2018-11-06)
