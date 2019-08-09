@@ -124,7 +124,7 @@ def sed(idx, midx):
 
     gbl_counter.inc()
 
-@profile
+
 def analysis(idx, obs):
     """Worker process to analyse the PDF and estimate parameters values and
     store them in an instance of ResultsManager.
