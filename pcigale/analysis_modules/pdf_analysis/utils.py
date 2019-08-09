@@ -306,7 +306,7 @@ def weighted_param(param, weights):
 
     """
 
-    mean = np.average(param, weights=weights)
-    std = np.sqrt(np.average((param-mean)**2, weights=weights))
+    mean = np.sum(param * weights)
+    std = np.sqrt(np.sum((param - mean)**2 * weights))
 
     return (mean, std)

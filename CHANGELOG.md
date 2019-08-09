@@ -25,9 +25,10 @@
 - Some labels and the title for the SED plots has been improved to avoid overlaps and overflows. (Médéric Boquien)
 - Ensure that best models are properly computed when models are computed by blocks and that no fit could be made in one or more blocks. This can be case if all the models in the block are older than the age of the universe. (Médéric)
 ### Optimised
-- Slight speedup of the computation of the likelihood from the χ² (Médéric Boquien)
-- Speedup of the computation of the χ² by ~10% (Médéric Boquien)
+- Slight speedup of the computation of the likelihood from the χ² using a multiplication rather than a division. (Médéric Boquien)
+- Speedup of the computation of the χ² by ~10% taking the opposite of a scalar rather than of an array. (Médéric Boquien)
 - Thanks to a change in the layout of the models storage in RAM, the computation of the χ² is now massively faster when the run contains multiple redshifts. (Médéric Boquien)
+- The computation of the weighted means and standard deviations has been made ~50% faster by normalising the likelihood. (Médéric Boquien)
 - The the fritz2006 module should now run faster thanks to an optimisation of the computation of the luminosity of the various AGN components (Médéric Boquien & Guang Yang)
 
 ## 2018.0 (2018-11-06)

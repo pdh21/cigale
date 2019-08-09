@@ -168,6 +168,7 @@ def analysis(idx, obs):
         scaling_l = scaling[wlikely]
 
         gbl_results.bayes.weight[idx] = np.nansum(likelihood)
+        likelihood *= 1. / gbl_results.bayes.weight[idx]
 
         # We compute the weighted average and standard deviation using the
         # likelihood as weight.
