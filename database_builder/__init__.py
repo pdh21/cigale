@@ -980,7 +980,7 @@ def build_base(bc03res='lr'):
     print("\nDONE\n")
     print('#' * 78)
 
-    print("11- "Importing the Yggdrasil SSP")
+    print("11- Importing the Yggdrasil SSP")
     build_yggdrasil_ssp(base)
     print("\nDONE\n")
     print('#' * 78)
