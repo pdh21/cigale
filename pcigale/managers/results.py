@@ -10,6 +10,7 @@ along with the names of the parameters, which are proportional to the mass,
 etc. Each of these classes contain a merge() method that allows to combine
 results of the analysis with different blocks of models.
 """
+import ctypes
 
 from astropy.table import Table, Column
 import numpy as np
@@ -190,9 +191,7 @@ class BestResultsManager(object):
                         for prop in allextpropnames}
         self.chi2 = SharedArray(nobs)
         self.scaling = SharedArray(nobs)
-
-        # We store the index as a float to work around python issue #10746
-        self.index = SharedArray(nobs)
+        self.index = SharedArray(nobs, ctypes.c_uint32)
 
     @property
     def flux(self):

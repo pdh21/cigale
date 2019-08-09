@@ -9,6 +9,8 @@ compute them, such as the configuration, the observations, and the parameters
 of the models.
 """
 
+import ctypes
+
 from astropy.table import Table, Column
 
 from .utils import SharedArray, get_info
@@ -50,7 +52,7 @@ class ModelsManager(object):
         self.flux = {band: SharedArray(size) for band in bandnames}
         self.intprop = {prop: SharedArray(size) for prop in self.intpropnames}
         self.extprop = {prop: SharedArray(size) for prop in self.extpropnames}
-        self.index = SharedArray(size)
+        self.index = SharedArray(size, ctypes.c_uint32)
 
     def save(self, filename):
         """Save the fluxes and properties of all the models into a table.
