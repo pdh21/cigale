@@ -103,6 +103,9 @@ def sed(idx, midx):
     sed = gbl_warehouse.get_sed(gbl_models.params.modules,
                                 gbl_models.params.from_index(midx))
 
+    # The redshift is the fastest varying variable but we want to store it
+    # as the slowest one so that models at a given redshift are contiguous
+    idx = (idx % gbl_models.nz) * gbl_models.nm + idx // gbl_models.nz
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
         for band in gbl_models.flux:
             gbl_models.flux[band][idx] = np.nan
@@ -117,10 +120,11 @@ def sed(idx, midx):
             gbl_models.extprop[prop][idx] = sed.info[prop]
         for prop in gbl_models.intprop:
             gbl_models.intprop[prop][idx] = sed.info[prop]
+    gbl_models.index[idx] = midx
 
     gbl_counter.inc()
 
-
+@profile
 def analysis(idx, obs):
     """Worker process to analyse the PDF and estimate parameters values and
     store them in an instance of ResultsManager.
@@ -141,8 +145,10 @@ def analysis(idx, obs):
         # work on views of the arrays and not on copies to save on RAM.
         z = np.array(
             gbl_models.conf['sed_modules_params']['redshifting']['redshift'])
-        wz = slice(np.abs(obs.redshift-z).argmin(), None, z.size)
-        corr_dz = compute_corr_dz(z[wz.start], obs)
+        length = gbl_models.nm
+        zidx = np.abs(obs.redshift-z).argmin()
+        wz = slice(zidx * length, (zidx + 1) * length, 1)
+        corr_dz = compute_corr_dz(z[zidx], obs)
     else:  # We do not know the redshift so we use the full grid
         wz = slice(0, None, 1)
         corr_dz = 1.
@@ -205,8 +211,7 @@ def analysis(idx, obs):
         best_idx_z = np.nanargmin(chi2)
         gbl_results.best.chi2[idx] = chi2[best_idx_z]
         gbl_results.best.scaling[idx] = scaling[best_idx_z]
-        gbl_results.best.index[idx] = (wz.start + best_idx_z*wz.step +
-                                       gbl_models.block.start)
+        gbl_results.best.index[idx] = gbl_models.index[wz][best_idx_z]
 
     gbl_counter.inc()
 

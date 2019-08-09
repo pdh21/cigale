@@ -41,11 +41,16 @@ class ModelsManager(object):
             bandnames = set(obs.bands+conf['analysis_params']['bands'])
         else:
             bandnames = obs.bands
+
         size = len(params.blocks[iblock])
+        if conf['parameters_file'] is "":
+            self.nz = len(conf['sed_modules_params']['redshifting']['redshift'])
+            self.nm = size // self.nz
 
         self.flux = {band: SharedArray(size) for band in bandnames}
         self.intprop = {prop: SharedArray(size) for prop in self.intpropnames}
         self.extprop = {prop: SharedArray(size) for prop in self.extpropnames}
+        self.index = SharedArray(size)
 
     def save(self, filename):
         """Save the fluxes and properties of all the models into a table.
