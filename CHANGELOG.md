@@ -24,6 +24,7 @@
 - Make sure that the best-fit models are stored with the correct scaling factor when the distance is given explicitly (Médéric Boquien)
 - Some labels and the title for the SED plots has been improved to avoid overlaps and overflows. (Médéric Boquien)
 - Ensure that best models are properly computed when models are computed by blocks and that no fit could be made in one or more blocks. This can be case if all the models in the block are older than the age of the universe. (Médéric)
+- Make sure that the parameters are saved with the proper scale (linear or logarithmic) in the χ² files. (Médéric Boquien)
 ### Optimised
 - Slight speedup of the computation of the likelihood from the χ² using a multiplication rather than a division. (Médéric Boquien)
 - Speedup of the computation of the χ² by ~10% taking the opposite of a scalar rather than of an array. (Médéric Boquien)
