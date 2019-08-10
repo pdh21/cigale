@@ -3,11 +3,11 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Médéric Boquien
 
-from astropy.cosmology import WMAP7 as cosmo
 from astropy.table import Column
 import numpy as np
 from scipy.constants import parsec
 
+from ..utils.cosmology import luminosity_distance
 from ..utils.io import read_table
 from .utils import get_info
 
@@ -299,11 +299,8 @@ class Observation(object):
         if 'distance' in row.colnames and np.isfinite(row['distance']):
             self.distance = row['distance'] * parsec * 1e6
         else:
-            if self.redshift == 0.:
-                self.distance = 10. * parsec
-            elif self.redshift > 0.:
-                self.distance = cosmo.luminosity_distance(self.redshift).value \
-                                * 1e6 * parsec
+            if self.redshift >= 0.:
+                self.distance = luminosity_distance(self.redshift)
             else:
                 self.distance = np.nan
         self.flux = {k: row[k] for k in cls.bands

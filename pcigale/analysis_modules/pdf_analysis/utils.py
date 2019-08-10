@@ -8,7 +8,7 @@
 from functools import lru_cache
 
 from astropy import log
-from astropy.cosmology import WMAP7 as cosmo
+from ...utils.cosmology import luminosity_distance
 import numpy as np
 from scipy import optimize
 from scipy.constants import parsec
@@ -48,11 +48,7 @@ def compute_corr_dz(model_z, obs):
         Object containing the distance and redshift of an object
 
     """
-    if model_z == 0.:
-        mod_distance = 10. * parsec
-    else:
-        mod_distance = cosmo.luminosity_distance(model_z).value * 1e6 * parsec
-    return (obs.distance / mod_distance) ** 2. * \
+    return (obs.distance / luminosity_distance(model_z)) ** 2. * \
            (1. + model_z) / (1. + obs.redshift)
 
 
