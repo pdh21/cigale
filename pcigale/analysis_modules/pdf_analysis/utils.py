@@ -289,13 +289,15 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
 
 def weighted_param(param, weights):
     """Compute the weighted mean and standard deviation of an array of data.
+    Note that here we assume that the sum of the weights is normalised to 1.
+    This simplifies and accelerates the computation.
 
     Parameters
     ----------
     param: array
         Values of the parameters for the entire grid of models
     weights: array
-        Weights by which to weight the parameter values
+        Weights by which to weigh the parameter values
 
     Returns
     -------
