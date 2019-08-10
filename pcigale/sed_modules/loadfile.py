@@ -13,7 +13,7 @@ This module reads a SED spectrum from a file.
 
 from collections import OrderedDict
 
-from ..utils import read_table
+from ..utils.io import read_table
 from . import SedModule
 
 

@@ -8,7 +8,7 @@ from astropy.table import Column
 import numpy as np
 from scipy.constants import parsec
 
-from ..utils import read_table
+from ..utils.io import read_table
 from .utils import get_info
 
 

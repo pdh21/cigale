@@ -15,7 +15,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from ..utils import read_table
+from ..utils.io import read_table
 from . import SedModule
 
 

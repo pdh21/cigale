@@ -8,7 +8,7 @@ import collections
 import itertools
 import numpy as np
 
-from ..utils import read_table
+from ..utils.io import read_table
 
 
 class ParametersManager(object):
