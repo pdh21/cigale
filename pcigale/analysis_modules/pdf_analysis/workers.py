@@ -10,8 +10,8 @@ from copy import deepcopy
 
 import numpy as np
 
-from ..utils import nothread
 from .utils import save_chi2, compute_corr_dz, compute_chi2, weighted_param
+from ..utils import nothreading
 from ...warehouse import SedWarehouse
 
 
@@ -30,7 +30,7 @@ def init_sed(models, counter):
 
     # Limit the number of threads to 1 if we use MKL in order to limit the
     # oversubscription of the CPU/RAM.
-    nothread()
+    nothreading()
 
     gbl_warehouse = SedWarehouse()
 
@@ -52,6 +52,9 @@ def init_analysis(models, results, counter):
 
     """
     global gbl_models, gbl_obs, gbl_results, gbl_counter
+
+    # Limit the number of threads to 1 to limit the oversubscription of the CPU
+    nothreading()
 
     gbl_models = models
     gbl_obs = models.obs
@@ -78,6 +81,9 @@ def init_bestfit(conf, params, observations, results, counter):
     """
     global gbl_warehouse, gbl_conf, gbl_params, gbl_obs
     global gbl_results, gbl_counter
+
+    # Limit the number of threads to 1 to limit the oversubscription of the CPU
+    nothreading()
 
     gbl_warehouse = SedWarehouse()
 

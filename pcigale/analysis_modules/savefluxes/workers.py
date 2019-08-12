@@ -7,8 +7,8 @@
 
 import numpy as np
 
+from ..utils import nothreading
 from ...warehouse import SedWarehouse
-from ..utils import nothread
 
 
 def init_fluxes(models, counter):
@@ -26,9 +26,8 @@ def init_fluxes(models, counter):
     """
     global gbl_warehouse, gbl_models, gbl_obs, gbl_save, gbl_counter
 
-    # Limit the number of threads to 1 if we use MKL in order to limit the
-    # oversubscription of the CPU/RAM.
-    nothread()
+    # Limit the number of threads to 1 to limit the oversubscription of the CPU
+    nothreading()
 
     gbl_warehouse = SedWarehouse()
 

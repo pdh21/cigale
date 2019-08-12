@@ -26,6 +26,7 @@
 - Some labels and the title for the SED plots has been improved to avoid overlaps and overflows. (Médéric Boquien)
 - Ensure that best models are properly computed when models are computed by blocks and that no fit could be made in one or more blocks. This can be case if all the models in the block are older than the age of the universe. (Médéric)
 - Make sure that the parameters are saved with the proper scale (linear or logarithmic) in the χ² files. (Médéric Boquien)
+- Some math libraries such as MKL or OpenBLAS sometime try to be (too) smart, starting computation threads on their own. As cigale is already parallel, this just oversubscribes the CPU and can lead to important slowdowns. An environment variable could be set to disable this, but this is cumbersome. Disabling within the code did not seem to work. A different method has been implement, which should address the issue to forcefully disable threading in these libraries. (Médéric Boquien)
 ### Optimised
 - Slight speedup of the computation of the likelihood from the χ² using a multiplication rather than a division. (Médéric Boquien)
 - Speedup of the computation of the χ² by ~10% taking the opposite of a scalar rather than of an array. (Médéric Boquien)
