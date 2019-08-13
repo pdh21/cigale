@@ -27,6 +27,15 @@ def nothreading():
     None
 
     """
+    for basename in ['iomp', 'gomp', 'omp', 'vcomp']:
+        try:  # Disable threading for OpenMP
+            name = find_library(basename)
+            if name:
+                lib = ctypes.cdll.LoadLibrary(name)
+                lib.omp_set_num_threads(ctypes.c_int(1))
+        except:
+            continue
+
     try:  # Disable threading for MKL
         name = find_library('mkl_rt')
         if name:
