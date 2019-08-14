@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import multiprocessing as mp
 import numpy as np
 from pcigale.utils import read_table
-from pcigale.analysis_modules.utils import Counter, nothreading
+from pcigale.analysis_modules.utils import Counter
 
 
 def pool_initializer(counter):
@@ -27,9 +27,7 @@ def pool_initializer(counter):
     :param counter: Counter class object for the number of models plotted
     """
     global gbl_counter
-    # Limit the number of threads to 1 if we use MKL in order to limit the
-    # oversubscription of the CPU/RAM.
-    nothreading()
+
     gbl_counter = counter
 
 

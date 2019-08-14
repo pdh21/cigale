@@ -6,51 +6,10 @@
 """
 Various utility functions for pcigale analysis modules
 """
-import ctypes
-from ctypes.util import find_library
+
 import multiprocessing as mp
 import time
 
-
-def nothreading():
-    """Some libraries such as Intel's MKL have automatic threading. This is
-    good when having only one process. However we already do our own
-    parallelisation. The additional threads created by the MKL increase in
-    excess the pressure on the CPU and on the RAM slowing everything down.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    None
-
-    """
-    for basename in ['iomp', 'gomp', 'omp', 'vcomp']:
-        try:  # Disable threading for OpenMP
-            name = find_library(basename)
-            if name:
-                lib = ctypes.cdll.LoadLibrary(name)
-                lib.omp_set_num_threads(ctypes.c_int(1))
-        except:
-            continue
-
-    try:  # Disable threading for MKL
-        name = find_library('mkl_rt')
-        if name:
-            lib = ctypes.cdll.LoadLibrary(name)
-            lib.mkl_set_num_threads(ctypes.byref(ctypes.c_int(1)))
-    except:
-        pass
-
-    try:  # Disable threading for OpenBLAS
-        name = find_library('openblas')
-        if name:
-            lib = ctypes.cdll.LoadLibrary(name)
-            lib.openblas_set_num_threads(ctypes.c_int(1))
-    except:
-        pass
 
 class Counter:
     """Class to count the number of models computers/objects analysed. It has

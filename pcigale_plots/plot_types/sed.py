@@ -22,7 +22,7 @@ from scipy.constants import c
 from pcigale.data import Database
 from pcigale.utils import read_table
 import matplotlib.gridspec as gridspec
-from pcigale.analysis_modules.utils import Counter, nothreading
+from pcigale.analysis_modules.utils import Counter
 
 # Name of the file containing the best models information
 BEST_RESULTS = "results.fits"
@@ -46,9 +46,7 @@ def pool_initializer(counter):
     :param counter: Counter class object for the number of models plotted
     """
     global gbl_counter
-    # Limit the number of threads to 1 if we use MKL in order to limit the
-    # oversubscription of the CPU/RAM.
-    nothreading()
+
     gbl_counter = counter
 
 
