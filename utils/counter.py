@@ -46,5 +46,8 @@ class Counter:
 
     def pprint(self, n):
         dt = time.time() - self.t0
-        print(f"{n}/{self.nmodels} performed in {dt:.1f} seconds ({n/dt:.1f}/s)",
+        s = round(dt % 60, 1)
+        m = round((dt // 60) % 60)
+        h = round(dt // 3600)
+        print(f"{n}/{self.nmodels} in {h:02}:{m:02}:{s:04.1f} ({n/dt:.1f}/s)",
               end="\n" if n == self.nmodels else "\r")
