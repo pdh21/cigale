@@ -31,7 +31,7 @@ import multiprocessing as mp
 import numpy as np
 
 from .. import AnalysisModule
-from ..utils import Counter
+from utils.counter import Counter
 from .workers import sed as worker_sed
 from .workers import init_sed as init_worker_sed
 from .workers import init_analysis as init_worker_analysis

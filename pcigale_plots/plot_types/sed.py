@@ -20,9 +20,9 @@ from os import path
 import pkg_resources
 from scipy.constants import c
 from pcigale.data import Database
-from pcigale.utils import read_table
+from utils.io import read_table
 import matplotlib.gridspec as gridspec
-from pcigale.analysis_modules.utils import Counter
+from utils.counter import Counter
 
 # Name of the file containing the best models information
 BEST_RESULTS = "results.fits"

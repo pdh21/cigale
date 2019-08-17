@@ -4,7 +4,8 @@
 # Author: Médéric Boquien
 
 """
-Various utility functions for pcigale analysis modules
+Multiprocessing counter class with utility functions for periodic updating and
+printing.
 """
 
 import multiprocessing as mp

@@ -17,7 +17,7 @@ import multiprocessing as mp
 import numpy as np
 import pkg_resources
 from scipy import stats
-from pcigale.analysis_modules.utils import Counter
+from utils.counter import Counter
 
 # Name of the file containing the best models information
 BEST_RESULTS = "results.fits"

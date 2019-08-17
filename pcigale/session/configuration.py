@@ -16,7 +16,7 @@ import validate
 
 from ..managers.parameters import ParametersManager
 from ..data import Database
-from ..utils.io import read_table
+from utils.io import read_table
 from .. import sed_modules
 from .. import analysis_modules
 from ..warehouse import SedWarehouse

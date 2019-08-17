@@ -8,7 +8,7 @@ import numpy as np
 from scipy.constants import parsec
 
 from ..utils.cosmology import luminosity_distance
-from ..utils.io import read_table
+from utils.io import read_table
 from .utils import get_info
 
 
