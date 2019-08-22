@@ -459,9 +459,10 @@ def build_yggdrasil_ssp(base):
 
     # Metallicities associated to each key
     metallicities = ["0.004", "0.008", "0.02"]
+    fcovs = ["0", "0.5"]
 
-    for Z in metallicities:
-        filename = f"{yggdrasil_dir}Z={Z}_kroupa_IMF_fcov_0.5_SFR_inst_Spectra"
+    for Z, fcov in itertools.product(metallicities, fcovs):
+        filename = f"{yggdrasil_dir}Z={Z}_kroupa_IMF_fcov_{fcov}_SFR_inst_Spectra"
         print(f"Importing {filename}...")
 
         with open(filename) as f:
@@ -487,8 +488,8 @@ def build_yggdrasil_ssp(base):
 
         # Conversion from erg/s/Å/10⁶ Msun to W/nm/Msun
         ssp_lumin *= 1e-7 * 10 * 1e-6
-        base.add_yggdrasil_ssp(Yggdrasil_SSP(float(Z), ssp_time, ssp_wave,
-                                             ssp_info, ssp_lumin))
+        base.add_yggdrasil_ssp(Yggdrasil_SSP(float(Z), float(fcov), ssp_time,
+                                             ssp_wave, ssp_info, ssp_lumin))
 
 def build_dale2014(base):
     models = []
@@ -979,7 +980,11 @@ def build_base(bc03res='lr'):
     print("\nDONE\n")
     print('#' * 78)
 
+    print("11- Importing the Yggdrasil SSP")
     build_yggdrasil_ssp(base)
+    print("\nDONE\n")
+    print('#' * 78)
+
     base.session.close_all()
 
 

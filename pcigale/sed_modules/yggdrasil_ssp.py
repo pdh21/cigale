@@ -20,8 +20,13 @@ class YggdrasilSSP(SedModule):
     parameter_list = OrderedDict([
         ("metallicity", (
             "cigale_list(options=0.004 & 0.008 & 0.02)",
-            "Metalicity. Possible values are: 0.004, 0.008, and 0.02.",
+            "Metallicity. Possible values are: 0.004, 0.008, and 0.02.",
             0.02
+        )),
+        ("fcov", (
+            "cigale_list(options=0 & 0.5)",
+            "Coverting fraction. Possible values are 0 and 0.5.",
+            0.5
         )),
         ("separation_age", (
             "cigale_list(dtype=int, minvalue=0)",
@@ -35,10 +40,12 @@ class YggdrasilSSP(SedModule):
     def _init_code(self):
         """Read the SSP from the database."""
         self.metallicity = float(self.parameters["metallicity"])
+        self.fcov = float(self.parameters["fcov"])
         self.separation_age = int(self.parameters["separation_age"])
 
         with Database() as database:
-            self.ssp = database.get_yggdrasil_ssp(self.metallicity)
+            self.ssp = database.get_yggdrasil_ssp(self.metallicity,
+                                                  self.fcov)
 
     def process(self, sed):
         """Add the convolution of a Bruzual and Charlot SSP to the SED
@@ -72,6 +79,7 @@ class YggdrasilSSP(SedModule):
         sed.add_module(self.name, self.parameters)
 
         sed.add_info("stellar.metallicity", self.metallicity)
+        sed.add_info("stellar.fcov", self.fcov)
         sed.add_info("stellar.old_young_separation_age", self.separation_age)
         sed.add_info("stellar.age", self.ssp.time_grid[index])
 
