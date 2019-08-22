@@ -21,7 +21,7 @@ from .. import sed_modules
 from .. import analysis_modules
 from ..warehouse import SedWarehouse
 from . import validation
-
+from pcigale.sed_modules.nebular import default_lines
 
 class Configuration(object):
     """This class manages the configuration of pcigale.
@@ -161,6 +161,7 @@ class Configuration(object):
         # Getting the list of the filters available in pcigale database
         with Database() as base:
             filter_list = base.get_filter_names()
+        filter_list += [f'line.{line}' for line in default_lines]
 
         if self.config['data_file'] != '':
             obs_table = read_table(self.config['data_file'])
