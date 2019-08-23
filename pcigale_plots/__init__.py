@@ -28,8 +28,6 @@ from pcigale.utils import read_table
 from pcigale.session.configuration import Configuration
 import matplotlib.gridspec as gridspec
 
-__version__ = "0.1-alpha"
-
 
 # Name of the file containing the best models information
 BEST_RESULTS = "results.fits"
