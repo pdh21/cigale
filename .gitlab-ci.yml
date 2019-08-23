@@ -12,5 +12,5 @@ build_wheel:
   script:
     - python setup.py sdist bdist_wheel
     - pip install twine
-    - twine upload --repository-url $TWINE_URL -u $TWINE_USER -p $TWINE_PASS dist/pcigale*.whl
+    - twine upload --verbose --disable-progress-bar --repository-url $TWINE_URL -u $TWINE_USER -p $TWINE_PASS dist/pcigale*.whl
   when: manual
