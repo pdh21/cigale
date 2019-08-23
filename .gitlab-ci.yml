@@ -1,16 +1,16 @@
 stages:
-  - build_wheel
+  - build
 
 build_wheel:
-  stage: build_wheel
+  stage: build
   image: python:latest
   variables:
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   cache:
     paths:
       - .cache/pip
-  script: python setup.py sdist bdist_wheel
-  artifacts:
-    paths:
-      - dist/*.whl
+  script:
+    - python setup.py sdist bdist_wheel
+    - pip install twine
+    - twine upload --repository-url $TWINE_URL -u $TWINE_USER -p $TWINE_PASS dist/pcigale*.whl
   when: manual
