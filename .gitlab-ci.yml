@@ -1,0 +1,16 @@
+stages:
+  - build_wheel
+
+build_wheel:
+  stage: build_wheel
+  image: python:latest
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    paths:
+      - .cache/pip
+  script: python setup.py sdist bdist_wheel
+  artifacts:
+    paths:
+      - dist/*.whl
+  when: manual
