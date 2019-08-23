@@ -55,25 +55,22 @@ class SharedArray(object):
         self.array[:] = np.nan
 
     def __setitem__(self, idx, data):
-        if isinstance(idx, slice):
-            self.array[idx] = data
-        else:
-            self._raw[idx] = data
+        self._raw[idx] = data
 
     def __getitem__(self, idx):
-        if isinstance(idx, slice):
-            return self.array[idx]
-        return self._raw[idx]
+        if isinstance(idx, int):
+            return self._raw[idx]
+        return self.array[idx]
 
     def __len__(self):
         return self.size
 
     def __rmul__(self, other):
-        return other * self.array
+        return other * self._array
 
     @property
     def array(self):
-        return np.ctypeslib.as_array(self._raw)
+        return self._array
 
     @property
     def raw(self):
@@ -83,5 +80,6 @@ class SharedArray(object):
     def raw(self, raw):
         if isinstance(raw, ctypes.Array):
             self._raw = raw
+            self._array = np.ctypeslib.as_array(self._raw)
         else:
             raise TypeError("Type must be RawArray.")

@@ -35,6 +35,7 @@
 - Thanks to a change in the layout of the models storage in RAM, the computation of the χ² is now massively faster when the run contains multiple redshifts. (Médéric Boquien)
 - The computation of the weighted means and standard deviations has been made ~50% faster by normalising the likelihood. (Médéric Boquien)
 - The the fritz2006 module should now run faster thanks to an optimisation of the computation of the luminosity of the various AGN components (Médéric Boquien & Guang Yang)
+- Various optimisations have been made regarding shared arrays to make their access faster. The overall effect is a speedup of 3-4% for the computation of the models. (Médéric Boquien)
 
 ## 2018.0 (2018-11-06)
 ### Added
