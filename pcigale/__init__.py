@@ -20,8 +20,6 @@ from .session.configuration import Configuration
 from .analysis_modules import get_module
 from .managers.parameters import ParametersManager
 
-__version__ = "0.10.0"
-
 
 def init(config):
     """Create a blank configuration file.

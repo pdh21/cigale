@@ -14,8 +14,6 @@ import numpy as np
 
 from pcigale.data import Database, Filter
 
-__version__ = "0.1-alpha"
-
 
 def list_filters():
     """Print the list of filters in the pcigale database.
