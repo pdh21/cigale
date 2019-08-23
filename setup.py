@@ -43,7 +43,7 @@ setup(
 
     install_requires=['numpy', 'scipy', 'sqlalchemy', 'matplotlib',
                       'configobj', 'astropy'],
-
+    setup_requires=['numpy', 'scipy', 'astropy', 'sqlalchemy', 'configobj'],
     entry_points=entry_points,
 
     cmdclass={"build": custom_build},
@@ -52,6 +52,7 @@ setup(
 
     author="The CIGALE team",
     author_email="cigale@lam.fr",
+    url="https://cigale.lam.fr",
     description="Python Code Investigating Galaxy Emission",
     license="CeCILL-V2",
     keywords="astrophysics, galaxy, SED fitting"

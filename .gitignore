@@ -6,3 +6,5 @@ pcigale/data/data.db
 pcigale.egg-info
 docs/_build
 docs/api
+dist/
+build/
