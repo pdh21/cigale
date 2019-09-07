@@ -121,16 +121,17 @@ class PdfAnalysis(AnalysisModule):
 
         initargs = (models, results, Counter(len(obs)))
         self._parallel_job(worker_analysis, obs, initargs,
-                           init_worker_analysis, conf['cores'])
+                           init_worker_analysis, conf['cores'], 1)
 
         return results
 
     def _compute_best(self, conf, obs, params, results):
         initargs = (conf, params, obs, results, Counter(len(obs)))
         self._parallel_job(worker_bestfit, obs, initargs,
-                           init_worker_bestfit, conf['cores'])
+                           init_worker_bestfit, conf['cores'], 1)
 
-    def _parallel_job(self, worker, items, initargs, initializer, ncores):
+    def _parallel_job(self, worker, items, initargs, initializer, ncores,
+                      chunksize=None):
         if ncores == 1:  # Do not create a new process
             initializer(*initargs)
             for idx, item in enumerate(items):
@@ -138,7 +139,7 @@ class PdfAnalysis(AnalysisModule):
         else:  # run in parallel
             with mp.Pool(processes=ncores, initializer=initializer,
                          initargs=initargs) as pool:
-                pool.starmap(worker, enumerate(items))
+                pool.starmap(worker, enumerate(items), chunksize)
 
     def _compute(self, conf, obs, params):
         results = []

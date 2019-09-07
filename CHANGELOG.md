@@ -36,6 +36,7 @@
 - The computation of the weighted means and standard deviations has been made ~50% faster by normalising the likelihood. (Médéric Boquien)
 - The the fritz2006 module should now run faster thanks to an optimisation of the computation of the luminosity of the various AGN components (Médéric Boquien & Guang Yang)
 - Various optimisations have been made regarding shared arrays to make their access faster. The overall effect is a speedup of 3-4% for the computation of the models. (Médéric Boquien)
+- All the cores should now be used over the entire duration of the computation of the Bayesian and best-fit estimates. Before the number of active cores could drop towards the end of the computation. (Médéric Boquien)
 
 ## 2018.0 (2018-11-06)
 ### Added
