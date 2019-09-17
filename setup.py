@@ -50,6 +50,7 @@ setup(
     package_data={'pcigale': ['data/data.db'],
                   'pcigale_plots': ['resources/CIGALE.png']},
 
+    include_package_data=True,
     author="The CIGALE team",
     author_email="cigale@lam.fr",
     url="https://cigale.lam.fr",
