@@ -71,6 +71,11 @@ class DL2007(SedModule):
         self.umax = float(self.parameters["umax"])
         self.gamma = float(self.parameters["gamma"])
 
+        # We also compute <U>
+        self.umean = (1. - self.gamma) * self.umin + \
+                     self.gamma * np.log(self.umax / self.umin) / \
+                     (1. / self.umin  - 1. / self.umax)
+
         with Database() as database:
             self.model_minmin = database.get_dl2007(self.qpah, self.umin,
                                                     self.umin)
@@ -110,6 +115,7 @@ class DL2007(SedModule):
         sed.add_info('dust.qpah', self.qpah)
         sed.add_info('dust.umin', self.umin)
         sed.add_info('dust.umax', self.umax)
+        sed.add_info('dust.umean', self.umean)
         sed.add_info('dust.gamma', self.gamma)
         # To compute the dust mass we simply divide the luminosity in W by the
         # emissivity in W/kg of dust.
