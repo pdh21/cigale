@@ -68,10 +68,10 @@ class PdfAnalysis(AnalysisModule):
             False
         )),
         ("save_chi2", (
-            "boolean()",
-            "If true, for each observation and each analysed property, save "
-            "the raw chi2. It occupies ~15 MB/million models/variable.",
-            False
+            "option('all', 'none', 'properties', 'fluxes')",
+            "Save the raw chi2. It occupies ~15 MB/million models/variable. "
+            "Allowed values are 'all', 'none', 'properties', and 'fluxes'.",
+            "none"
         )),
         ("lim_flag", (
             "boolean()",

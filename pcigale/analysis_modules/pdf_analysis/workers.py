@@ -177,7 +177,8 @@ def analysis(idx, obs):
             mean, std = weighted_param(_(values[wlikely]), likelihood)
             gbl_results.bayes.intmean[prop][idx] = mean
             gbl_results.bayes.interror[prop][idx] = std
-            if gbl_models.conf['analysis_params']['save_chi2'] is True:
+            if (gbl_models.conf['analysis_params']['save_chi2'] in
+                ['all', 'properties']):
                 save_chi2(obs, prop, gbl_models, chi2, _(values))
 
         for prop in gbl_results.bayes.extmean:
@@ -191,7 +192,8 @@ def analysis(idx, obs):
                                        likelihood)
             gbl_results.bayes.extmean[prop][idx] = mean
             gbl_results.bayes.exterror[prop][idx] = std
-            if gbl_models.conf['analysis_params']['save_chi2'] is True:
+            if (gbl_models.conf['analysis_params']['save_chi2'] in
+                ['all', 'properties']):
                 save_chi2(obs, prop, gbl_models, chi2,
                           _(values * scaling * corr_dz))
 
@@ -201,7 +203,8 @@ def analysis(idx, obs):
                                        likelihood)
             gbl_results.bayes.fluxmean[band][idx] = mean
             gbl_results.bayes.fluxerror[band][idx] = std
-            if gbl_models.conf['analysis_params']['save_chi2'] is True:
+            if (gbl_models.conf['analysis_params']['save_chi2'] in
+                ['all', 'fluxes']):
                 save_chi2(obs, band, gbl_models, chi2, values * scaling)
 
         best_idx_z = np.nanargmin(chi2)
