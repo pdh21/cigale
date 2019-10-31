@@ -22,7 +22,7 @@ from collections import OrderedDict
 
 import numpy as np
 from scipy.constants import parsec
-from scipy.misc import factorial
+from scipy.special import factorial
 from astropy.cosmology import WMAP7 as cosmology
 
 from . import SedModule

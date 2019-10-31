@@ -92,7 +92,8 @@ class Fritz2006(SedModule):
         self.tau = float(self.parameters["tau"])
         self.beta = float(self.parameters["beta"])
         self.gamma = float(self.parameters["gamma"])
-        self.opening_angle = (180. - self.parameters["opening_angle"]) / 2.
+        self.opening_angle = (
+            180. - float(self.parameters["opening_angle"])) / 2.
         self.psy = float(self.parameters["psy"])
         self.fracAGN = float(self.parameters["fracAGN"])
 

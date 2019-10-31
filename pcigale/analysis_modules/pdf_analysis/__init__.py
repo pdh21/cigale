@@ -172,6 +172,8 @@ class PdfAnalysis(AnalysisModule):
 
         initargs = (params, filters, variables_nolog, model_fluxes,
                     model_variables, time.time(), mp.Value('i', 0))
+        # Cast configuration 'cores' to int in case it is read as string
+        conf['cores'] = int(conf['cores'])
         if conf['cores'] == 1:  # Do not create a new process
             init_worker_sed(*initargs)
             for idx in range(n_params):
