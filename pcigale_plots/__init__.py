@@ -322,12 +322,13 @@ def _sed_worker(obs, mod, filters, sed_type, nologo):
             figure.suptitle(
                 "Best model for {} at z = {} $\chi^2$={} \n OPT$\chi^2$={} " \
                 "IR$\chi^2$={} threshold (OPT IR)={}  [$\mu$m]".format(
-                    obs['id'],
-                    np.round(obs['redshift'], decimals=3),
-                    np.round(mod['best.reduced_chi_square'], decimals=2),
-                    np.round(OPTchi2, decimals=2),
-                    np.round(IRchi2, decimals=2),
-                    np.round(OPT_IR_LIMIT * (1 + obs['redshift']), decimals=2)
+                    str(obs['id']),
+                    str(np.round(obs['redshift'], decimals=3)),
+                    str(np.round(mod['best.reduced_chi_square'], decimals=2)),
+                    str(np.round(OPTchi2, decimals=2)),
+                    str(np.round(IRchi2, decimals=2)),
+                    str(np.round(OPT_IR_LIMIT * (1 + obs['redshift']),
+                                 decimals=2))
                 ))
 
             if nologo is False:
