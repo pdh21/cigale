@@ -260,7 +260,9 @@ def bestfit(oidx, obs):
 
         # If the distance is user defined, the redshift-based luminosity distance
         # of the model is probably incorrect so we replace it
-        sed.add_info('universe.luminosity_distance', obs.distance, force=True)
+        if np.isfinite(obs.distance):
+            sed.add_info('universe.luminosity_distance', obs.distance,
+                         force=True)
         for prop in gbl_results.best.intprop:
             gbl_results.best.intprop[prop][oidx] = sed.info[prop]
 
