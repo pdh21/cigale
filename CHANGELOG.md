@@ -7,6 +7,7 @@
 - Implementation of the auto-detection of lines in the input flux file so they are automatically added to the list of bands in `pcigale.ini`. (Médéric Boquien)
 - The `dl2007` and `dl2014` modules now provide \<U\>. (Médéric Boquien)
 - Saving the χ² is now a bit more fine-grained. It is possible to save none, all, only the properties, or only the fluxes. (Médéric Boquien)
+- The database now includes the JWST MIRI and NIRCam filters. (Médéric Boquien)
 ### Changed
 - Python 3.6 is now the minimum required version. (Médéric Boquien)
 - The logo has now been moved to the lower-right corner of the figure so that it does not overlap with any information and it has been updated for a less pixelated version. (Médéric Boquien & Rodrigo González Castillo)
