@@ -17,7 +17,7 @@ class VdtValueRepeatedError(vdt.VdtValueError):
         Traceback (most recent call last):
         VdtValueRepeatedError: the value "jedie" is too long.
         """
-        vdt.ValidateError.__init__(self, 'the value {} is repeated.'.format(value))
+        vdt.ValidateError.__init__(self, f"the value {value} is repeated.")
 
 
 def is_cigale_list(inobject, dtype='float', minvalue=None, maxvalue=None,

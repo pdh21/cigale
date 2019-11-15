@@ -100,6 +100,10 @@ class Fritz2006(SedModule):
             self.fritz2006 = base.get_fritz2006(self.r_ratio, self.tau,
                                                 self.beta, self.gamma,
                                                 self.opening_angle, self.psy)
+        self.l_agn_scatt = np.trapz(self.fritz2006.lumin_scatt,
+                                    x=self.fritz2006.wave)
+        self.l_agn_agn = np.trapz(self.fritz2006.lumin_agn,
+                                  x=self.fritz2006.wave)
 
     def process(self, sed):
         """Add the IR re-emission contributions
@@ -128,10 +132,8 @@ class Fritz2006(SedModule):
         if self.fracAGN < 1.:
             agn_power = luminosity * (1./(1.-self.fracAGN) - 1.)
             l_agn_therm = agn_power
-            l_agn_scatt = np.trapz(agn_power * self.fritz2006.lumin_scatt,
-                                   x=self.fritz2006.wave)
-            l_agn_agn = np.trapz(agn_power * self.fritz2006.lumin_agn,
-                                 x=self.fritz2006.wave)
+            l_agn_scatt = agn_power * self.l_agn_scatt
+            l_agn_agn = agn_power * self.l_agn_agn
             l_agn_total = l_agn_therm + l_agn_scatt + l_agn_agn
 
         else:

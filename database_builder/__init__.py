@@ -141,11 +141,16 @@ def read_bc03_ssp(filename):
 def build_filters(base):
     filters = []
     filters_dir = os.path.join(os.path.dirname(__file__), 'filters/')
-    for filter_file in glob.glob(filters_dir + '*.dat'):
+    for filter_file in glob.glob(filters_dir + '**/*.dat', recursive=True):
         with open(filter_file, 'r') as filter_file_read:
             filter_name = filter_file_read.readline().strip('# \n\t')
             filter_type = filter_file_read.readline().strip('# \n\t')
             filter_description = filter_file_read.readline().strip('# \n\t')
+
+        # Make the name dynamic for filters in subdirectories
+        tmp_name = filter_file.replace(filters_dir, '')[:-4]
+        if '/' in tmp_name:
+            filter_name = tmp_name.replace('/', '.')
         filter_table = np.genfromtxt(filter_file)
         # The table is transposed to have table[0] containing the wavelength
         # and table[1] containing the transmission.

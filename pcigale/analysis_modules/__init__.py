@@ -54,7 +54,7 @@ class AnalysisModule(object):
         if os.path.exists('out/'):
             name = datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + '_out/'
             os.rename('out/', name)
-            print("The out/ directory was renamed to {}".format(name))
+            print(f"The out/ directory was renamed to {name}")
 
         os.mkdir('out/')
         shutil.copy('pcigale.ini', 'out/')

@@ -220,9 +220,6 @@ class SED(object):
     def get_lumin_contribution(self, name):
         """Get the luminosity vector of a given contribution
 
-        If the name of the contribution is not unique in the SED, the flux of
-        the last one is returned.
-
         Parameters
         ----------
         name: string
@@ -235,10 +232,7 @@ class SED(object):
             wavelength grid.
 
         """
-        # Find the index of the _last_ name element
-        idx = (len(self.contribution_names) - 1 -
-               self.contribution_names[::-1].index(name))
-        return self.luminosities[idx]
+        return self.luminosities[self.contribution_names.index(name)]
 
     def compute_fnu(self, filter_name):
         """

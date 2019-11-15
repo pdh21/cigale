@@ -413,8 +413,8 @@ class Database(object):
                          result.spec_table)
         else:
             raise DatabaseLookupError(
-                "The M2005 SSP for imf <{0}> and metallicity <{1}> is not in "
-                "the database.".format(imf, metallicity))
+                f"The M2005 SSP for imf <{imf}> and metallicity <{metallicity}>"
+                f" is not in the database.")
 
     def get_m2005_parameters(self):
         """Get parameters for the Maraston 2005 stellar models.
@@ -477,8 +477,8 @@ class Database(object):
                         result.spec_table)
         else:
             raise DatabaseLookupError(
-                "The BC03 SSP for imf <{0}> and metallicity <{1}> is not in "
-                "the database.".format(imf, metallicity))
+                f"The BC03 SSP for imf <{imf}> and metallicity <{metallicity}> "
+                f"is not in the database.")
 
     def get_bc03_parameters(self):
         """Get parameters for the Bruzual & Charlot 2003 stellar models.
@@ -647,8 +647,8 @@ class Database(object):
                           result.lumin)
         else:
             raise DatabaseLookupError(
-                "The DL2007 model for qpah <{0}>, umin <{1}>, and umax <{2}> "
-                "is not in the database.".format(qpah, umin, umax))
+                f"The DL2007 model for qpah <{qpah}>, umin <{umin}>, and umax "
+                f"<{umax}> is not in the database.")
 
     def get_dl2007_parameters(self):
         """Get parameters for the DL2007 models.
@@ -718,9 +718,8 @@ class Database(object):
                           result.wave, result.lumin)
         else:
             raise DatabaseLookupError(
-                "The DL2014 model for qpah <{0}>, umin <{1}>, umax <{2}>, and "
-                "alpha <{3}> is not in the database."
-                .format(qpah, umin, umax, alpha))
+                f"The DL2014 model for qpah <{qpah}>, umin <{umin}>, umax "
+                f"<{umax}>, and alpha <{alpha}> is not in the database.")
 
     def get_dl2014_parameters(self):
         """Get parameters for the DL2014 models.
@@ -786,8 +785,8 @@ class Database(object):
                             result.lumin)
         else:
             raise DatabaseLookupError(
-                "The Dale2014 template for frac_agn <{0}> and alpha <{1}> "
-                "is not in the database.".format(frac_agn, alpha))
+                f"The Dale2014 template for frac_agn <{frac_agn}> and alpha "
+                f"<{alpha}> is not in the database.")
 
     def get_dale2014_parameters(self):
         """Get parameters for the Dale 2014 models.
@@ -1032,8 +1031,8 @@ class Database(object):
                                  result.lumin)
         else:
             raise DatabaseLookupError(
-                "The Schreiber2016 template for type <{0}> and tdust <{1}> "
-                "is not in the database.".format(type, tdust))
+                f"The Schreiber2016 template for type <{type}> and tdust "
+                f"<{tdust}> is not in the database.")
 
     def get_schreiber2016_parameters(self):
         """Get parameters for the Scnreiber 2016 models.
@@ -1104,9 +1103,8 @@ class Database(object):
                           result.wave, result.lumin)
         else:
             raise DatabaseLookupError(
-                "The THEMIS model for qhac <{0}>, umin <{1}>, umax <{2}>, and "
-                "alpha <{3}> is not in the database."
-                .format(qhac, umin, umax, alpha))
+                f"The THEMIS model for qhac <{qhac}>, umin <{umin}>, umax "
+                f"<{umax}>, and alpha <{alpha}> is not in the database.")
 
     def _get_parameters(self, schema):
         """Generic function to get parameters from an arbitrary schema.
@@ -1186,7 +1184,7 @@ class Database(object):
                     raise Exception('The database is not writable.')
         else:
             raise DatabaseLookupError(
-                "The filter <{0}> is not in the database".format(name))
+                f"The filter <{name}> is not in the database")
 
     def get_filter(self, name):
         """
@@ -1215,7 +1213,7 @@ class Database(object):
                           result.pivot_wavelength)
         else:
             raise DatabaseLookupError(
-                "The filter <{0}> is not in the database".format(name))
+                f"The filter <{name}> is not in the database")
 
     def get_filter_names(self):
         """Get the list of the name of the filters in the database.

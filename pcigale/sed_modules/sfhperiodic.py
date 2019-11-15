@@ -90,7 +90,7 @@ class SfhPeriodic(SedModule):
             burst = np.zeros_like(time_grid)
             burst[:int(self.tau_bursts)+1] = 1.
         else:
-            raise Exception("Burst type {} unknown.".format(self.type_bursts))
+            raise Exception(f"Burst type {self.type_bursts} unknown.")
 
         for t_burst in np.arange(0, age, self.delta_bursts):
             self.sfr += burst

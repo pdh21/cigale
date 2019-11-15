@@ -37,7 +37,7 @@ class SharedArray(object):
     implementation and if new operations are done on these arrays, it may be
     necessary to define them here.
     """
-    def __init__(self, size):
+    def __init__(self, size, dtype=ctypes.c_double):
         """The RawArray is stored in raw, which is protected by a setter and
         a getter. The array property returns raw as a regular Numpy array. It
         is important to access both the RawArray and the Numpy array forms. The
@@ -47,29 +47,30 @@ class SharedArray(object):
         issue we selectively work with array or raw depending on whether the
         operation is done with a slice or not.
         """
-        self.raw = RawArray(ctypes.c_double, size)
+        self.raw = RawArray(dtype, size)
         self.size = size
+        # By default RawArray initialises all the elements to 0. Setting them to
+        # np.nan is preferanble to in case for a reason some elements are never
+        # assigned a value during a run
+        self.array[:] = np.nan
 
     def __setitem__(self, idx, data):
-        if isinstance(idx, slice):
-            self.array[idx] = data
-        else:
-            self._raw[idx] = data
+        self._raw[idx] = data
 
     def __getitem__(self, idx):
-        if isinstance(idx, slice):
-            return self.array[idx]
-        return self._raw[idx]
+        if isinstance(idx, int):
+            return self._raw[idx]
+        return self.array[idx]
 
     def __len__(self):
         return self.size
 
     def __rmul__(self, other):
-        return other * self.array
+        return other * self._array
 
     @property
     def array(self):
-        return np.ctypeslib.as_array(self._raw)
+        return self._array
 
     @property
     def raw(self):
@@ -79,5 +80,6 @@ class SharedArray(object):
     def raw(self, raw):
         if isinstance(raw, ctypes.Array):
             self._raw = raw
+            self._array = np.ctypeslib.as_array(self._raw)
         else:
             raise TypeError("Type must be RawArray.")

@@ -63,7 +63,7 @@ class BC03(SedModule):
             elif self.imf == 1:
                 self.ssp = database.get_bc03('chab', self.metallicity)
             else:
-                raise Exception("IMF #{} unknown".format(self.imf))
+                raise Exception(f"IMF #{self.imf} unknown")
 
     def process(self, sed):
         """Add the convolution of a Bruzual and Charlot SSP to the SED

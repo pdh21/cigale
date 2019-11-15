@@ -8,7 +8,6 @@
 import numpy as np
 
 from ...warehouse import SedWarehouse
-from ..utils import nothread
 
 
 def init_fluxes(models, counter):
@@ -25,10 +24,6 @@ def init_fluxes(models, counter):
 
     """
     global gbl_warehouse, gbl_models, gbl_obs, gbl_save, gbl_counter
-
-    # Limit the number of threads to 1 if we use MKL in order to limit the
-    # oversubscription of the CPU/RAM.
-    nothread()
 
     gbl_warehouse = SedWarehouse()
 
@@ -67,6 +62,6 @@ def fluxes(idx, midx):
             gbl_models.intprop[prop][idx] = sed.info[prop]
 
     if gbl_save is True:
-        sed.to_fits("out/{}".format(midx))
+        sed.to_fits(f"out/{midx}")
 
     gbl_counter.inc()

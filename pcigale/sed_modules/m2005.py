@@ -61,7 +61,7 @@ class M2005(SedModule):
             with Database() as database:
                 self.ssp = database.get_m2005('krou', self.metallicity)
         else:
-            raise Exception("IMF #{} unknown".format(self.imf))
+            raise Exception(f"IMF #{self.imf} unknown")
 
     def process(self, sed):
         """Add the convolution of a Maraston 2005 SSP to the SED
