@@ -59,6 +59,7 @@ class PdfAnalysis(AnalysisModule):
             "analyse all the physical properties (not recommended when there "
             "are many models).",
             ["stellar.m_star", "sfh.sfr10Myrs", "dust.luminosity", "dust.mass",
+             "attenuation.wircam_h",
              "dust.qpah", "dust.umin", "agn.fracAGN",
              "attenuation.bessell_b", "attenuation.galex_fuv",
              "attenuation.slope_BC", "attenuation.BC_to_ISM_factor",

@@ -108,7 +108,7 @@ class TwoPowerLawAtt(SedModule):
         ("Av_BC", (
             "cigale_list(minvalue=0)",
             "V-band attenuation in the birth clouds.",
-            [0.3, 0.8, 1.2, 1.7, 2.3, 2.8, 3.3, 3.8]
+            [0.1,0.3, 0.8, 1.2, 1.7, 2.3, 2.8, 3.3, 3.8]
         )),
         ("slope_BC", (
             "cigale_list()",
@@ -130,7 +130,7 @@ class TwoPowerLawAtt(SedModule):
             "Filters for which the attenuation will be computed and added to "
             "the SED information dictionary. You can give several filter "
             "names separated by a & (don't use commas).",
-            "bessell_b & galex_fuv"
+            "bessell_b & galex_fuv & wircam_h"
         ))
     ])
 
