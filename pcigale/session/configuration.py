@@ -105,14 +105,15 @@ class Configuration(object):
              ")"] +
             ["SSP:"] +
             ["* bc03 (Bruzual and Charlot 2003)"] +
-            ["* m2005 (Maraston 2005)"] +
+            ["* m2005 (Maraston 2005; note that it cannot be combined with the "
+             "nebular module)"] +
             ["Nebular emission:"] +
             ["* nebular (continuum and line nebular emission)"] +
             ["Dust attenuation:"] +
             ["* dustatt_modified_CF00 (modified Charlot & Fall 2000 "
              "attenuation law)"] +
-            ["* dustatt_modified_starburst (modified starburst attenuaton law)"
-            ] +
+            ["* dustatt_modified_starburst (modified Calzetti 2000 attenuaton "
+             "law)"] +
             ["Dust emission:"] +
             ["* casey2012 (Casey 2012 dust emission models)"] +
             ["* dale2014 (Dale et al. 2014 dust emission templates)"] +
@@ -124,7 +125,7 @@ class Configuration(object):
             ["Radio:"] +
             ["* radio (synchrotron emission)"] +
             ["Restframe parameters:"] +
-            ["* restframe_parameters (UV slope, IRX-beta, D4000, EW, etc.)"] +
+            ["* restframe_parameters (UV slope (β), IRX, D4000, EW, etc.)"] +
             ["Redshift+IGM:"] +
             ["* redshifting (mandatory, also includes the IGM from Meiksin "
              "2006)"]
