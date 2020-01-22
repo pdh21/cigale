@@ -299,6 +299,11 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
             if yrange[0] is not False:
                 ymin = yrange[0]
             else:
+                if not mask_uplim.any() == False:
+                    ymin = min(min(np.min(obs_fluxes[mask_ok]),
+                                   np.min(obs_fluxes[mask_uplim])),
+                               min(np.min(mod_fluxes[mask_ok]),
+                                   np.min(mod_fluxes[mask_uplim])))
                 ymin = min(np.min(obs_fluxes[mask_ok]),
                            np.min(mod_fluxes[mask_ok]))
                 ymin *= 1e-1
