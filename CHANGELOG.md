@@ -11,6 +11,7 @@
 - The SKIRTOR AGN models (Stalevski et al. 2016) have been implemented as the `skirtor2016` module.
 ### Changed
 - Python 3.6 is now the minimum required version. (Médéric Boquien)
+- The `pcigale-plots` executable has been largely rewritten for better modularity and to enable the various improvements indicated below. (Rodrigo González Castillo & Médéric Boquien)
 - The logo has now been moved to the lower-right corner of the figure so that it does not overlap with any information and it has been updated for a less pixelated version. (Médéric Boquien & Rodrigo González Castillo)
 - The wavelength range in SED plots is now dynamically adapted to cover the observed wavelengths. (Médéric Boquien)
 - The uncertainties on the SED plots now correspond only to 1σ rather than 3σ so they do not appear exceedingly large. (Médéric Boquien)
