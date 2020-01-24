@@ -311,7 +311,7 @@ class Configuration(object):
                                ('dust emission', ['casey2012', 'dale2014',
                                                   'dl2007', 'dl2014',
                                                   'themis']),
-                               ('AGN', ['dale2014', 'fritz2006']),
+                               ('AGN', ['fritz2006', 'skirtor2016']),
                                ('radio', ['radio']),
                                ('restframe_parameters',
                                 ['restframe_parameters']),
