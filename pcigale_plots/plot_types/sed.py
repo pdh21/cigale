@@ -163,7 +163,8 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
             ax2 = plt.subplot(gs[1])
 
             # Stellar emission
-            if 'stellar_attenuated' in series:
+            if ('stellar_attenuated' in series
+                and 'stellar.young' in sed.columns):
                 if 'nebular.absorption_young' in sed.columns:
                     ax1.loglog(wavelength_spec[wsed],
                                (sed['stellar.young'][wsed] +
@@ -185,7 +186,8 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                                marker=None, nonposy='clip', linestyle='-',
                                linewidth=1.0)
 
-            if 'stellar_unattenuated' in series:
+            if ('stellar_unattenuated' in series
+                and 'stellar.young' in sed.columns):
                 ax1.loglog(wavelength_spec[wsed],
                            (sed['stellar.old'][wsed] +
                             sed['stellar.young'][wsed]),
