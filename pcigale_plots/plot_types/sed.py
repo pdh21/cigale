@@ -110,6 +110,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
         The absolute path to outdir
 
     """
+    np.seterr(invalid='ignore')
     gbl_counter.inc()
 
     id_best_model_file = path.join(outdir, f"{obs['id']}_best_model.fits")

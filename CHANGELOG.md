@@ -21,6 +21,7 @@
 - The markers for the observed fluxes in the SED plots have been tweaked to improve readability. (Médéric Boquien)
 - The computation of all the cosmology-dependent quantities has been consolidated in pcigale/utils/cosmology.py and optimised. This leads to a slightly faster startup, in particular when there are many objects to fit, and it makes it easier to change the cosmology. (Médéric Boquien)
 - The time spent computing is now displayed in hours, minutes, and seconds rather than just seconds to improve legibility. (Médéric Boquien)
+- Some expected warnings have been silenced in `pcigale-plots` to avoid flooding the terminal. (Médéric Boquien)
 ### Fixed
 - Make sure we can plot the PDF of equivalent widths. (Médéric Boquien)
 - Fix a crash when generating a mock catalogue containing intensive properties. (Médéric Boquien)
