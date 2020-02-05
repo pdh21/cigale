@@ -316,7 +316,7 @@ class Observation(object):
                            if np.isfinite(row[k]) and row[k + '_err'] <= 0.}
         self.extprop_err = {k: row[k + '_err'] for k in self.extprop.keys()}
         self.extprop_ul_err = {k: -row[k + '_err']
-                               for prop in self.extprop_ul.keys()}
+                               for k in self.extprop_ul.keys()}
 
         self.intprop = {k: row[k] for k in cls.intprops}
         self.intprop_err = {k: row[k + '_err'] for k in cls.intprops}
