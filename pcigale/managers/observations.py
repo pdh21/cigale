@@ -66,6 +66,7 @@ class ObservationsManagerPassbands(object):
         self._check_errors(defaulterror)
         self._check_invalid(config['analysis_params']['lim_flag'],
                             threshold)
+        print(self.table)
         self._add_model_error(modelerror)
 
         # Rebuild the quantities to fit after vetting them
@@ -172,16 +173,14 @@ class ObservationsManagerPassbands(object):
 
         for item in self.bands + self.extprops:
             error = item + '_err'
-            w = np.where((self.table[item] < threshold) |
-                         (self.table[error] < threshold))
+            if upperlimits is False:
+                w = np.where((self.table[item] < threshold) |
+                             (self.table[error] <= 0.))
+            else:
+                w = np.where((self.table[item] < threshold) |
+                             (self.table[error] == 0.))
             self.table[item][w] = np.nan
             self.table[error][w] = np.nan
-            if upperlimits is False:
-                w = np.where(self.table[error] <= 0.)
-                self.table[item][w] = np.nan
-            else:
-                w = np.where(self.table[error] == 0.)
-                self.table[item][w] = np.nan
             if np.all(~np.isfinite(self.table[item])):
                 allinvalid.append(item)
 

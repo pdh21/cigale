@@ -37,6 +37,7 @@
 - Some math libraries such as MKL or OpenBLAS sometime try to be (too) smart, starting computation threads on their own. As cigale is already parallel, this just oversubscribes the CPU and can lead to important slowdowns. An environment variable could be set by the user to disable this, but this is cumbersome. Rather, we set these variables directly in the code at the startup of cigale. (Yannick Roehlly & Médéric Boquien)
 - Fix a crash in `pcigale-plots` when plotting the SED of models computed without stellar populations. (Médéric Boquien)
 - Make sure that upper limits on physical properties are correctly taken into account. (Médéric Boquien)
+- Improve the sanitation of input data so that upper limits of extensive properties are not eliminated from the quantities to be fitted when upper limits are activated. (Médéric Boquien)
 ### Optimised
 - Slight speedup of the computation of the likelihood from the χ² using a multiplication rather than a division. (Médéric Boquien)
 - Speedup of the computation of the χ² by ~10% taking the opposite of a scalar rather than of an array. (Médéric Boquien)
