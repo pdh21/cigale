@@ -38,6 +38,7 @@
 - Fix a crash in `pcigale-plots` when plotting the SED of models computed without stellar populations. (Médéric Boquien)
 - Make sure that upper limits on physical properties are correctly taken into account. (Médéric Boquien)
 - Improve the sanitation of input data so that upper limits of extensive properties are not eliminated from the quantities to be fitted when upper limits are activated. (Médéric Boquien)
+- Ensure that the radio module still works with recent versions of numpy. (Médéric Boquien & Laure Ciesla, reported by Wenjia Zhou)
 ### Optimised
 - Slight speedup of the computation of the likelihood from the χ² using a multiplication rather than a division. (Médéric Boquien)
 - Speedup of the computation of the χ² by ~10% taking the opposite of a scalar rather than of an array. (Médéric Boquien)
