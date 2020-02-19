@@ -8,7 +8,7 @@
 - The `dl2007` and `dl2014` modules now provide \<U\>. (Médéric Boquien)
 - Saving the χ² is now a bit more fine-grained. It is possible to save none, all, only the properties, or only the fluxes. (Médéric Boquien)
 - The database now includes the JWST MIRI and NIRCam filters. (Médéric Boquien)
-- The SKIRTOR AGN models (Stalevski et al. 2016) have been implemented as the `skirtor2016` module.
+- The SKIRTOR AGN models (Stalevski et al. 2016) have been implemented as the `skirtor2016` module. (Médéric Boquien, with the support of Marko Stalevski)
 ### Changed
 - Python 3.6 is now the minimum required version. (Médéric Boquien)
 - The `pcigale-plots` executable has been largely rewritten for better modularity and to enable the various improvements indicated below. (Rodrigo González Castillo & Médéric Boquien)
