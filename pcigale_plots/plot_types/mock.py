@@ -115,7 +115,11 @@ def _mock_worker(exact, estimated, param, logo, outdir):
     plt.minorticks_on()
 
     if logo is not False:
-        plt.figimage(logo, 510, 55, origin='upper', zorder=10, alpha=1)
+        # Multiplying the dpi by 2 is a hack so the figure is small and not too
+        # pixelated
+        figwidth = figure.get_figwidth() * figure.dpi * 2.
+        figure.figimage(logo, figwidth-logo.shape[0], 0, origin='upper',
+                        zorder=0, alpha=1)
 
     plt.tight_layout()
     plt.savefig(f'{outdir}/mock_{param}.pdf')
