@@ -102,7 +102,7 @@ def _mock_worker(exact, estimated, param, logo, outdir):
         slope = 0.0
         intercept = 1.0
         r_value = 0.0
-
+    figure = plt.figure()
     plt.errorbar(exact, estimated, marker='.', label=param, color='k',
                  linestyle='None', capsize=0.)
     plt.plot(range_exact, range_exact, color='r', label='1-to-1')
@@ -118,10 +118,10 @@ def _mock_worker(exact, estimated, param, logo, outdir):
         # Multiplying the dpi by 2 is a hack so the figure is small and not too
         # pixelated
         figwidth = figure.get_figwidth() * figure.dpi * 2.
-        figure.figimage(logo, figwidth-logo.shape[0], 0, origin='upper',
+        figure.figimage(logo, 0, 0, origin='upper',
                         zorder=0, alpha=1)
 
     plt.tight_layout()
-    plt.savefig(f'{outdir}/mock_{param}.pdf')
+    plt.savefig(f'{outdir}/mock_{param}.pdf', dpi=figure.dpi * 2.)
 
     plt.close()
