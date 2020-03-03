@@ -123,7 +123,9 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
         obs_fluxes = np.array([obs[filt] for filt in filters.keys()])
         obs_fluxes_err = np.array([obs[filt+'_err']
                                    for filt in filters.keys()])
-        mod_fluxes = np.array([mod["best."+filt] for filt in filters.keys()])
+        mod_fluxes = np.array([mod["best."+filt]
+                               if "best."+filt in mod.colnames else np.nan
+                               for filt in filters.keys()])
         if obs['redshift'] >= 0:
             z = obs['redshift']
         else:  # Redshift mode
