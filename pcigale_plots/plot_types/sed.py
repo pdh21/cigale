@@ -318,9 +318,11 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                                    np.min(obs_fluxes[mask_uplim])),
                                min(np.min(mod_fluxes[mask_ok]),
                                    np.min(mod_fluxes[mask_uplim])))
-                else:
+                elif not mask_ok.any() == False:
                     ymin = min(np.min(obs_fluxes[mask_ok]),
                                np.min(mod_fluxes[mask_ok]))
+                else:  # No valid flux (e.g., fitting only properties)
+                    ymin = ax1.get_ylim()[0]
                 ymin *= 1e-1
 
             if yrange[1] is not False:
@@ -331,9 +333,11 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                                    np.max(obs_fluxes[mask_uplim])),
                                max(np.max(mod_fluxes[mask_ok]),
                                    np.max(mod_fluxes[mask_uplim])))
-                else:
+                elif not mask_ok.any() == False:
                     ymax = max(np.max(obs_fluxes[mask_ok]),
                                np.max(mod_fluxes[mask_ok]))
+                else:  # No valid flux (e.g., fitting only properties)
+                    ymax = ax1.get_ylim()[1]
                 ymax *= 1e1
 
             xmin = xmin if xmin < xmax else xmax - 1e1
