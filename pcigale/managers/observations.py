@@ -62,6 +62,7 @@ class ObservationsManagerPassbands(object):
         self.tofit_err = self.bands_err + self.intprops_err + self.extprops_err
 
         # Sanitise the input
+        self._check_id()
         self._check_filters()
         self._check_errors(defaulterror)
         self._check_invalid(config['analysis_params']['lim_flag'],
@@ -90,6 +91,19 @@ class ObservationsManagerPassbands(object):
             self.idx += 1
             return obs
         raise StopIteration
+
+    def _check_id(self):
+        """Check that the id of each object is unique. If not trigger an
+        exception as it may cause issues down the road.
+
+        """
+        seen_set = set()
+        dup_set = set(i for i in self.table['id']
+                      if i in seen_set or seen_set.add(i))
+
+        if len(dup_set) > 0:
+            raise Exception("The input file has the following duplicated id: " +
+                            ", ".join(dup_set) + ". The id must be unique.")
 
     def _check_filters(self):
         """Check whether the list of filters and poperties makes sense.
