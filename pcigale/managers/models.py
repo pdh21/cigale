@@ -45,7 +45,7 @@ class ModelsManager(object):
             bandnames = obs.bands
 
         size = len(params.blocks[iblock])
-        if conf['parameters_file'] is "":
+        if conf['parameters_file'] == "":
             self.nz = len(conf['sed_modules_params']['redshifting']['redshift'])
             self.nm = size // self.nz
 
