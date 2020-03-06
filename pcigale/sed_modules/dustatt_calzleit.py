@@ -319,7 +319,7 @@ class CalzLeit(SedModule):
         if 'dust.luminosity' in sed.info:
             sed.add_info("dust.luminosity",
                          sed.info["dust.luminosity"]+attenuation_total, True,
-                         True, unit=W)
+                         True, unit='W')
         else:
             sed.add_info("dust.luminosity", attenuation_total, True, unit='W')
 
