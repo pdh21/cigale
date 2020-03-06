@@ -120,8 +120,7 @@ class THEMIS(SedModule):
         sed.add_info('dust.gamma', self.gamma)
         # To compute the dust mass we simply divide the luminosity in W by the
         # emissivity in W/kg of dust.
-        sed.add_info('dust.mass', luminosity / self.emissivity, True,
-                     unit='solMass')
+        sed.add_info('dust.mass', luminosity / self.emissivity, True, unit='kg)'
 
         sed.add_contribution('dust.Umin_Umin', self.model_minmin.wave,
                              luminosity * self.model_minmin.lumin)

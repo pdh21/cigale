@@ -97,8 +97,7 @@ class Schreiber2016(SedModule):
         # emissivity and then by the expected MH/Mdust as the emissivity was
         # computed for 1 kg of H. Note that we take 100 here but it should vary
         # with the exact model. Fix that later. Maybe directly in the database.
-        sed.add_info('dust.mass', luminosity / self.emissivity, True,
-                     unit='solMass')
+        sed.add_info('dust.mass', luminosity / self.emissivity, True, unit='kg')
 
         sed.add_contribution('dust.dust_continuum', self.model_dust.wave,
                              luminosity * self.model_dust.lumin)
