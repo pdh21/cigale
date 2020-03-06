@@ -116,7 +116,7 @@ class Fritz2006(SedModule):
         """
 
         if 'dust.luminosity' not in sed.info:
-            sed.add_info('dust.luminosity', 1., True)
+            sed.add_info('dust.luminosity', 1., True, unit='W')
         luminosity = sed.info['dust.luminosity']
 
         sed.add_module(self.name, self.parameters)
@@ -124,8 +124,9 @@ class Fritz2006(SedModule):
         sed.add_info('agn.tau', self.tau)
         sed.add_info('agn.beta', self.beta)
         sed.add_info('agn.gamma', self.gamma)
-        sed.add_info('agn.opening_angle', self.parameters["opening_angle"])
-        sed.add_info('agn.psy', self.psy)
+        sed.add_info('agn.opening_angle', self.parameters["opening_angle"],
+                     unit='deg')
+        sed.add_info('agn.psy', self.psy, unit='deg')
         sed.add_info('agn.fracAGN', self.fracAGN)
 
         # Compute the AGN luminosity
@@ -140,10 +141,10 @@ class Fritz2006(SedModule):
             raise Exception("AGN fraction is exactly 1. Behaviour "
                             "undefined.")
 
-        sed.add_info('agn.therm_luminosity', l_agn_therm, True)
-        sed.add_info('agn.scatt_luminosity', l_agn_scatt, True)
-        sed.add_info('agn.agn_luminosity', l_agn_agn, True)
-        sed.add_info('agn.luminosity', l_agn_total, True)
+        sed.add_info('agn.therm_luminosity', l_agn_therm, True, unit='W')
+        sed.add_info('agn.scatt_luminosity', l_agn_scatt, True, unit='W')
+        sed.add_info('agn.agn_luminosity', l_agn_agn, True, unit='W')
+        sed.add_info('agn.luminosity', l_agn_total, True, unit='W')
 
         sed.add_contribution('agn.fritz2006_therm', self.fritz2006.wave,
                              agn_power * self.fritz2006.lumin_therm)

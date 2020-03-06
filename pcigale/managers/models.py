@@ -12,6 +12,7 @@ of the models.
 import ctypes
 
 from astropy.table import Table, Column
+from astropy.units import Unit
 
 from .utils import SharedArray, get_info
 
@@ -30,7 +31,7 @@ class ModelsManager(object):
         self.params = params
         self.block = params.blocks[iblock]
         self.iblock = iblock
-        self.allpropnames, self.allextpropnames = get_info(self)
+        self.allpropnames, self.unit, self.allextpropnames = get_info(self)
         self.allintpropnames = set(self.allpropnames) - self.allextpropnames
 
         props_nolog = set([prop[:-4] if prop.endswith('log') else prop
@@ -71,11 +72,13 @@ class ModelsManager(object):
             else:
                 unit = 'mJy'
             table.add_column(Column(self.flux[band], name=band,
-                                    unit=unit))
+                                    unit=Unit(unit)))
         for prop in sorted(self.extprop.keys()):
-            table.add_column(Column(self.extprop[prop], name=prop))
+            table.add_column(Column(self.extprop[prop], name=prop,
+                                    unit=Unit(self.unit[prop])))
         for prop in sorted(self.intprop.keys()):
-            table.add_column(Column(self.intprop[prop], name=prop))
+            table.add_column(Column(self.intprop[prop], name=prop,
+                                    unit=Unit(self.unit[prop])))
 
         table.write(f"out/{filename}.fits")
         table.write(f"out/{filename}.txt", format='ascii.fixed_width',

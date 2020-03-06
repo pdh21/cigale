@@ -445,9 +445,10 @@ class ModStarburstAtt(SedModule):
         # Total attenuation
         if 'dust.luminosity' in sed.info:
             sed.add_info("dust.luminosity",
-                         sed.info["dust.luminosity"] + dust_lumin, True, True)
+                         sed.info["dust.luminosity"] + dust_lumin, True, True,
+                         unit='W')
         else:
-            sed.add_info("dust.luminosity", dust_lumin, True)
+            sed.add_info("dust.luminosity", dust_lumin, True, unit='W')
 
         # Fλ fluxes (only from continuum) in each filter after attenuation.
         flux_att = {filt: sed.compute_fnu(filt) for filt in self.filter_list}
@@ -455,13 +456,15 @@ class ModStarburstAtt(SedModule):
         # Attenuation in each filter
         for filt in self.filter_list:
             sed.add_info("attenuation." + filt,
-                         -2.5 * np.log10(flux_att[filt] / flux_noatt[filt]))
+                         -2.5 * np.log10(flux_att[filt] / flux_noatt[filt]),
+                         unit='mag')
 
-        sed.add_info('attenuation.E_BV_lines', self.ebvl)
-        sed.add_info('attenuation.E_BVs', self.ebvs)
+        sed.add_info('attenuation.E_BV_lines', self.ebvl, unit='mag')
+        sed.add_info('attenuation.E_BVs', self.ebvs, unit='mag')
         sed.add_info('attenuation.E_BV_factor', self.ebv_factor)
-        sed.add_info('attenuation.uv_bump_wavelength', self.uv_bump_wavelength)
-        sed.add_info('attenuation.uv_bump_width', self.uv_bump_width)
+        sed.add_info('attenuation.uv_bump_wavelength', self.uv_bump_wavelength,
+                     unit='nm')
+        sed.add_info('attenuation.uv_bump_width', self.uv_bump_width, unit='nm')
         sed.add_info('attenuation.uv_bump_amplitude', self.uv_bump_amplitude)
         sed.add_info('attenuation.powerlaw_slope', self.powerlaw_slope)
 

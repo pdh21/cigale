@@ -108,7 +108,7 @@ class DL2007(SedModule):
 
         """
         if 'dust.luminosity' not in sed.info:
-            sed.add_info('dust.luminosity', 1., True)
+            sed.add_info('dust.luminosity', 1., True, unit='W')
         luminosity = sed.info['dust.luminosity']
 
         sed.add_module(self.name, self.parameters)
@@ -119,7 +119,8 @@ class DL2007(SedModule):
         sed.add_info('dust.gamma', self.gamma)
         # To compute the dust mass we simply divide the luminosity in W by the
         # emissivity in W/kg of dust.
-        sed.add_info('dust.mass', luminosity / self.emissivity, True)
+        sed.add_info('dust.mass', luminosity / self.emissivity, True,
+                     unit='solMass')
 
         sed.add_contribution('dust.Umin_Umin', self.model_minmin.wave,
                              luminosity * self.model_minmin.lumin)

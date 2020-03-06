@@ -304,8 +304,10 @@ class CalzLeit(SedModule):
             attenuation_total += attenuation
 
             sed.add_module(self.name, self.parameters)
-            sed.add_info("attenuation.E_BVs." + contrib, self.ebvs[age])
-            sed.add_info("attenuation." + contrib, attenuation, True)
+            sed.add_info("attenuation.E_BVs." + contrib, self.ebvs[age],
+                         unit='mag')
+            sed.add_info("attenuation." + contrib, attenuation, True,
+                         unit='mag')
             sed.add_contribution("attenuation." + contrib, wavelength,
                                  attenuation_spectrum)
 
@@ -317,9 +319,9 @@ class CalzLeit(SedModule):
         if 'dust.luminosity' in sed.info:
             sed.add_info("dust.luminosity",
                          sed.info["dust.luminosity"]+attenuation_total, True,
-                         True)
+                         True, unit=W)
         else:
-            sed.add_info("dust.luminosity", attenuation_total, True)
+            sed.add_info("dust.luminosity", attenuation_total, True, unit='W')
 
         # Fλ fluxes (only from continuum) in each filter after attenuation.
         flux_att = {filt: sed.compute_fnu(filt) for filt in self.filter_list}
@@ -327,11 +329,13 @@ class CalzLeit(SedModule):
         # Attenuation in each filter
         for filt in self.filter_list:
             sed.add_info("attenuation." + filt,
-                         -2.5 * np.log10(flux_att[filt] / flux_noatt[filt]))
+                         -2.5 * np.log10(flux_att[filt] / flux_noatt[filt]),
+                         unit='mag')
 
         sed.add_info('attenuation.ebvs_old_factor', self.ebvs_old_factor)
-        sed.add_info('attenuation.uv_bump_wavelength', self.uv_bump_wavelength)
-        sed.add_info('attenuation.uv_bump_width', self.uv_bump_width)
+        sed.add_info('attenuation.uv_bump_wavelength', self.uv_bump_wavelength,
+                     unit='nm')
+        sed.add_info('attenuation.uv_bump_width', self.uv_bump_width, unit='nm')
         sed.add_info('attenuation.uv_bump_amplitude', self.uv_bump_amplitude)
         sed.add_info('attenuation.powerlaw_slope', self.powerlaw_slope)
 

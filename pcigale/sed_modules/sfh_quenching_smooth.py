@@ -91,11 +91,12 @@ class SfhQuenchSmooth(SedModule):
                 sfr_integrated = 1.
 
             sed.sfh = sfr
-            sed.add_info("sfh.integrated", sfr_integrated, True, force=True)
+            sed.add_info("sfh.integrated", sfr_integrated, True, force=True,
+                         unit='solMass')
 
         sed.add_module(self.name, self.parameters)
 
-        sed.add_info("sfh.quenching_time", self.quenching_age)
+        sed.add_info("sfh.quenching_time", self.quenching_age, unit='Myr')
         sed.add_info("sfh.quenching_factor", self.quenching_factor)
 
 

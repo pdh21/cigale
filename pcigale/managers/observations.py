@@ -40,7 +40,7 @@ class ObservationsManagerPassbands(object):
 
         self.conf = config
         self.params = params
-        self.allpropertiesnames, self.massproportional = get_info(self)
+        self.allpropertiesnames, _, self.massproportional = get_info(self)
         self.table = read_table(config['data_file'])
         self.bands = [band for band in config['bands']
                       if not band.endswith('_err')]

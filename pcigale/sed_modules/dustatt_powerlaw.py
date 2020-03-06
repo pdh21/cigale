@@ -213,7 +213,7 @@ class PowerLawAtt(SedModule):
             dust_lumin -= np.trapz(attenuation_spectrum, wavelength)
 
             sed.add_module(self.name, self.parameters)
-            sed.add_info("attenuation.Av." + contrib, self.av[age])
+            sed.add_info("attenuation.Av." + contrib, self.av[age], unit='mag')
             sed.add_contribution("attenuation." + contrib, wavelength,
                                  attenuation_spectrum)
 
@@ -222,17 +222,19 @@ class PowerLawAtt(SedModule):
                                young * self.lineatt[name][1])
 
         sed.add_info("attenuation.av_old_factor", self.av_old_factor)
-        sed.add_info('attenuation.uv_bump_wavelength', self.uv_bump_wavelength)
-        sed.add_info('attenuation.uv_bump_width', self.uv_bump_width)
+        sed.add_info('attenuation.uv_bump_wavelength', self.uv_bump_wavelength,
+                     unit='nm')
+        sed.add_info('attenuation.uv_bump_width', self.uv_bump_width, unit='nm')
         sed.add_info("attenuation.uv_bump_amplitude", self.uv_bump_amplitude)
         sed.add_info("attenuation.powerlaw_slope", self.powerlaw_slope)
 
         # Total attenuation
         if 'dust.luminosity' in sed.info:
             sed.add_info("dust.luminosity",
-                         sed.info["dust.luminosity"] + dust_lumin, True, True)
+                         sed.info["dust.luminosity"] + dust_lumin, True, True,
+                         unit='W')
         else:
-            sed.add_info("dust.luminosity", dust_lumin, True)
+            sed.add_info("dust.luminosity", dust_lumin, True, unit='W')
 
         # Fλ fluxes (only in continuum) in each filter after attenuation.
         flux_att = {filt: sed.compute_fnu(filt) for filt in self.filter_list}
@@ -240,7 +242,8 @@ class PowerLawAtt(SedModule):
         # Attenuation in each filter
         for filt in self.filter_list:
             sed.add_info("attenuation." + filt,
-                         -2.5 * np.log10(flux_att[filt] / flux_noatt[filt]))
+                         -2.5 * np.log10(flux_att[filt] / flux_noatt[filt]),
+                         unit='mag')
 
 
 # SedModule to be returned by get_module

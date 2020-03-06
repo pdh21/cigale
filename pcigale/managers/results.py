@@ -13,6 +13,7 @@ results of the analysis with different blocks of models.
 import ctypes
 
 from astropy.table import Table, Column
+from astropy.units import Unit
 import numpy as np
 
 from .utils import SharedArray
@@ -339,6 +340,7 @@ class ResultsManager(object):
         self.conf = models.conf
         self.obs = models.obs
         self.params = models.params
+        self.unit = models.unit
 
         self.bayes = BayesResultsManager(models)
         self.best = BestResultsManager(models)
@@ -378,19 +380,24 @@ class ResultsManager(object):
 
         for prop in sorted(self.bayes.intmean):
             table.add_column(Column(self.bayes.intmean[prop],
-                                    name="bayes."+prop))
+                                    name="bayes."+prop,
+                                    unit=Unit(self.unit[prop])))
             table.add_column(Column(self.bayes.interror[prop],
-                                    name="bayes."+prop+"_err"))
+                                    name="bayes."+prop+"_err",
+                                    unit=Unit(self.unit[prop])))
         for prop in sorted(self.bayes.extmean):
             table.add_column(Column(self.bayes.extmean[prop],
-                                    name="bayes."+prop))
+                                    name="bayes."+prop,
+                                    unit=Unit(self.unit[prop])))
             table.add_column(Column(self.bayes.exterror[prop],
-                                    name="bayes."+prop+"_err"))
+                                    name="bayes."+prop+"_err",
+                                    unit=Unit(self.unit[prop])))
         for band in sorted(self.bayes.fluxmean):
             table.add_column(Column(self.bayes.fluxmean[band],
-                                    name="bayes."+band))
+                                    name="bayes."+band, unit=Unit('mJy')))
             table.add_column(Column(self.bayes.fluxerror[band],
-                                    name="bayes."+band+"_err"))
+                                    name="bayes."+band+"_err",
+                                    unit=Unit('mJy')))
 
         table.add_column(Column(self.best.chi2, name="best.chi_square"))
         obs = [self.obs.table[obs].data for obs in self.obs.tofit]
@@ -400,10 +407,12 @@ class ResultsManager(object):
 
         for prop in sorted(self.best.intprop):
             table.add_column(Column(self.best.intprop[prop],
-                                    name="best."+prop))
+                                    name="best."+prop,
+                                    unit=Unit(self.unit[prop])))
         for prop in sorted(self.best.extprop):
             table.add_column(Column(self.best.extprop[prop],
-                                    name="best."+prop))
+                                    name="best."+prop,
+                                    unit=Unit(self.unit[prop])))
 
         for band in self.obs.bands:
             if band.startswith('line.') or band.startswith('linefilter.'):

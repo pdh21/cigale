@@ -87,17 +87,18 @@ class Schreiber2016(SedModule):
 
         """
         if 'dust.luminosity' not in sed.info.keys():
-            sed.add_info('dust.luminosity', 1., True)
+            sed.add_info('dust.luminosity', 1., True, unit='W')
         luminosity = sed.info['dust.luminosity']
 
         sed.add_module(self.name, self.parameters)
-        sed.add_info('dust.tdust', self.tdust)
+        sed.add_info('dust.tdust', self.tdust, unit='K')
         sed.add_info('dust.fpah', self.fpah)
         # To compute the dust mass we simply divide the luminosity by the
         # emissivity and then by the expected MH/Mdust as the emissivity was
         # computed for 1 kg of H. Note that we take 100 here but it should vary
         # with the exact model. Fix that later. Maybe directly in the database.
-        sed.add_info('dust.mass', luminosity / self.emissivity, True)
+        sed.add_info('dust.mass', luminosity / self.emissivity, True,
+                     unit='solMass')
 
         sed.add_contribution('dust.dust_continuum', self.model_dust.wave,
                              luminosity * self.model_dust.lumin)

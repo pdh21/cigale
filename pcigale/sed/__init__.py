@@ -67,6 +67,7 @@ class SED(object):
         self.lines = dict()
         self.info = dict()
         self.mass_proportional_info = set()
+        self.unit = dict()
 
     @property
     def sfh(self):
@@ -88,12 +89,14 @@ class SED(object):
         if value is not None:
             sfh_sfr = value
             self._sfh = value
-            self.add_info("sfh.sfr", sfh_sfr[-1], True, force=True)
+            self.add_info("sfh.sfr", sfh_sfr[-1], True, force=True,
+                          unit='solMass/yr')
             self.add_info("sfh.sfr10Myrs", np.mean(sfh_sfr[-10:]), True,
-                          force=True)
+                          force=True, unit='solMass/yr')
             self.add_info("sfh.sfr100Myrs", np.mean(sfh_sfr[-100:]), True,
-                          force=True)
-            self.add_info("sfh.age", sfh_sfr.size, False, force=True)
+                          force=True, unit='solMass/yr')
+            self.add_info("sfh.age", sfh_sfr.size, False, force=True,
+                          unit='Myr')
 
     @property
     def fnu(self):
@@ -116,7 +119,8 @@ class SED(object):
 
         return f_nu
 
-    def add_info(self, key, value, mass_proportional=False, force=False):
+    def add_info(self, key, value, mass_proportional=False, force=False,
+                 unit=''):
         """
         Add a key / value to the information dictionary
 
@@ -141,6 +145,7 @@ class SED(object):
         """
         if (key not in self.info) or force:
             self.info[key] = value
+            self.unit[key] = unit
             if mass_proportional:
                 self.mass_proportional_info.add(key)
         else:
@@ -386,6 +391,7 @@ class SED(object):
         sed.contribution_names = self.contribution_names[:]
         sed.lines = self.lines.copy()
         sed.info = self.info.copy()
+        sed.unit = self.unit  # No need to copy, the units will not change
         sed.mass_proportional_info = self.mass_proportional_info.copy()
 
         return sed

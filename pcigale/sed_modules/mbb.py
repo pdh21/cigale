@@ -98,11 +98,11 @@ class MBB(SedModule):
 
         """
         if 'dust.luminosity' not in sed.info:
-            sed.add_info('dust.luminosity', 1., True)
+            sed.add_info('dust.luminosity', 1., True, unit='W')
         luminosity = sed.info['dust.luminosity']
 
         sed.add_module(self.name, self.parameters)
-        sed.add_info("dust.t_mbb", self.T)
+        sed.add_info("dust.t_mbb", self.T, unit='K')
         sed.add_info("dust.beta_mbb", self.beta)
         sed.add_info("dust.epsilon_mbb", self.epsilon)
 

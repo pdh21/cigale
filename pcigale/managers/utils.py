@@ -21,7 +21,7 @@ def get_info(cls):
     info = list(sed.info.keys())
     info.sort()
 
-    return (info, sed.mass_proportional_info)
+    return (info, sed.unit, sed.mass_proportional_info)
 
 
 class SharedArray(object):

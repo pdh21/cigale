@@ -112,17 +112,17 @@ class SKIRTOR2016(SedModule):
         """
 
         if 'dust.luminosity' not in sed.info:
-            sed.add_info('dust.luminosity', 1., True)
+            sed.add_info('dust.luminosity', 1., True, unit='W')
         luminosity = sed.info['dust.luminosity']
 
         sed.add_module(self.name, self.parameters)
         sed.add_info('agn.t', self.t)
         sed.add_info('agn.pl', self.pl)
         sed.add_info('agn.q', self.q)
-        sed.add_info('agn.oa', self.oa)
+        sed.add_info('agn.oa', self.oa, unit='deg')
         sed.add_info('agn.R', self.R)
         sed.add_info('agn.Mcl', self.Mcl)
-        sed.add_info('agn.i', self.i)
+        sed.add_info('agn.i', self.i, unit='i')
         sed.add_info('agn.fracAGN', self.fracAGN)
 
         # Compute the AGN luminosity
@@ -136,9 +136,9 @@ class SKIRTOR2016(SedModule):
             raise Exception("AGN fraction is exactly 1. Behaviour "
                             "undefined.")
 
-        sed.add_info('agn.dust_luminosity', lumin_dust, True)
-        sed.add_info('agn.disk_luminosity', lumin_disk, True)
-        sed.add_info('agn.luminosity', lumin, True)
+        sed.add_info('agn.dust_luminosity', lumin_dust, True, unit='W')
+        sed.add_info('agn.disk_luminosity', lumin_disk, True, unit='W')
+        sed.add_info('agn.luminosity', lumin, True, unit='W')
 
         sed.add_contribution('agn.SKIRTOR2016_dust', self.SKIRTOR2016.wave,
                              agn_power * self.SKIRTOR2016.dust)

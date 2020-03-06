@@ -109,8 +109,9 @@ class SfhBuat08(SedModule):
 
         # Add the sfh and the output parameters to the SED.
         sed.sfh = self.sfr
-        sed.add_info("sfh.integrated", self.sfr_integrated, True)
-        sed.add_info("sfh.velocity", self.velocity)
+        sed.add_info("sfh.integrated", self.sfr_integrated, True,
+                     unit='solMass')
+        sed.add_info("sfh.velocity", self.velocity, unit='km/s')
 
 
 # SedModule to be returned by get_module

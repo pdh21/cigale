@@ -112,10 +112,11 @@ class SFHDelayedBQ(SedModule):
 
         # Add the sfh and the output parameters to the SED.
         sed.sfh = self.sfr
-        sed.add_info("sfh.integrated", self.sfr_integrated, True)
-        sed.add_info("sfh.age_main", self.age_main)
-        sed.add_info("sfh.tau_main", self.tau_main)
-        sed.add_info("sfh.age_bq", self.age_bq)
+        sed.add_info("sfh.integrated", self.sfr_integrated, True,
+                     unit='solMass')
+        sed.add_info("sfh.age_main", self.age_main, unit='Myr')
+        sed.add_info("sfh.tau_main", self.tau_main, unit='Myr')
+        sed.add_info("sfh.age_bq", self.age_bq, unit='Myr')
         sed.add_info("sfh.r_sfr", self.r_sfr)
 
 # CreationModule to be returned by get_module

@@ -195,8 +195,9 @@ class Redshifting(SedModule):
             sed.luminosity *= 1. / (1. + redshift)
 
         sed.add_info("universe.redshift", redshift)
-        sed.add_info("universe.luminosity_distance", self.luminosity_distance)
-        sed.add_info("universe.age", self.universe_age)
+        sed.add_info("universe.luminosity_distance", self.luminosity_distance,
+                     unit='m')
+        sed.add_info("universe.age", self.universe_age, unit='Myr')
 
         # We identify the right grid from the length of the wavelength array.
         # It is not completely foolproof but it is good enough. We need to do

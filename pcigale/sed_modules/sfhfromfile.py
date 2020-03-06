@@ -98,7 +98,8 @@ class SfhFromFile(SedModule):
 
         sed.add_module(self.name, self.parameters)
         sed.sfh = self.sfr
-        sed.add_info("sfh.integrated", self.sfr_integrated, True)
+        sed.add_info("sfh.integrated", self.sfr_integrated, True,
+                     unit='solMass')
         sed.add_info("sfh.index", self.sfr_column_number)
 
 

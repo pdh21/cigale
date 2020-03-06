@@ -124,11 +124,12 @@ class SFHDelayed(SedModule):
 
         # Add the sfh and the output parameters to the SED.
         sed.sfh = self.sfr
-        sed.add_info("sfh.integrated", self.sfr_integrated, True)
-        sed.add_info("sfh.age_main", self.age_main)
-        sed.add_info("sfh.tau_main", self.tau_main)
-        sed.add_info("sfh.age_burst", self.age_burst)
-        sed.add_info("sfh.tau_burst", self.tau_burst)
+        sed.add_info("sfh.integrated", self.sfr_integrated, True,
+                     unit='solMass')
+        sed.add_info("sfh.age_main", self.age_main, unit='Myr')
+        sed.add_info("sfh.tau_main", self.tau_main, unit='Myr')
+        sed.add_info("sfh.age_burst", self.age_burst, unit='Myr')
+        sed.add_info("sfh.tau_burst", self.tau_burst, unit='Myr')
         sed.add_info("sfh.f_burst", self.f_burst)
 
 # SedModule to be returned by get_module

@@ -179,7 +179,8 @@ class NebularEmission(SedModule):
         sed.add_info('nebular.f_esc', self.fesc)
         sed.add_info('nebular.f_dust', self.fdust)
         sed.add_info('dust.luminosity', (sed.info['stellar.lum_ly_young'] +
-                     sed.info['stellar.lum_ly_old']) * self.fdust, True)
+                     sed.info['stellar.lum_ly_old']) * self.fdust, True,
+                     unit='W')
 
         sed.add_contribution('nebular.absorption_old', sed.wavelength_grid,
                              self.absorbed_old)
@@ -195,7 +196,7 @@ class NebularEmission(SedModule):
             linesdict = self.linesdict[metallicity]
             cont = self.cont_template[metallicity]
 
-            sed.add_info('nebular.lines_width', self.lines_width)
+            sed.add_info('nebular.lines_width', self.lines_width, unit='km/s')
             sed.add_info('nebular.logU', self.logU)
 
             for line in default_lines:
