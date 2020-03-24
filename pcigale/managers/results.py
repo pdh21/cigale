@@ -13,7 +13,7 @@ results of the analysis with different blocks of models.
 import ctypes
 
 from astropy.table import Table, Column
-from astropy.units import Unit
+from astropy.units import Unit, LogUnit
 import numpy as np
 
 from .utils import SharedArray
@@ -379,19 +379,23 @@ class ResultsManager(object):
         table.add_column(Column(self.obs.table['id'], name="id"))
 
         for prop in sorted(self.bayes.intmean):
+            if prop.endswith('_log'):
+                unit = LogUnit(self.unit[prop[:-4]])
+            else:
+                unit = Unit(self.unit[prop])
             table.add_column(Column(self.bayes.intmean[prop],
-                                    name="bayes."+prop,
-                                    unit=Unit(self.unit[prop])))
+                                    name="bayes."+prop, unit=unit))
             table.add_column(Column(self.bayes.interror[prop],
-                                    name="bayes."+prop+"_err",
-                                    unit=Unit(self.unit[prop])))
+                                    name="bayes."+prop+"_err", unit=unit))
         for prop in sorted(self.bayes.extmean):
+            if prop.endswith('_log'):
+                unit = LogUnit(self.unit[prop[:-4]])
+            else:
+                unit = Unit(self.unit[prop])
             table.add_column(Column(self.bayes.extmean[prop],
-                                    name="bayes."+prop,
-                                    unit=Unit(self.unit[prop])))
+                                    name="bayes."+prop, unit=unit))
             table.add_column(Column(self.bayes.exterror[prop],
-                                    name="bayes."+prop+"_err",
-                                    unit=Unit(self.unit[prop])))
+                                    name="bayes."+prop+"_err", unit=unit))
         for band in sorted(self.bayes.fluxmean):
             table.add_column(Column(self.bayes.fluxmean[band],
                                     name="bayes."+band, unit=Unit('mJy')))
