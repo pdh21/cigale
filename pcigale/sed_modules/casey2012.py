@@ -68,7 +68,7 @@ class Casey2012(SedModule):
         Npl = ((1. - np.exp(-(lambda_0 / lambda_c) ** beta)) * (c / lambda_c)
                ** 3. / (np.exp(cst.h * c / (lambda_c * cst.k * T)) - 1.))
 
-        self.wave = np.logspace(3., 6., 1000.)
+        self.wave = np.logspace(3., 6., 1000)
         conv = c / (self.wave * self.wave)
 
         self.lumin_blackbody = (conv * (1. - np.exp(-(lambda_0 / self.wave)

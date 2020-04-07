@@ -75,7 +75,7 @@ class MBB(SedModule):
         c = cst.c * 1e9
         lambda_0 = 200e3
 
-        self.wave = np.logspace(3., 6., 1000.)
+        self.wave = np.logspace(3., 6., 1000)
         conv = c / (self.wave * self.wave)
 
         self.lumin_mbb = (conv * (1. - np.exp(-(lambda_0 / self.wave)
