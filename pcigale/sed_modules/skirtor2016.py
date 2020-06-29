@@ -122,7 +122,7 @@ class SKIRTOR2016(SedModule):
         sed.add_info('agn.oa', self.oa, unit='deg')
         sed.add_info('agn.R', self.R)
         sed.add_info('agn.Mcl', self.Mcl)
-        sed.add_info('agn.i', self.i, unit='i')
+        sed.add_info('agn.i', self.i, unit='deg')
         sed.add_info('agn.fracAGN', self.fracAGN)
 
         # Compute the AGN luminosity
