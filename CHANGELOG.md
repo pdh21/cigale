@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 2020.0 (2020-06-29)
 ### Added
 - The (1+z1)/(1+z2) factor between observed and grid flux densities caused by the differential redshifting is now taken into account. With a default grid redshift rounding of two decimals this yields a difference of at most 0.5% in the estimated physical properties at z=0 and even less at higher z. (Médéric Boquien)
 - The list of bands for which to carry out a Bayesian flux estimate is now configurable. By default this corresponds to the fitted bands but it also supports bands that are not included in the fit. This can be set in the `fluxes` parameter of the `pdf\_analysis` module. (Médéric Boquien)
