@@ -218,6 +218,7 @@ class _SKIRTOR2016(BASE):
     wave = Column(PickleType)
     disk = Column(PickleType)
     dust = Column(PickleType)
+    intrin_disk = Column(PickleType)
 
     def __init__(self, agn):
         self.t = agn.t
@@ -230,6 +231,8 @@ class _SKIRTOR2016(BASE):
         self.wave = agn.wave
         self.disk = agn.disk
         self.dust = agn.dust
+        self.intrin_disk = agn.intrin_disk
+
 
 
 class _NebularLines(BASE):

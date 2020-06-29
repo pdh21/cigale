@@ -6,7 +6,7 @@ class SKIRTOR2016(object):
 
     """
 
-    def __init__(self, t, pl, q, oa, R, Mcl, i, wave, disk, dust):
+    def __init__(self, t, pl, q, oa, R, Mcl, i, wave, disk, dust, intrin_disk):
         """Create a new AGN model. The descriptions of the parameters are taken
            directly from https://sites.google.com/site/skirtorus/sed-library.
 
@@ -37,7 +37,8 @@ class SKIRTOR2016(object):
             Luminosity of the accretion disk in W/nm
         dust: array of float
             Luminosity of the dust in W/nm
-
+        intrin_disk: array of float
+            Luminosity of the intrinsic isotropic disk emission in W/nm
         """
 
         self.t = t
@@ -50,3 +51,4 @@ class SKIRTOR2016(object):
         self.wave = wave
         self.disk = disk
         self.dust = dust
+        self.intrin_disk = intrin_disk
