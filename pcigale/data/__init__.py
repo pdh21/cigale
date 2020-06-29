@@ -822,6 +822,8 @@ class Database(object):
             Luminosity of the accretion disk in W/nm
         dust: array of float
             Luminosity of the dust in W/nm
+        intrin_disk: array of float
+            Luminosity of the intrinsic isotropic disk emission in W/nm
 
         Returns
         -------
@@ -845,7 +847,7 @@ class Database(object):
         if result:
             return SKIRTOR2016(result.t, result.pl, result.q, result.oa,
                                result.R, result.Mcl, result.i, result.wave,
-                               result.disk, result.dust)
+                               result.disk, result.dust, result.intrin_disk)
         else:
             raise DatabaseLookupError(
                 "The SKIRTOR2016 model is not in the database.")
