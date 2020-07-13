@@ -4,6 +4,7 @@
 ### Added
 ### Changed
 ### Fixed
+- Ensure that `pcigale-plots` correctly detects the `skirtor2016` AGN models. (Médéric Boquien, reported by Guang Yang)
 ### Optimised
 
 ## 2020.0 (2020-06-29)
