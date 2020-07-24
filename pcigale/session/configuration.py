@@ -36,17 +36,28 @@ class Configuration(object):
             Name of the configuration file (pcigale.conf by default).
 
         """
-        self.spec = configobj.ConfigObj(filename+'.spec',
-                                        write_empty_values=True,
-                                        indent_type='  ',
-                                        encoding='UTF8',
-                                        list_values=False,
-                                        _inspec=True)
-        self.config = configobj.ConfigObj(filename,
-                                          write_empty_values=True,
-                                          indent_type='  ',
-                                          encoding='UTF8',
-                                          configspec=self.spec)
+        # We should never be in the case when there is a pcigale.ini but no
+        # pcigale.ini.spec. While this seems to work when doing the pcigale
+        # genconf, it actually generates an incorrect pcigale.ini.spec. The only
+        # clean solution is to rebuild both files.
+        if os.path.isfile(filename) and not os.path.isfile(filename+'.spec'):
+            raise Exception("The pcigale.ini.spec file appears to be missing. "
+                            "Please delete the pcigale.ini file and regenrate "
+                            "it with 'pcigale init' and then 'pcigale genconf' "
+                            "after having filled the initial pcigale.ini "
+                            "template.")
+        else:
+            self.spec = configobj.ConfigObj(filename+'.spec',
+                                            write_empty_values=True,
+                                            indent_type='  ',
+                                            encoding='UTF8',
+                                            list_values=False,
+                                            _inspec=True)
+            self.config = configobj.ConfigObj(filename,
+                                              write_empty_values=True,
+                                              indent_type='  ',
+                                              encoding='UTF8',
+                                              configspec=self.spec)
 
         # We validate the configuration so that the variables are converted to
         # the expected that. We do not handle errors at the point but only when
