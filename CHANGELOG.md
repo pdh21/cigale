@@ -7,6 +7,7 @@
 ### Changed
 ### Fixed
 - Ensure that `pcigale-plots` correctly detects the `skirtor2016` AGN models. (Médéric Boquien, reported by Guang Yang)
+- Correct a typo in the `themis` module. (Médéric Boquien, reported by Alexandros Maragkoudakis)
 ### Optimised
 
 ## 2020.0 (2020-06-29)
