@@ -9,6 +9,7 @@
 - Ensure that `pcigale-plots` correctly detects the `skirtor2016` AGN models. (Médéric Boquien, reported by Guang Yang)
 - Correct a typo in the `themis` module. (Médéric Boquien, reported by Alexandros Maragkoudakis)
 ### Optimised
+- The estimation of the physical properties and the related uncertainties has been made up to 50% faster. The final gain in the analysis speed accounting for all the steps depends on the number of properties to be evaluated and the number of models but can be over 25% when estimating many properties over a large parameter space. (Médéric Boquien)
 
 ## 2020.0 (2020-06-29)
 ### Added
