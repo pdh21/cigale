@@ -166,8 +166,8 @@ class ModCF00Att(SedModule):
             sed.lines[name] = (linewl, old * self.lineatt[name][0],
                                young * self.lineatt[name][1])
 
-        sed.add_info('attenuation.Av_ISM', self.Av_ISM)
-        sed.add_info('attenuation.Av_BC', self.Av_BC)
+        sed.add_info('attenuation.Av_ISM', self.Av_ISM, unit='mag')
+        sed.add_info('attenuation.Av_BC', self.Av_BC, unit='mag')
         sed.add_info('attenuation.mu', self.mu)
         sed.add_info('attenuation.slope_BC', self.slope_BC)
         sed.add_info('attenuation.slope_ISM', self.slope_ISM)
@@ -175,9 +175,10 @@ class ModCF00Att(SedModule):
         # Total attenuation
         if 'dust.luminosity' in sed.info:
             sed.add_info("dust.luminosity",
-                         sed.info["dust.luminosity"] + dust_lumin, True, True)
+                         sed.info["dust.luminosity"] + dust_lumin, True, True,
+                         unit='W')
         else:
-            sed.add_info("dust.luminosity", dust_lumin, True)
+            sed.add_info("dust.luminosity", dust_lumin, True, unit='W')
 
         # Fλ fluxes (only in continuum) in each filter after attenuation.
         flux_att = {filt: sed.compute_fnu(filt) for filt in self.filter_list}
@@ -185,7 +186,7 @@ class ModCF00Att(SedModule):
         # Attenuation in each filter
         for filt in self.filter_list:
             att = -2.5 * np.log10(flux_att[filt] / flux_noatt[filt])
-            sed.add_info("attenuation." + filt, max(0., att))
+            sed.add_info("attenuation." + filt, max(0., att), unit='mag')
 
 
 # CreationModule to be returned by get_module

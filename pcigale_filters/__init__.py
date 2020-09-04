@@ -14,8 +14,6 @@ import numpy as np
 
 from pcigale.data import Database, Filter
 
-__version__ = "0.1-alpha"
-
 
 def list_filters():
     """Print the list of filters in the pcigale database.
@@ -62,8 +60,8 @@ def add_filters(fnames):
                 raise ValueError("Filter transmission type can only be "
                                  "'energy' or 'photon'.")
 
-            print("Importing {}... ({} points)".format(filter_name,
-                                                       filter_table.shape[1]))
+            print(f"Importing {filter_name}... "
+                  f"({filter_table.shape[1]} points)")
 
             new_filter = Filter(filter_name, filter_description, filter_table)
 
@@ -89,9 +87,9 @@ def del_filters(fnames):
         for fname in fnames:
             if fname in names:
                 base.del_filter(fname)
-                print("Removing filter {}".format(fname))
+                print(f"Removing filter {fname}")
             else:
-                print("Filter {} not in the database".format(fname))
+                print("Filter {fname} not in the database")
 
 
 def worker_plot(fname):
@@ -110,9 +108,9 @@ def worker_plot(fname):
     plt.minorticks_on()
     plt.xlabel('Wavelength [nm]')
     plt.ylabel('Relative transmission')
-    plt.title("{} filter".format(fname))
+    plt.title(f"{fname} filter")
     plt.tight_layout()
-    plt.savefig("{}.pdf".format(fname))
+    plt.savefig(f"{fname}.pdf")
 
 
 def plot_filters(fnames):

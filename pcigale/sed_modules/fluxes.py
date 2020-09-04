@@ -56,7 +56,7 @@ class Fluxes(SedModule):
 
         for filter_ in filter_list:
             sed.add_info(
-                "param.{}".format(filter_),
+                f"param.{filter_}",
                 sed.compute_fnu(filter_),
                 True
             )

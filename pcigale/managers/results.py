@@ -10,8 +10,10 @@ along with the names of the parameters, which are proportional to the mass,
 etc. Each of these classes contain a merge() method that allows to combine
 results of the analysis with different blocks of models.
 """
+import ctypes
 
 from astropy.table import Table, Column
+from astropy.units import Unit, LogUnit
 import numpy as np
 
 from .utils import SharedArray
@@ -36,6 +38,7 @@ class BayesResultsManager(object):
         intpropnames = [prop for prop in models.obs.conf['analysis_params']['variables']
                         if (prop in models.allintpropnames or
                             prop[:-4] in models.allintpropnames)]
+        fluxnames = [name for name in models.conf['analysis_params']['bands']]
         self.nproperties = len(intpropnames) + len(extpropnames)
 
         # Arrays where we store the data related to the models. For memory
@@ -47,8 +50,8 @@ class BayesResultsManager(object):
         self.interror = {prop: SharedArray(nobs) for prop in intpropnames}
         self.extmean = {prop: SharedArray(nobs) for prop in extpropnames}
         self.exterror = {prop: SharedArray(nobs) for prop in extpropnames}
-        self.fluxmean = {band: SharedArray(nobs) for band in models.flux}
-        self.fluxerror = {band: SharedArray(nobs) for band in models.flux}
+        self.fluxmean = {band: SharedArray(nobs) for band in fluxnames}
+        self.fluxerror = {band: SharedArray(nobs) for band in fluxnames}
         self.weight = SharedArray(nobs)
 
     @property
@@ -112,10 +115,10 @@ class BayesResultsManager(object):
                     for band in merged.fluxerror}
         weight = np.array([result.weight for result in results])
 
-        totweight = np.sum(weight, axis=0)
+        totweight = np.nansum(weight, axis=0)
 
         for prop in merged.intmean:
-            merged.intmean[prop][:] = np.sum(
+            merged.intmean[prop][:] = np.nansum(
                 intmean[prop] * weight, axis=0) / totweight
 
             # We compute the merged standard deviation by combining the
@@ -123,11 +126,11 @@ class BayesResultsManager(object):
             # http://stats.stackexchange.com/a/10445 where the number of
             # datapoints has been substituted with the weights. In short we
             # exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
-            merged.interror[prop][:] = np.sqrt(np.sum(
+            merged.interror[prop][:] = np.sqrt(np.nansum(
                 weight * (interror[prop]**2. + (intmean[prop]-merged.intmean[prop])**2), axis=0) / totweight)
 
         for prop in merged.extmean:
-            merged.extmean[prop][:] = np.sum(
+            merged.extmean[prop][:] = np.nansum(
                 extmean[prop] * weight, axis=0) / totweight
 
             # We compute the merged standard deviation by combining the
@@ -135,7 +138,7 @@ class BayesResultsManager(object):
             # http://stats.stackexchange.com/a/10445 where the number of
             # datapoints has been substituted with the weights. In short we
             # exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
-            merged.exterror[prop][:] = np.sqrt(np.sum(
+            merged.exterror[prop][:] = np.sqrt(np.nansum(
                 weight * (exterror[prop]**2. + (extmean[prop]-merged.extmean[prop])**2), axis=0) / totweight)
 
         for prop in merged.extmean:
@@ -148,7 +151,7 @@ class BayesResultsManager(object):
                                merged.exterror[prop])
 
         for band in merged.fluxmean:
-            merged.fluxmean[band][:] = np.sum(
+            merged.fluxmean[band][:] = np.nansum(
                 fluxmean[band] * weight, axis=0) / totweight
 
             # We compute the merged standard deviation by combining the
@@ -156,7 +159,7 @@ class BayesResultsManager(object):
             # http://stats.stackexchange.com/a/10445 where the number of
             # datapoints has been substituted with the weights. In short we
             # exploit the fact that Var(X) = E(Var(X)) + Var(E(X)).
-            merged.fluxerror[band][:] = np.sqrt(np.sum(
+            merged.fluxerror[band][:] = np.sqrt(np.nansum(
                 weight * (fluxerror[band]**2. + (fluxmean[band]-merged.fluxmean[band])**2), axis=0) / totweight)
 
 
@@ -189,9 +192,7 @@ class BestResultsManager(object):
                         for prop in allextpropnames}
         self.chi2 = SharedArray(nobs)
         self.scaling = SharedArray(nobs)
-
-        # We store the index as a float to work around python issue #10746
-        self.index = SharedArray(nobs)
+        self.index = SharedArray(nobs, ctypes.c_uint32)
 
     @property
     def flux(self):
@@ -284,22 +285,22 @@ class BestResultsManager(object):
         if len(results) == 1:
             return results[0]
 
-        best = np.argmin([result.chi2 for result in results], axis=0)
-
+        chi2 = np.array([result.chi2 for result in results])
         merged = results[0]
-        for iobs, bestidx in enumerate(best):
-            for band in merged.flux:
-                merged.flux[band][iobs] = \
-                    results[bestidx].flux[band][iobs]
-            for prop in merged.intprop:
-                merged.intprop[prop][iobs] = \
-                    results[bestidx].intprop[prop][iobs]
-            for prop in merged.extprop:
-                merged.extprop[prop][iobs] = \
-                    results[bestidx].extprop[prop][iobs]
-            merged.chi2[iobs] = results[bestidx].chi2[iobs]
-            merged.scaling[iobs] = results[bestidx].scaling[iobs]
-            merged.index[iobs] = results[bestidx].index[iobs]
+        for iobs, bestidx in enumerate(np.argsort(chi2, axis=0)[0, :]):
+            if np.isfinite(bestidx):
+                for band in merged.flux:
+                    merged.flux[band][iobs] = \
+                        results[bestidx].flux[band][iobs]
+                for prop in merged.intprop:
+                    merged.intprop[prop][iobs] = \
+                        results[bestidx].intprop[prop][iobs]
+                for prop in merged.extprop:
+                    merged.extprop[prop][iobs] = \
+                        results[bestidx].extprop[prop][iobs]
+                merged.chi2[iobs] = results[bestidx].chi2[iobs]
+                merged.scaling[iobs] = results[bestidx].scaling[iobs]
+                merged.index[iobs] = results[bestidx].index[iobs]
 
         return merged
 
@@ -308,14 +309,23 @@ class BestResultsManager(object):
          objects seems to be overconstrainted.
 
         """
+        # If no best model has been found, it means none could be properly
+        # fitted. We warn the user in that case
+        bad = [str(id_) for id_ in self.obs.table['id'][np.isnan(self.chi2)]]
+        if len(bad) > 0:
+            print(f"No suitable model found for {', '.join(bad)}. It may be "
+                  f"that models are older than the universe or that your χ² are"
+                  f" very large.")
+
         obs = [self.obs.table[obs].data for obs in self.obs.tofit]
         nobs = np.count_nonzero(np.isfinite(obs), axis=0)
         chi2_red = self.chi2 / (nobs - 1)
         # If low values of reduced chi^2, it means that the data are overfitted
         # Errors might be under-estimated or not enough valid data.
-        print("\n{}% of the objects have chi^2_red~0 and {}% chi^2_red<0.5"
-              .format(np.round((chi2_red < 1e-12).sum() / chi2_red.size, 1),
-                      np.round((chi2_red < 0.5).sum() / chi2_red.size, 1)))
+        print(f"{np.round(100. * (chi2_red < 1e-12).sum() / chi2_red.size, 1)}%"
+              f" of the objects have χ²_red~0 and "
+              f"{np.round(100. * (chi2_red < 0.5).sum() / chi2_red.size, 1)}% "
+              f"χ²_red<0.5")
 
 
 class ResultsManager(object):
@@ -330,6 +340,7 @@ class ResultsManager(object):
         self.conf = models.conf
         self.obs = models.obs
         self.params = models.params
+        self.unit = models.unit
 
         self.bayes = BayesResultsManager(models)
         self.best = BestResultsManager(models)
@@ -368,20 +379,29 @@ class ResultsManager(object):
         table.add_column(Column(self.obs.table['id'], name="id"))
 
         for prop in sorted(self.bayes.intmean):
+            if prop.endswith('_log'):
+                unit = LogUnit(self.unit[prop[:-4]])
+            else:
+                unit = Unit(self.unit[prop])
             table.add_column(Column(self.bayes.intmean[prop],
-                                    name="bayes."+prop))
+                                    name="bayes."+prop, unit=unit))
             table.add_column(Column(self.bayes.interror[prop],
-                                    name="bayes."+prop+"_err"))
+                                    name="bayes."+prop+"_err", unit=unit))
         for prop in sorted(self.bayes.extmean):
+            if prop.endswith('_log'):
+                unit = LogUnit(self.unit[prop[:-4]])
+            else:
+                unit = Unit(self.unit[prop])
             table.add_column(Column(self.bayes.extmean[prop],
-                                    name="bayes."+prop))
+                                    name="bayes."+prop, unit=unit))
             table.add_column(Column(self.bayes.exterror[prop],
-                                    name="bayes."+prop+"_err"))
+                                    name="bayes."+prop+"_err", unit=unit))
         for band in sorted(self.bayes.fluxmean):
             table.add_column(Column(self.bayes.fluxmean[band],
-                                    name="bayes."+band))
+                                    name="bayes."+band, unit=Unit('mJy')))
             table.add_column(Column(self.bayes.fluxerror[band],
-                                    name="bayes."+band+"_err"))
+                                    name="bayes."+band+"_err",
+                                    unit=Unit('mJy')))
 
         table.add_column(Column(self.best.chi2, name="best.chi_square"))
         obs = [self.obs.table[obs].data for obs in self.obs.tofit]
@@ -391,10 +411,12 @@ class ResultsManager(object):
 
         for prop in sorted(self.best.intprop):
             table.add_column(Column(self.best.intprop[prop],
-                                    name="best."+prop))
+                                    name="best."+prop,
+                                    unit=Unit(self.unit[prop])))
         for prop in sorted(self.best.extprop):
             table.add_column(Column(self.best.extprop[prop],
-                                    name="best."+prop))
+                                    name="best."+prop,
+                                    unit=Unit(self.unit[prop])))
 
         for band in self.obs.bands:
             if band.startswith('line.') or band.startswith('linefilter.'):
@@ -405,6 +427,6 @@ class ResultsManager(object):
                                     name="best."+band, unit=unit))
 
 
-        table.write("out/{}.txt".format(filename), format='ascii.fixed_width',
+        table.write(f"out/{filename}.txt", format='ascii.fixed_width',
                     delimiter=None)
-        table.write("out/{}.fits".format(filename), format='fits')
+        table.write(f"out/{filename}.fits", format='fits')

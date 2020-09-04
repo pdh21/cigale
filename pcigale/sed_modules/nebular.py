@@ -95,7 +95,10 @@ class NebularEmission(SedModule):
         self.fesc = float(self.parameters['f_esc'])
         self.fdust = float(self.parameters['f_dust'])
         self.lines_width = float(self.parameters['lines_width'])
-        self.emission = bool(self.parameters["emission"])
+        if type(self.parameters["emission"]) is str:
+            self.emission = self.parameters["emission"].lower() == 'true'
+        else:
+            self.emission = bool(self.parameters["emission"])
 
         if self.fesc < 0. or self.fesc > 1:
             raise Exception("Escape fraction must be between 0 and 1")
@@ -176,7 +179,8 @@ class NebularEmission(SedModule):
         sed.add_info('nebular.f_esc', self.fesc)
         sed.add_info('nebular.f_dust', self.fdust)
         sed.add_info('dust.luminosity', (sed.info['stellar.lum_ly_young'] +
-                     sed.info['stellar.lum_ly_old']) * self.fdust, True)
+                     sed.info['stellar.lum_ly_old']) * self.fdust, True,
+                     unit='W')
 
         sed.add_contribution('nebular.absorption_old', sed.wavelength_grid,
                              self.absorbed_old)
@@ -192,7 +196,7 @@ class NebularEmission(SedModule):
             linesdict = self.linesdict[metallicity]
             cont = self.cont_template[metallicity]
 
-            sed.add_info('nebular.lines_width', self.lines_width)
+            sed.add_info('nebular.lines_width', self.lines_width, unit='km/s')
             sed.add_info('nebular.logU', self.logU)
 
             for line in default_lines:

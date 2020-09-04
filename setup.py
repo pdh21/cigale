@@ -41,20 +41,22 @@ entry_points = {
 
 setup(
     name="pcigale",
-    version="2018.0",
+    version="dev",
     packages=find_packages(exclude=["database_builder"]),
 
     install_requires=['numpy', 'scipy', 'sqlalchemy', 'matplotlib',
                       'configobj', 'astropy'],
-
+    setup_requires=['numpy', 'scipy', 'astropy', 'sqlalchemy', 'configobj'],
     entry_points=entry_points,
 
     cmdclass={"build": custom_build},
     package_data={'pcigale': ['data/data.db'],
-                  'pcigale_plots': ['data/CIGALE.png']},
+                  'pcigale_plots': ['resources/CIGALE.png']},
 
+    include_package_data=True,
     author="The CIGALE team",
     author_email="cigale@lam.fr",
+    url="https://cigale.lam.fr",
     description="Python Code Investigating Galaxy Emission",
     license="CeCILL-V2",
     keywords="astrophysics, galaxy, SED fitting"

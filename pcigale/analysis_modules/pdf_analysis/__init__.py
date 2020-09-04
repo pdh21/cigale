@@ -31,7 +31,7 @@ import multiprocessing as mp
 import numpy as np
 
 from .. import AnalysisModule
-from ..utils import Counter
+from utils.counter import Counter
 from .workers import sed as worker_sed
 from .workers import init_sed as init_worker_sed
 from .workers import init_analysis as init_worker_analysis
@@ -55,16 +55,23 @@ class PdfAnalysis(AnalysisModule):
             "are many models).",
             ["sfh.sfr", "sfh.sfr10Myrs", "sfh.sfr100Myrs"]
         )),
+        ("bands", (
+            "cigale_string_list()",
+            "List of bands for which to estimate the fluxes. Note that this is "
+            "independent from the fluxes actually fitted to estimate the "
+            "physical properties.",
+            None
+        )),
         ("save_best_sed", (
             "boolean()",
             "If true, save the best SED for each observation to a file.",
             False
         )),
         ("save_chi2", (
-            "boolean()",
-            "If true, for each observation and each analysed property, save "
-            "the raw chi2. It occupies ~15 MB/million models/variable.",
-            False
+            "option('all', 'none', 'properties', 'fluxes')",
+            "Save the raw chi2. It occupies ~15 MB/million models/variable. "
+            "Allowed values are 'all', 'none', 'properties', and 'fluxes'.",
+            "none"
         )),
         ("lim_flag", (
             "boolean()",
@@ -114,16 +121,17 @@ class PdfAnalysis(AnalysisModule):
 
         initargs = (models, results, Counter(len(obs)))
         self._parallel_job(worker_analysis, obs, initargs,
-                           init_worker_analysis, conf['cores'])
+                           init_worker_analysis, conf['cores'], 1)
 
         return results
 
     def _compute_best(self, conf, obs, params, results):
         initargs = (conf, params, obs, results, Counter(len(obs)))
         self._parallel_job(worker_bestfit, obs, initargs,
-                           init_worker_bestfit, conf['cores'])
+                           init_worker_bestfit, conf['cores'], 1)
 
-    def _parallel_job(self, worker, items, initargs, initializer, ncores):
+    def _parallel_job(self, worker, items, initargs, initializer, ncores,
+                      chunksize=None):
         if ncores == 1:  # Do not create a new process
             initializer(*initargs)
             for idx, item in enumerate(items):
@@ -131,13 +139,13 @@ class PdfAnalysis(AnalysisModule):
         else:  # run in parallel
             with mp.Pool(processes=ncores, initializer=initializer,
                          initargs=initargs) as pool:
-                pool.starmap(worker, enumerate(items))
+                pool.starmap(worker, enumerate(items), chunksize)
 
     def _compute(self, conf, obs, params):
         results = []
         nblocks = len(params.blocks)
         for iblock in range(nblocks):
-            print('\nProcessing block {}/{}...'.format(iblock + 1, nblocks))
+            print(f"\nProcessing block {iblock + 1}/{nblocks}...")
             # We keep the models if there is only one block. This allows to
             # avoid recomputing the models when we do a mock analysis
             if not hasattr(self, '_models'):
@@ -195,6 +203,7 @@ class PdfAnalysis(AnalysisModule):
         obs.save('observations')
 
         results = self._compute(conf, obs, params)
+        print("\nSanity check of the analysis results...")
         results.best.analyse_chi2()
 
         print("\nSaving the analysis results...")
@@ -205,7 +214,7 @@ class PdfAnalysis(AnalysisModule):
 
             # For the mock analysis we do not save the ancillary files.
             for k in ['best_sed', 'chi2']:
-                conf['analysis_params']["save_{}".format(k)] = False
+                conf['analysis_params'][f"save_{k}"] = False
 
             # We replace the observations with a mock catalogue..
             obs.generate_mock(results)

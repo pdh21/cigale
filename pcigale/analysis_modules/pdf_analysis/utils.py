@@ -8,7 +8,7 @@
 from functools import lru_cache
 
 from astropy import log
-from astropy.cosmology import WMAP7 as cosmo
+from ...utils.cosmology import luminosity_distance
 import numpy as np
 from scipy import optimize
 from scipy.constants import parsec
@@ -21,8 +21,8 @@ def save_chi2(obs, variable, models, chi2, values):
     """Save the chi² and the associated physocal properties
 
     """
-    fname = 'out/{}_{}_chi2-block-{}.npy'.format(obs.id, variable.replace('/',
-                                                 '_'), models.iblock)
+    fname = f"out/{obs.id}_{variable.replace('/', '_')}_chi2-block-" \
+            f"{models.iblock}.npy"
     data = np.memmap(fname, dtype=np.float64, mode='w+',
                      shape=(2, chi2.size))
     data[0, :] = chi2
@@ -48,11 +48,7 @@ def compute_corr_dz(model_z, obs):
         Object containing the distance and redshift of an object
 
     """
-    if model_z == 0.:
-        mod_distance = 10. * parsec
-    else:
-        mod_distance = cosmo.luminosity_distance(model_z).value * 1e6 * parsec
-    return (obs.distance / mod_distance) ** 2. * \
+    return (obs.distance / luminosity_distance(model_z)) ** 2. * \
            (1. + model_z) / (1. + obs.redshift)
 
 
@@ -256,12 +252,12 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
         # inverse error
         inv_flux_err = 1. / obs.flux_err[band]
         model = models.flux[band][wz]
-        chi2 += ((flux - model * scaling) * inv_flux_err) ** 2.
+        chi2 += ((model * scaling - flux) * inv_flux_err) ** 2.
 
     # Computation of the χ² from intensive properties
     for name, prop in obs.intprop.items():
         model = models.intprop[name][wz]
-        chi2 += ((prop - model) * (1. / obs.intprop_err[name])) ** 2.
+        chi2 += ((model - prop) * (1. / obs.intprop_err[name])) ** 2.
 
     # Computation of the χ² from extensive properties
     for name, prop in obs.extprop.items():
@@ -269,7 +265,7 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
         # inverse error
         inv_prop_err = 1. / obs.extprop_err[name]
         model = models.extprop[name][wz]
-        chi2 += ((prop - (scaling * model) * corr_dz) * inv_prop_err) ** 2.
+        chi2 += (((scaling * model) * corr_dz - prop) * inv_prop_err) ** 2.
 
     # Finally take the presence of upper limits into account
     if limits is True:
@@ -289,13 +285,15 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
 
 def weighted_param(param, weights):
     """Compute the weighted mean and standard deviation of an array of data.
+    Note that here we assume that the sum of the weights is normalised to 1.
+    This simplifies and accelerates the computation.
 
     Parameters
     ----------
     param: array
         Values of the parameters for the entire grid of models
     weights: array
-        Weights by which to weight the parameter values
+        Weights by which to weigh the parameter values
 
     Returns
     -------
@@ -306,7 +304,8 @@ def weighted_param(param, weights):
 
     """
 
-    mean = np.average(param, weights=weights)
-    std = np.sqrt(np.average((param-mean)**2, weights=weights))
+    mean = np.einsum('i, i', param, weights)
+    delta = param - mean
+    std = np.sqrt(np.einsum('i, i, i', delta, delta, weights))
 
     return (mean, std)

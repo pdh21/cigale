@@ -19,7 +19,7 @@ from collections import OrderedDict
 import multiprocessing as mp
 
 from .. import AnalysisModule
-from ..utils import Counter
+from utils.counter import Counter
 from .workers import init_fluxes as init_worker_fluxes
 from .workers import fluxes as worker_fluxes
 from ...managers.models import ModelsManager
@@ -71,8 +71,7 @@ class SaveFluxes(AnalysisModule):
     def _compute_models(self, conf, obs, params):
         nblocks = len(params.blocks)
         for iblock in range(nblocks):
-            print('Computing models for block {}/{}...'.format(iblock + 1,
-                                                               nblocks))
+            print(f"Computing models for block {iblock + 1}/{nblocks}...")
 
             models = ModelsManager(conf, obs, params, iblock)
             counter = Counter(len(params.blocks[iblock]), 50, 250)
@@ -86,7 +85,7 @@ class SaveFluxes(AnalysisModule):
                 counter.pprint(len(params.blocks[iblock]))
 
             print("Saving the models ....")
-            models.save('models-block-{}'.format(iblock))
+            models.save(f"models-block-{iblock}")
 
 
     def process(self, conf):

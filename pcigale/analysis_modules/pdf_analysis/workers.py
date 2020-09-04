@@ -10,7 +10,6 @@ from copy import deepcopy
 
 import numpy as np
 
-from ..utils import nothread
 from .utils import save_chi2, compute_corr_dz, compute_chi2, weighted_param
 from ...warehouse import SedWarehouse
 
@@ -27,10 +26,6 @@ def init_sed(models, counter):
 
     """
     global gbl_warehouse, gbl_models, gbl_counter
-
-    # Limit the number of threads to 1 if we use MKL in order to limit the
-    # oversubscription of the CPU/RAM.
-    nothread()
 
     gbl_warehouse = SedWarehouse()
 
@@ -103,6 +98,9 @@ def sed(idx, midx):
     sed = gbl_warehouse.get_sed(gbl_models.params.modules,
                                 gbl_models.params.from_index(midx))
 
+    # The redshift is the fastest varying variable but we want to store it
+    # as the slowest one so that models at a given redshift are contiguous
+    idx = (idx % gbl_models.nz) * gbl_models.nm + idx // gbl_models.nz
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
         for band in gbl_models.flux:
             gbl_models.flux[band][idx] = np.nan
@@ -117,6 +115,7 @@ def sed(idx, midx):
             gbl_models.extprop[prop][idx] = sed.info[prop]
         for prop in gbl_models.intprop:
             gbl_models.intprop[prop][idx] = sed.info[prop]
+    gbl_models.index[idx] = midx
 
     gbl_counter.inc()
 
@@ -141,8 +140,10 @@ def analysis(idx, obs):
         # work on views of the arrays and not on copies to save on RAM.
         z = np.array(
             gbl_models.conf['sed_modules_params']['redshifting']['redshift'])
-        wz = slice(np.abs(obs.redshift-z).argmin(), None, z.size)
-        corr_dz = compute_corr_dz(z[wz.start], obs)
+        length = gbl_models.nm
+        zidx = np.abs(obs.redshift-z).argmin()
+        wz = slice(zidx * length, (zidx + 1) * length, 1)
+        corr_dz = compute_corr_dz(z[zidx], obs)
     else:  # We do not know the redshift so we use the full grid
         wz = slice(0, None, 1)
         corr_dz = 1.
@@ -153,7 +154,7 @@ def analysis(idx, obs):
     if np.any(chi2 < -np.log(np.finfo(np.float64).tiny) * 2.):
         # We use the exponential probability associated with the χ² as
         # likelihood function.
-        likelihood = np.exp(-chi2 / 2.)
+        likelihood = np.exp(-.5 * chi2)
         wlikely = np.where(np.isfinite(likelihood))
         # If all the models are valid, it is much more efficient to use a slice
         if likelihood.size == wlikely[0].size:
@@ -162,6 +163,7 @@ def analysis(idx, obs):
         scaling_l = scaling[wlikely]
 
         gbl_results.bayes.weight[idx] = np.nansum(likelihood)
+        likelihood *= 1. / gbl_results.bayes.weight[idx]
 
         # We compute the weighted average and standard deviation using the
         # likelihood as weight.
@@ -175,8 +177,9 @@ def analysis(idx, obs):
             mean, std = weighted_param(_(values[wlikely]), likelihood)
             gbl_results.bayes.intmean[prop][idx] = mean
             gbl_results.bayes.interror[prop][idx] = std
-            if gbl_models.conf['analysis_params']['save_chi2'] is True:
-                save_chi2(obs, prop, gbl_models, chi2, values)
+            if (gbl_models.conf['analysis_params']['save_chi2'] in
+                ['all', 'properties']):
+                save_chi2(obs, prop, gbl_models, chi2, _(values))
 
         for prop in gbl_results.bayes.extmean:
             if prop.endswith('_log'):
@@ -189,9 +192,10 @@ def analysis(idx, obs):
                                        likelihood)
             gbl_results.bayes.extmean[prop][idx] = mean
             gbl_results.bayes.exterror[prop][idx] = std
-            if gbl_models.conf['analysis_params']['save_chi2'] is True:
+            if (gbl_models.conf['analysis_params']['save_chi2'] in
+                ['all', 'properties']):
                 save_chi2(obs, prop, gbl_models, chi2,
-                          values * scaling * corr_dz)
+                          _(values * scaling * corr_dz))
 
         for band in gbl_results.bayes.fluxmean:
             values = gbl_models.flux[band][wz]
@@ -199,19 +203,14 @@ def analysis(idx, obs):
                                        likelihood)
             gbl_results.bayes.fluxmean[band][idx] = mean
             gbl_results.bayes.fluxerror[band][idx] = std
-            if gbl_models.conf['analysis_params']['save_chi2'] is True:
+            if (gbl_models.conf['analysis_params']['save_chi2'] in
+                ['all', 'fluxes']):
                 save_chi2(obs, band, gbl_models, chi2, values * scaling)
 
         best_idx_z = np.nanargmin(chi2)
         gbl_results.best.chi2[idx] = chi2[best_idx_z]
         gbl_results.best.scaling[idx] = scaling[best_idx_z]
-        gbl_results.best.index[idx] = (wz.start + best_idx_z*wz.step +
-                                       gbl_models.block.start)
-    else:
-        # It sometimes happens because models are older than the Universe's age
-        print("No suitable model found for the object {}. It may be that "
-              "models are older than the Universe or that your chi² are very "
-              "large.".format(obs.id))
+        gbl_results.best.index[idx] = gbl_models.index[wz][best_idx_z]
 
     gbl_counter.inc()
 
@@ -229,46 +228,49 @@ def bestfit(oidx, obs):
     """
     np.seterr(invalid='ignore')
 
-    best_index = int(gbl_results.best.index[oidx])
+    if np.isfinite(gbl_results.best.index[oidx]):
+        best_index = int(gbl_results.best.index[oidx])
 
-    # We compute the model at the exact redshift not to have to correct for the
-    # difference between the object and the grid redshifts.
-    params = deepcopy(gbl_params.from_index(best_index))
-    if obs.redshift >= 0.:
-        model_z = params[gbl_params.modules.index('redshifting')]['redshift']
-        params[gbl_params.modules.index('redshifting')]['redshift'] = obs.redshift
-        # Correct fluxes for the fact that the scaling factor was computed on
-        # the grid redshift. Because of the difference in redshift the distance
-        # is different and must be reflected in the scaling
-        corr_scaling = compute_corr_dz(model_z, obs) / \
-                       compute_corr_dz(obs.redshift, obs)
-    else:  # The model redshift is always exact in redhisfting mode
-        corr_scaling = 1.
+        # We compute the model at the exact redshift not to have to correct for
+        # the difference between the object and the grid redshifts.
+        params = deepcopy(gbl_params.from_index(best_index))
+        if obs.redshift >= 0.:
+            model_z = params[gbl_params.modules.index('redshifting')]['redshift']
+            params[gbl_params.modules.index('redshifting')]['redshift'] = obs.redshift
+            # Correct fluxes for the fact that the scaling factor was computed
+            # on the grid redshift. Because of the difference in redshift the
+            # distance is different and must be reflected in the scaling
+            corr_scaling = compute_corr_dz(model_z, obs) / \
+                           compute_corr_dz(obs.redshift, obs)
+        else:  # The model redshift is always exact in redhisfting mode
+            corr_scaling = 1.
 
-    sed = gbl_warehouse.get_sed(gbl_params.modules, params)
+        sed = deepcopy(gbl_warehouse.get_sed(gbl_params.modules, params))
 
-    # Handle the case where the distance does not correspond to the redshift.
-    if obs.redshift >= 0.:
-        corr_dz = (obs.distance / sed.info['universe.luminosity_distance']) ** 2
-    else:
-        corr_dz = 1.
+        # Handle the case where the distance does not correspond to the redshift.
+        if obs.redshift >= 0.:
+            corr_dz = (obs.distance / sed.info['universe.luminosity_distance']) ** 2
+        else:
+            corr_dz = 1.
 
-    scaling = gbl_results.best.scaling[oidx] * corr_scaling
+        scaling = gbl_results.best.scaling[oidx] * corr_scaling
 
-    for band in gbl_results.best.flux:
-        gbl_results.best.flux[band][oidx] = sed.compute_fnu(band) * scaling
+        for band in gbl_results.best.flux:
+            gbl_results.best.flux[band][oidx] = sed.compute_fnu(band) * scaling
 
-    # If the distance is user defined, the redshift-based luminosity distance
-    # of the model is probably incorrect so we replace it
-    sed.add_info('universe.luminosity_distance', obs.distance, force=True)
-    for prop in gbl_results.best.intprop:
-        gbl_results.best.intprop[prop][oidx] = sed.info[prop]
+        # If the distance is user defined, the redshift-based luminosity distance
+        # of the model is probably incorrect so we replace it
+        if np.isfinite(obs.distance):
+            sed.add_info('universe.luminosity_distance', obs.distance,
+                         force=True)
+        for prop in gbl_results.best.intprop:
+            gbl_results.best.intprop[prop][oidx] = sed.info[prop]
 
-    for prop in gbl_results.best.extprop:
-        gbl_results.best.extprop[prop][oidx] = sed.info[prop] * scaling \
-                                                   * corr_dz
+        for prop in gbl_results.best.extprop:
+            gbl_results.best.extprop[prop][oidx] = sed.info[prop] * scaling \
+                                                       * corr_dz
 
-    if gbl_conf['analysis_params']["save_best_sed"]:
-        sed.to_fits('out/{}'.format(obs.id), scaling)
+        if gbl_conf['analysis_params']["save_best_sed"]:
+            sed.to_fits(f"out/{obs.id}", scaling * corr_dz)
 
     gbl_counter.inc()

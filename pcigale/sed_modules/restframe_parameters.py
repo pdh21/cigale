@@ -220,15 +220,15 @@ class RestframeParam(SedModule):
 
         if 'nebular.lines_young' in sed.contribution_names:
             for line, EW in self.EW(sed).items():
-                sed.add_info("param.EW({}/{})".format(*line), EW)
+                sed.add_info(f"param.EW({line[0]}/{line[1]})", EW, unit='nm')
 
         for filt in self.lumin_filters:
-            sed.add_info("param.restframe_Lnu({})".format(filt),
-                         fluxes[filt] * self.to_lumin,
-                         True)
+            sed.add_info(f"param.restframe_Lnu({filt})",
+                         fluxes[filt] * self.to_lumin, True, unit='W')
         for filt1, filt2 in self.colours:
-            sed.add_info("param.restframe_{}-{}".format(filt1, filt2),
-                         2.5 * np.log10(fluxes[filt2]/fluxes[filt1]))
+            sed.add_info(f"param.restframe_{filt1}-{filt2}",
+                         2.5 * np.log10(fluxes[filt2]/fluxes[filt1]),
+                         unit='mag')
 
 
 # SedModule to be returned by get_module

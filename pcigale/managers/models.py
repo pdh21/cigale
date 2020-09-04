@@ -9,7 +9,10 @@ compute them, such as the configuration, the observations, and the parameters
 of the models.
 """
 
+import ctypes
+
 from astropy.table import Table, Column
+from astropy.units import Unit
 
 from .utils import SharedArray, get_info
 
@@ -28,7 +31,7 @@ class ModelsManager(object):
         self.params = params
         self.block = params.blocks[iblock]
         self.iblock = iblock
-        self.allpropnames, self.allextpropnames = get_info(self)
+        self.allpropnames, self.unit, self.allextpropnames = get_info(self)
         self.allintpropnames = set(self.allpropnames) - self.allextpropnames
 
         props_nolog = set([prop[:-4] if prop.endswith('log') else prop
@@ -37,11 +40,20 @@ class ModelsManager(object):
                              self.allintpropnames & props_nolog)
         self.extpropnames = (self.allextpropnames & set(obs.extprops) |
                              self.allextpropnames & props_nolog)
-        size = len(params.blocks[iblock])
+        if 'bands' in conf['analysis_params']:
+            bandnames = set(obs.bands+conf['analysis_params']['bands'])
+        else:
+            bandnames = obs.bands
 
-        self.flux = {band: SharedArray(size) for band in obs.bands}
+        size = len(params.blocks[iblock])
+        if conf['parameters_file'] == "":
+            self.nz = len(conf['sed_modules_params']['redshifting']['redshift'])
+            self.nm = size // self.nz
+
+        self.flux = {band: SharedArray(size) for band in bandnames}
         self.intprop = {prop: SharedArray(size) for prop in self.intpropnames}
         self.extprop = {prop: SharedArray(size) for prop in self.extpropnames}
+        self.index = SharedArray(size, ctypes.c_uint32)
 
     def save(self, filename):
         """Save the fluxes and properties of all the models into a table.
@@ -60,12 +72,14 @@ class ModelsManager(object):
             else:
                 unit = 'mJy'
             table.add_column(Column(self.flux[band], name=band,
-                                    unit=unit))
+                                    unit=Unit(unit)))
         for prop in sorted(self.extprop.keys()):
-            table.add_column(Column(self.extprop[prop], name=prop))
+            table.add_column(Column(self.extprop[prop], name=prop,
+                                    unit=Unit(self.unit[prop])))
         for prop in sorted(self.intprop.keys()):
-            table.add_column(Column(self.intprop[prop], name=prop))
+            table.add_column(Column(self.intprop[prop], name=prop,
+                                    unit=Unit(self.unit[prop])))
 
-        table.write("out/{}.fits".format(filename))
-        table.write("out/{}.txt".format(filename), format='ascii.fixed_width',
+        table.write(f"out/{filename}.fits")
+        table.write(f"out/{filename}.txt", format='ascii.fixed_width',
                     delimiter=None)

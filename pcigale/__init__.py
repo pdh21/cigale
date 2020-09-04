@@ -3,6 +3,15 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Yannick Roehlly
 
+import os
+# Set environment variables to disable multithreading as users will probably
+# want to set the number of cores to the max of their computer.
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 import argparse
 import multiprocessing as mp
 import sys
@@ -10,8 +19,6 @@ import sys
 from .session.configuration import Configuration
 from .analysis_modules import get_module
 from .managers.parameters import ParametersManager
-
-__version__ = "0.10.0"
 
 
 def init(config):
@@ -39,8 +46,9 @@ def check(config):
     configuration = config.configuration
 
     if configuration:
-        print("With this configuration cigale will compute {} "
-              "models.".format(ParametersManager(configuration).size))
+        pm = ParametersManager(configuration)
+        print(f"With this configuration cigale will compute "
+              f"{pm.size} models ({pm.size // pm.shape[-1]} per redshift).")
 
 
 def run(config):
@@ -54,12 +62,9 @@ def run(config):
 
 
 def main():
-    if sys.version_info[:2] < (3, 5):
-        raise Exception("Python {}.{} is unsupported. Please upgrade to "
-                        "Python 3.5 or later.".format(*sys.version_info[:2]))
     if sys.version_info[:2] < (3, 6):
-        print("Python {}.{} detected. For better performance we recommend "
-              "Python 3.6 or later.".format(*sys.version_info[:2]))
+        raise Exception(f"Python {sys.version_info[0]}.{sys.version_info[1]} is"
+                        f" unsupported. Please upgrade to Python 3.6 or later.")
 
     # We set the sub processes start method to spawn because it solves
     # deadlocks when a library cannot handle being used on two sides of a

@@ -37,10 +37,10 @@ def save_sed_to_fits(sed, prefix, norm=1.):
     for name in sed.contribution_names:
         table[name] = Column(norm * sed.get_lumin_contribution(name),
                              unit="W/nm")
-    table.write("{}_best_model.fits".format(prefix))
+    table.write(f"{prefix}_best_model.fits")
 
     if sed.sfh is not None:
         table = Table(meta=info)
         table["time"] = Column(np.arange(sed.sfh.size), unit="Myr")
         table["SFR"] = Column(norm * sed.sfh, unit="Msun/yr")
-        table.write("{}_SFH.fits".format(prefix))
+        table.write(f"{prefix}_SFH.fits")

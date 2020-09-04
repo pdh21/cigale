@@ -3,12 +3,12 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Médéric Boquien
 
-from astropy.cosmology import WMAP7 as cosmo
 from astropy.table import Column
 import numpy as np
 from scipy.constants import parsec
 
-from ..utils import read_table
+from ..utils.cosmology import luminosity_distance
+from utils.io import read_table
 from .utils import get_info
 
 
@@ -40,7 +40,7 @@ class ObservationsManagerPassbands(object):
 
         self.conf = config
         self.params = params
-        self.allpropertiesnames, self.massproportional = get_info(self)
+        self.allpropertiesnames, _, self.massproportional = get_info(self)
         self.table = read_table(config['data_file'])
         self.bands = [band for band in config['bands']
                       if not band.endswith('_err')]
@@ -62,6 +62,7 @@ class ObservationsManagerPassbands(object):
         self.tofit_err = self.bands_err + self.intprops_err + self.extprops_err
 
         # Sanitise the input
+        self._check_id()
         self._check_filters()
         self._check_errors(defaulterror)
         self._check_invalid(config['analysis_params']['lim_flag'],
@@ -91,6 +92,19 @@ class ObservationsManagerPassbands(object):
             return obs
         raise StopIteration
 
+    def _check_id(self):
+        """Check that the id of each object is unique. If not trigger an
+        exception as it may cause issues down the road.
+
+        """
+        values, counts = np.unique(self.table['id'], return_counts=True)
+        duplicates = values[counts > 1].data
+
+        if duplicates.size > 0:
+            raise Exception("The input file has the following duplicated id: " +
+                            ", ".join(duplicates.astype(str)) +
+                            ". The id must be unique.")
+
     def _check_filters(self):
         """Check whether the list of filters and poperties makes sense.
 
@@ -103,15 +117,15 @@ class ObservationsManagerPassbands(object):
         """
         for item in self.tofit + self.tofit_err:
             if item not in self.table.colnames:
-                raise Exception("{} to be taken in the fit but not present "
-                                "in the observation table.".format(item))
+                raise Exception(f"{item} to be taken in the fit but not present"
+                                f" in the observation table.")
 
         for item in self.table.colnames:
             if (item != 'id' and item != 'redshift' and item != 'distance' and
                     item not in self.tofit + self.tofit_err):
                 self.table.remove_column(item)
-                print("Warning: {} in the input file but not to be taken into"
-                      " account in the fit.".format(item))
+                print(f"Warning: {item} in the input file but not to be taken "
+                      f"into account in the fit.")
 
     def _check_errors(self, defaulterror=0.1):
         """Check whether the error columns are present. If not, add them.
@@ -148,9 +162,8 @@ class ObservationsManagerPassbands(object):
                                 name=error)
                 self.table.add_column(colerr,
                                       index=self.table.colnames.index(item)+1)
-                print("Warning: {}% of {} taken as errors.".format(defaulterror *
-                                                                   100.,
-                                                                   item))
+                print(f"Warning: {defaulterror * 100}% of {item} taken as "
+                      f"errors.")
 
     def _check_invalid(self, upperlimits=False, threshold=-9990.):
         """Check whether invalid data are correctly marked as such.
@@ -173,16 +186,14 @@ class ObservationsManagerPassbands(object):
 
         for item in self.bands + self.extprops:
             error = item + '_err'
-            w = np.where((self.table[item] < threshold) |
-                         (self.table[error] < threshold))
+            if upperlimits is False:
+                w = np.where((self.table[item] < threshold) |
+                             (self.table[error] <= 0.))
+            else:
+                w = np.where((self.table[item] < threshold) |
+                             (self.table[error] == 0.))
             self.table[item][w] = np.nan
             self.table[error][w] = np.nan
-            if upperlimits is False:
-                w = np.where(self.table[error] <= 0.)
-                self.table[item][w] = np.nan
-            else:
-                w = np.where(self.table[error] == 0.)
-                self.table[item][w] = np.nan
             if np.all(~np.isfinite(self.table[item])):
                 allinvalid.append(item)
 
@@ -194,8 +205,7 @@ class ObservationsManagerPassbands(object):
                 self.extprops.remove(item)
                 self.extprops_err.remove(item + '_err')
             self.table.remove_columns([item, item + '_err'])
-            print("Warning: {} removed as no valid data was found.".format(
-                allinvalid))
+            print(f"Warning: {allinvalid} removed as no valid data was found.")
 
     def _add_model_error(self, modelerror=0.1):
         """Add in quadrature the error of the model to the input error.
@@ -256,9 +266,9 @@ class ObservationsManagerPassbands(object):
             Root of the filename where to save the observations.
 
         """
-        self.table.write('out/{}.fits'.format(filename))
-        self.table.write('out/{}.txt'.format(filename),
-                         format='ascii.fixed_width', delimiter=None)
+        self.table.write(f'out/{filename}.fits')
+        self.table.write(f'out/{filename}.txt', format='ascii.fixed_width',
+                         delimiter=None)
 
 
 class ObservationsManagerVirtual(object):
@@ -301,11 +311,8 @@ class Observation(object):
         if 'distance' in row.colnames and np.isfinite(row['distance']):
             self.distance = row['distance'] * parsec * 1e6
         else:
-            if self.redshift == 0.:
-                self.distance = 10. * parsec
-            elif self.redshift > 0.:
-                self.distance = cosmo.luminosity_distance(self.redshift).value \
-                                * 1e6 * parsec
+            if self.redshift >= 0.:
+                self.distance = luminosity_distance(self.redshift)
             else:
                 self.distance = np.nan
         self.flux = {k: row[k] for k in cls.bands
@@ -321,7 +328,7 @@ class Observation(object):
                            if np.isfinite(row[k]) and row[k + '_err'] <= 0.}
         self.extprop_err = {k: row[k + '_err'] for k in self.extprop.keys()}
         self.extprop_ul_err = {k: -row[k + '_err']
-                               for prop in self.extprop_ul.keys()}
+                               for k in self.extprop_ul.keys()}
 
         self.intprop = {k: row[k] for k in cls.intprops}
         self.intprop_err = {k: row[k + '_err'] for k in cls.intprops}

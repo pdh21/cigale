@@ -16,12 +16,12 @@ import validate
 
 from ..managers.parameters import ParametersManager
 from ..data import Database
-from ..utils import read_table
+from utils.io import read_table
 from .. import sed_modules
 from .. import analysis_modules
 from ..warehouse import SedWarehouse
 from . import validation
-
+from pcigale.sed_modules.nebular import default_lines
 
 class Configuration(object):
     """This class manages the configuration of pcigale.
@@ -36,17 +36,28 @@ class Configuration(object):
             Name of the configuration file (pcigale.conf by default).
 
         """
-        self.spec = configobj.ConfigObj(filename+'.spec',
-                                        write_empty_values=True,
-                                        indent_type='  ',
-                                        encoding='UTF8',
-                                        list_values=False,
-                                        _inspec=True)
-        self.config = configobj.ConfigObj(filename,
-                                          write_empty_values=True,
-                                          indent_type='  ',
-                                          encoding='UTF8',
-                                          configspec=self.spec)
+        # We should never be in the case when there is a pcigale.ini but no
+        # pcigale.ini.spec. While this seems to work when doing the pcigale
+        # genconf, it actually generates an incorrect pcigale.ini.spec. The only
+        # clean solution is to rebuild both files.
+        if os.path.isfile(filename) and not os.path.isfile(filename+'.spec'):
+            raise Exception("The pcigale.ini.spec file appears to be missing. "
+                            "Please delete the pcigale.ini file and regenrate "
+                            "it with 'pcigale init' and then 'pcigale genconf' "
+                            "after having filled the initial pcigale.ini "
+                            "template.")
+        else:
+            self.spec = configobj.ConfigObj(filename+'.spec',
+                                            write_empty_values=True,
+                                            indent_type='  ',
+                                            encoding='UTF8',
+                                            list_values=False,
+                                            _inspec=True)
+            self.config = configobj.ConfigObj(filename,
+                                              write_empty_values=True,
+                                              indent_type='  ',
+                                              encoding='UTF8',
+                                              configspec=self.spec)
 
         # We validate the configuration so that the variables are converted to
         # the expected that. We do not handle errors at the point but only when
@@ -105,14 +116,15 @@ class Configuration(object):
              ")"] +
             ["SSP:"] +
             ["* bc03 (Bruzual and Charlot 2003)"] +
-            ["* m2005 (Maraston 2005)"] +
+            ["* m2005 (Maraston 2005; note that it cannot be combined with the "
+             "nebular module)"] +
             ["Nebular emission:"] +
             ["* nebular (continuum and line nebular emission)"] +
             ["Dust attenuation:"] +
             ["* dustatt_modified_CF00 (modified Charlot & Fall 2000 "
              "attenuation law)"] +
-            ["* dustatt_modified_starburst (modified starburst attenuaton law)"
-            ] +
+            ["* dustatt_modified_starburst (modified Calzetti 2000 attenuaton "
+             "law)"] +
             ["Dust emission:"] +
             ["* casey2012 (Casey 2012 dust emission models)"] +
             ["* dale2014 (Dale et al. 2014 dust emission templates)"] +
@@ -124,7 +136,7 @@ class Configuration(object):
             ["Radio:"] +
             ["* radio (synchrotron emission)"] +
             ["Restframe parameters:"] +
-            ["* restframe_parameters (UV slope, IRX-beta, D4000, EW, etc.)"] +
+            ["* restframe_parameters (UV slope (β), IRX, D4000, EW, etc.)"] +
             ["Redshift+IGM:"] +
             ["* redshifting (mandatory, also includes the IGM from Meiksin "
              "2006)"]
@@ -139,8 +151,8 @@ class Configuration(object):
 
         self.config['cores'] = ""
         self.config.comments['cores'] = [""] + wrap(
-            "Number of CPU cores available. This computer has {} cores."
-            .format(mp.cpu_count()))
+            f"Number of CPU cores available. This computer has "
+            f"{mp.cpu_count()} cores.")
         self.spec['cores'] = "integer(min=1)"
 
         self.config.write()
@@ -161,6 +173,7 @@ class Configuration(object):
         # Getting the list of the filters available in pcigale database
         with Database() as base:
             filter_list = base.get_filter_names()
+        filter_list += [f'line.{line}' for line in default_lines]
 
         if self.config['data_file'] != '':
             obs_table = read_table(self.config['data_file'])
@@ -187,9 +200,8 @@ class Configuration(object):
             # band
             for band in bands:
                 if band.endswith('_err') and (band[:-4] not in bands):
-                    raise Exception("The observation table as a {} column "
-                                    "but no {} column.".format(band,
-                                                               band[:-4]))
+                    raise Exception(f"The observation table as a {band} column "
+                                    f"but no {band[:-4]} column.")
 
             self.config['bands'] = bands
         else:
@@ -248,6 +260,11 @@ class Configuration(object):
             self.config['analysis_params'].comments[name] = wrap(desc)
             self.spec['analysis_params'][name] = typ
 
+        if 'pdf_analysis' == module_name:
+            bands = [band for band in self.config['bands']
+                     if not band.endswith('_err')]
+            self.config['analysis_params']['bands'] = bands
+
         self.config.write()
         self.spec.write()
 
@@ -276,10 +293,10 @@ class Configuration(object):
             for module, param, message in configobj.flatten_errors(self.config,
                                                                    validity):
                 if len(module) > 0:
-                    print("Module {}, parameter {}: {}".format('/'.join(module),
-                                                               param, message))
+                    print(f"Module {'/'.join(module)}, parameter {param}: "
+                          f"{message}")
                 else:
-                    print("Parameter {}: {}".format(param, message))
+                    print(f"Parameter {param}: {message}")
             print("Run the same command after having fixed pcigale.ini.")
 
             return None
@@ -305,7 +322,7 @@ class Configuration(object):
                                ('dust emission', ['casey2012', 'dale2014',
                                                   'dl2007', 'dl2014',
                                                   'themis']),
-                               ('AGN', ['dale2014', 'fritz2006']),
+                               ('AGN', ['fritz2006', 'skirtor2016']),
                                ('radio', ['radio']),
                                ('restframe_parameters',
                                 ['restframe_parameters']),
@@ -327,8 +344,8 @@ class Configuration(object):
         for module in modules:
             if all([user_module not in modules[module] for user_module in
                     self.config['sed_modules']]):
-                print("{} Options are: {}.".
-                      format(comments[module], ', '.join(modules[module])))
+                print(f"{comments[module]} Options are: "
+                      f"{', '.join(modules[module])}.")
 
     def complete_redshifts(self):
         """Complete the configuration when the redshifts are missing from the

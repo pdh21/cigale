@@ -77,7 +77,24 @@ class DL2014(SedModule):
         self.umin = float(self.parameters["umin"])
         self.alpha = float(self.parameters["alpha"])
         self.gamma = float(self.parameters["gamma"])
+
+        # We also compute <U>. For this we consider Eq. 6 and 15 of Draine & Li
+        # (2007) taking into account that α can be different from 2. We then
+        # just compute the integral. We have two specific cases, α=1 and α=2.
         self.umax = 1e7
+        self.umean = (1. - self.gamma) * self.umin
+        if self.alpha == 1.0:
+            self.umean += self.gamma * (self.umax - self.umin) / \
+                          np.log(self.umax / self.umin)
+        elif self.alpha == 2.0:
+            self.umean += self.gamma * np.log(self.umax / self.umin) / \
+                          (1. / self.umin  - 1. / self.umax)
+        else:
+            oma = 1. - self.alpha
+            tma = 2. - self.alpha
+            self.umean += self.gamma * oma / tma * \
+                          (self.umin**tma - self.umax**tma) / \
+                          (self.umin**oma - self.umax**oma)
 
         with Database() as database:
             self.model_minmin = database.get_dl2014(self.qpah, self.umin,
@@ -111,17 +128,18 @@ class DL2014(SedModule):
 
         """
         if 'dust.luminosity' not in sed.info:
-            sed.add_info('dust.luminosity', 1., True)
+            sed.add_info('dust.luminosity', 1., True, unit='W')
         luminosity = sed.info['dust.luminosity']
 
         sed.add_module(self.name, self.parameters)
         sed.add_info('dust.qpah', self.qpah)
         sed.add_info('dust.umin', self.umin)
+        sed.add_info('dust.umean', self.umean)
         sed.add_info('dust.alpha', self.alpha)
         sed.add_info('dust.gamma', self.gamma)
         # To compute the dust mass we simply divide the luminosity in W by the
         # emissivity in W/kg of dust.
-        sed.add_info('dust.mass', luminosity / self.emissivity, True)
+        sed.add_info('dust.mass', luminosity / self.emissivity, True, unit='kg')
 
         sed.add_contribution('dust.Umin_Umin', self.model_minmin.wave,
                              luminosity * self.model_minmin.lumin)

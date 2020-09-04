@@ -33,6 +33,7 @@ from .fritz2006 import Fritz2006
 from .nebular_continuum import NebularContinuum
 from .nebular_lines import NebularLines
 from .schreiber2016 import Schreiber2016
+from .skirtor2016 import SKIRTOR2016
 from .themis import THEMIS
 
 DATABASE_FILE = pkg_resources.resource_filename(__name__, 'data.db')
@@ -226,6 +227,35 @@ class _Fritz2006(BASE):
         self.lumin_agn = agn.lumin_agn
 
 
+class _SKIRTOR2016(BASE):
+    """Storage for SKIRTOR 2016 models
+    """
+
+    __tablename__ = 'skirtor2016'
+    t = Column(Float, primary_key=True)
+    pl = Column(Float, primary_key=True)
+    q = Column(Float, primary_key=True)
+    oa = Column(Float, primary_key=True)
+    R = Column(Float, primary_key=True)
+    Mcl = Column(Float, primary_key=True)
+    i = Column(Float, primary_key=True)
+    wave = Column(PickleType)
+    disk = Column(PickleType)
+    dust = Column(PickleType)
+
+    def __init__(self, agn):
+        self.t = agn.t
+        self.pl = agn.pl
+        self.q = agn.q
+        self.oa = agn.oa
+        self.R = agn.R
+        self.Mcl = agn.Mcl
+        self.i = agn.i
+        self.wave = agn.wave
+        self.disk = agn.disk
+        self.dust = agn.dust
+
+
 class _NebularLines(BASE):
     """Storage for line templates
     """
@@ -391,8 +421,8 @@ class Database(object):
                          result.spec_table)
         else:
             raise DatabaseLookupError(
-                "The M2005 SSP for imf <{0}> and metallicity <{1}> is not in "
-                "the database.".format(imf, metallicity))
+                f"The M2005 SSP for imf <{imf}> and metallicity <{metallicity}>"
+                f" is not in the database.")
 
     def get_m2005_parameters(self):
         """Get parameters for the Maraston 2005 stellar models.
@@ -455,8 +485,8 @@ class Database(object):
                         result.spec_table)
         else:
             raise DatabaseLookupError(
-                "The BC03 SSP for imf <{0}> and metallicity <{1}> is not in "
-                "the database.".format(imf, metallicity))
+                f"The BC03 SSP for imf <{imf}> and metallicity <{metallicity}> "
+                f"is not in the database.")
 
     def get_bc03_parameters(self):
         """Get parameters for the Bruzual & Charlot 2003 stellar models.
@@ -553,8 +583,8 @@ class Database(object):
                           result.lumin)
         else:
             raise DatabaseLookupError(
-                "The DL2007 model for qpah <{0}>, umin <{1}>, and umax <{2}> "
-                "is not in the database.".format(qpah, umin, umax))
+                f"The DL2007 model for qpah <{qpah}>, umin <{umin}>, and umax "
+                f"<{umax}> is not in the database.")
 
     def get_dl2007_parameters(self):
         """Get parameters for the DL2007 models.
@@ -624,9 +654,8 @@ class Database(object):
                           result.wave, result.lumin)
         else:
             raise DatabaseLookupError(
-                "The DL2014 model for qpah <{0}>, umin <{1}>, umax <{2}>, and "
-                "alpha <{3}> is not in the database."
-                .format(qpah, umin, umax, alpha))
+                f"The DL2014 model for qpah <{qpah}>, umin <{umin}>, umax "
+                f"<{umax}>, and alpha <{alpha}> is not in the database.")
 
     def get_dl2014_parameters(self):
         """Get parameters for the DL2014 models.
@@ -692,8 +721,8 @@ class Database(object):
                             result.lumin)
         else:
             raise DatabaseLookupError(
-                "The Dale2014 template for frac_agn <{0}> and alpha <{1}> "
-                "is not in the database.".format(frac_agn, alpha))
+                f"The Dale2014 template for frac_agn <{frac_agn}> and alpha "
+                f"<{alpha}> is not in the database.")
 
     def get_dale2014_parameters(self):
         """Get parameters for the Dale 2014 models.
@@ -791,6 +820,96 @@ class Database(object):
             dictionary of parameters and their values
         """
         return self._get_parameters(_Fritz2006)
+
+    def add_skirtor2016(self, models):
+        """
+        Add a SKIRTOR 2016 (Stalevski et al., 2016) AGN model to the database.
+
+        Parameters
+        ----------
+        models: list of pcigale.data.SKIRTOR2016 objects
+
+        """
+        if self.is_writable:
+            for model in models:
+                self.session.add(_SKIRTOR2016(model))
+            try:
+                self.session.commit()
+            except exc.IntegrityError:
+                self.session.rollback()
+                raise DatabaseInsertError(
+                    'The agn model is already in the base.')
+        else:
+            raise Exception('The database is not writable.')
+
+    def get_skirtor2016(self, t, pl, q, oa, R, Mcl, i):
+        """
+        Get the SKIRTOR 2016 AGN model corresponding to a given set of
+        parameters.
+
+        Parameters
+        ----------
+        t: float
+            average edge-on optical depth at 9.7 micron; the actual one along
+            the line of sight may vary depending on the clumps distribution
+        pl: float
+            power-law exponent that sets radial gradient of dust density
+        q: float
+            index that sets dust density gradient with polar angle
+        oa: float
+            angle measured between the equatorial plan and edge of the torus.
+            Half-opening angle of the dust-free cone is 90-oa
+        R: float
+            ratio of outer to inner radius, R_out/R_in
+        Mcl: float
+            Angle between AGN axis and line of sight.
+        i: float
+            inclination, i.e. viewing angle, i.e. position of the instrument
+            w.r.t. the AGN axis. i=0: face-on, type 1 view; i=90: edge-on, type
+            2 view.
+        wave: array of float
+            Wavelength grid in nm.
+        disk: array of flaot
+            Luminosity of the accretion disk in W/nm
+        dust: array of float
+            Luminosity of the dust in W/nm
+
+        Returns
+        -------
+        agn: pcigale.data.SKIRTOR2016
+            The AGN model.
+
+        Raises
+        ------
+        DatabaseLookupError: if the requested template is not in the database.
+
+        """
+        result = (self.session.query(_SKIRTOR2016).
+                  filter(_SKIRTOR2016.t == t).
+                  filter(_SKIRTOR2016.pl == pl).
+                  filter(_SKIRTOR2016.q == q).
+                  filter(_SKIRTOR2016.oa == oa).
+                  filter(_SKIRTOR2016.R == R).
+                  filter(_SKIRTOR2016.Mcl == Mcl).
+                  filter(_SKIRTOR2016.i == i).
+                  first())
+        if result:
+            return SKIRTOR2016(result.t, result.pl, result.q, result.oa,
+                               result.R, result.Mcl, result.i, result.wave,
+                               result.disk, result.dust)
+        else:
+            raise DatabaseLookupError(
+                "The SKIRTOR2016 model is not in the database.")
+
+    def get_skirtor2016_parameters(self):
+        """Get parameters for the SKIRTOR 2016 AGN models.
+
+        Returns
+        -------
+        paramaters: dictionary
+            dictionary of parameters and their values
+        """
+        return self._get_parameters(_SKIRTOR2016)
 
     def add_nebular_lines(self, models):
         """
@@ -938,8 +1057,8 @@ class Database(object):
                                  result.lumin)
         else:
             raise DatabaseLookupError(
-                "The Schreiber2016 template for type <{0}> and tdust <{1}> "
-                "is not in the database.".format(type, tdust))
+                f"The Schreiber2016 template for type <{type}> and tdust "
+                f"<{tdust}> is not in the database.")
 
     def get_schreiber2016_parameters(self):
         """Get parameters for the Scnreiber 2016 models.
@@ -1010,9 +1129,8 @@ class Database(object):
                           result.wave, result.lumin)
         else:
             raise DatabaseLookupError(
-                "The THEMIS model for qhac <{0}>, umin <{1}>, umax <{2}>, and "
-                "alpha <{3}> is not in the database."
-                .format(qhac, umin, umax, alpha))
+                f"The THEMIS model for qhac <{qhac}>, umin <{umin}>, umax "
+                f"<{umax}>, and alpha <{alpha}> is not in the database.")
 
     def _get_parameters(self, schema):
         """Generic function to get parameters from an arbitrary schema.
@@ -1092,7 +1210,7 @@ class Database(object):
                     raise Exception('The database is not writable.')
         else:
             raise DatabaseLookupError(
-                "The filter <{0}> is not in the database".format(name))
+                f"The filter <{name}> is not in the database")
 
     def get_filter(self, name):
         """
@@ -1121,7 +1239,7 @@ class Database(object):
                           result.pivot_wavelength)
         else:
             raise DatabaseLookupError(
-                "The filter <{0}> is not in the database".format(name))
+                f"The filter <{name}> is not in the database")
 
     def get_filter_names(self):
         """Get the list of the name of the filters in the database.

@@ -23,7 +23,7 @@ from collections import OrderedDict
 import numpy as np
 from scipy.constants import parsec
 from scipy.special import factorial
-from astropy.cosmology import WMAP7 as cosmology
+from ..utils.cosmology import age, luminosity_distance
 
 from . import SedModule
 
@@ -160,16 +160,11 @@ class Redshifting(SedModule):
         # Raise an error when applying a negative redshift. This module is
         # not for blue-shifting.
         if self.redshift < 0.:
-            raise Exception("The redshift provided is negative <{}>."
-                            .format(self.redshift))
+            raise Exception(f"The redshift provided is negative "
+                            f"({self.redshift}).")
 
-        self.universe_age = cosmology.age(self.redshift).value * 1000.
-        if self.redshift == 0.:
-            self.luminosity_distance = 10. * parsec
-        else:
-            self.luminosity_distance = (
-                cosmology.luminosity_distance(self.redshift).value * 1e6 *
-                parsec)
+        self.universe_age = age(self.redshift)
+        self.luminosity_distance = luminosity_distance(self.redshift)
         # We do not define the values of the IGM attenuation component yet.
         # This is because we need the wavelength grid for that first. This
         # will be assigned on the first call.
@@ -188,8 +183,8 @@ class Redshifting(SedModule):
         # If the SED is already redshifted, raise an error.
         if ('universe.redshift' in sed.info and
             sed.info['universe.redshift'] > 0.):
-            raise Exception("The SED is already redshifted <z={}>."
-                            .format(sed.info['universe.redshift']))
+            raise Exception(f"The SED is already redshifted (z="
+                            f"{sed.info['universe.redshift']}).")
 
         if redshift > 0.:
             # We redshift directly the SED wavelength grid
@@ -200,8 +195,9 @@ class Redshifting(SedModule):
             sed.luminosity *= 1. / (1. + redshift)
 
         sed.add_info("universe.redshift", redshift)
-        sed.add_info("universe.luminosity_distance", self.luminosity_distance)
-        sed.add_info("universe.age", self.universe_age)
+        sed.add_info("universe.luminosity_distance", self.luminosity_distance,
+                     unit='m')
+        sed.add_info("universe.age", self.universe_age, unit='Myr')
 
         # We identify the right grid from the length of the wavelength array.
         # It is not completely foolproof but it is good enough. We need to do

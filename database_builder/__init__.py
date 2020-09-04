@@ -22,7 +22,7 @@ import scipy.constants as cst
 from astropy.table import Table
 from pcigale.data import (Database, Filter, M2005, BC03, BPASSv2, Fritz2006,
                           Dale2014, DL2007, DL2014, NebularLines,
-                          NebularContinuum, Schreiber2016, THEMIS)
+                          NebularContinuum, SKIRTOR2016, Schreiber2016, THEMIS)
 
 
 def read_bc03_ssp(filename):
@@ -140,11 +140,16 @@ def read_bc03_ssp(filename):
 def build_filters(base):
     filters = []
     filters_dir = os.path.join(os.path.dirname(__file__), 'filters/')
-    for filter_file in glob.glob(filters_dir + '*.dat'):
+    for filter_file in glob.glob(filters_dir + '**/*.dat', recursive=True):
         with open(filter_file, 'r') as filter_file_read:
             filter_name = filter_file_read.readline().strip('# \n\t')
             filter_type = filter_file_read.readline().strip('# \n\t')
             filter_description = filter_file_read.readline().strip('# \n\t')
+
+        # Make the name dynamic for filters in subdirectories
+        tmp_name = filter_file.replace(filters_dir, '')[:-4]
+        if '/' in tmp_name:
+            filter_name = tmp_name.replace('/', '.')
         filter_table = np.genfromtxt(filter_file)
         # The table is transposed to have table[0] containing the wavelength
         # and table[1] containing the transmission.
@@ -783,6 +788,55 @@ def build_fritz2006(base):
 
     base.add_fritz2006(models)
 
+def build_skirtor2016(base):
+    models = []
+    skirtor2016_dir = os.path.join(os.path.dirname(__file__), 'skirtor2016/')
+
+    files = glob.glob(skirtor2016_dir + '/*')
+    files = [file.split('/')[-1] for file in files]
+    params = [f.split('_')[:-1] for f in files]
+
+    # Parameters of SKIRTOR 2016
+    t = list({param[0][1:] for param in params})
+    p = list({param[1][1:] for param in params})
+    q = list({param[2][1:] for param in params})
+    oa = list({param[3][2:] for param in params})
+    R = list({param[4][1:] for param in params})
+    Mcl = list({param[5][3:] for param in params})
+    i = list({param[6][1:] for param in params})
+
+    iter_params = ((p1, p2, p3, p4, p5, p6, p7)
+                   for p1 in t
+                   for p2 in p
+                   for p3 in q
+                   for p4 in oa
+                   for p5 in R
+                   for p6 in Mcl
+                   for p7 in i)
+
+    for params in iter_params:
+        filename = skirtor2016_dir + \
+                "t{}_p{}_q{}_oa{}_R{}_Mcl{}_i{}_sed.dat".format(*params)
+        print("Importing {}...".format(filename))
+
+        wl, disk, scatt, dust = np.genfromtxt(filename, unpack=True,
+                                              usecols=(0, 2, 3, 4))
+        wl *= 1e3
+        disk += scatt
+        disk /= wl
+        dust /= wl
+
+        # Normalization of the lumin_therm to 1W
+        norm = np.trapz(dust, x=wl)
+        disk /= norm
+        dust /= norm
+
+        models.append(SKIRTOR2016(params[0], params[1], params[2], params[3],
+                                  params[4], params[5], params[6], wl, disk,
+                                  dust))
+
+    base.add_skirtor2016(models)
+
 def build_nebular(base):
     models_lines = []
     models_cont = []
@@ -800,7 +854,7 @@ def build_nebular(base):
 
     # Convert wavelength from Å to nm
     wave_lines *= 0.1
-    wave_cont = cont[:1600, 0] * 0.1
+    wave_cont = cont[:3729, 0] * 0.1
 
     # Get the list of metallicities
     metallicities = np.unique(lines[:, 1])
@@ -830,7 +884,7 @@ def build_nebular(base):
 
     # Import continuum
     for idx, metallicity in enumerate(metallicities):
-        spectra = cont[1600 * idx: 1600 * (idx+1), :]
+        spectra = cont[3729 * idx: 3729 * (idx+1), :]
         for logU, spectrum in zip(np.around(np.arange(-4., -.9, .1), 1),
                                   spectra.T):
             models_cont.append(NebularContinuum(metallicity, logU, wave_cont,
@@ -978,6 +1032,11 @@ def build_base(bc03res='lr', bpassres='lr'):
     print("\nDONE\n")
     print('#' * 78)
 
+    print("7- Importing SKIRTOR 2016 models\n")
+    build_skirtor2016(base)
+    print("\nDONE\n")
+    print('#' * 78)
+
     print("8- Importing Dale et al (2014) templates\n")
     build_dale2014(base)
     print("\nDONE\n")
@@ -993,7 +1052,7 @@ def build_base(bc03res='lr', bpassres='lr'):
     print("\nDONE\n")
     print('#' * 78)
 
-    print("10- Importing Jones et al (2017) models)\n")
+    print("11- Importing Jones et al (2017) models)\n")
     build_themis(base)
     print("\nDONE\n")
     print('#' * 78)

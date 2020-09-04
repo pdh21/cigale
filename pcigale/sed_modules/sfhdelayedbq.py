@@ -76,7 +76,10 @@ class SFHDelayedBQ(SedModule):
         self.age_bq = int(self.parameters["age_bq"])
         self.r_sfr = float(self.parameters["r_sfr"])
         sfr_A = float(self.parameters["sfr_A"])
-        normalise = bool(self.parameters["normalise"])
+        if type(self.parameters["normalise"]) is str:
+            normalise = self.parameters["normalise"].lower() == 'true'
+        else:
+            normalise = bool(self.parameters["normalise"])
 
         # Delayed SFH
         t = np.arange(self.age_main)
@@ -109,10 +112,11 @@ class SFHDelayedBQ(SedModule):
 
         # Add the sfh and the output parameters to the SED.
         sed.sfh = self.sfr
-        sed.add_info("sfh.integrated", self.sfr_integrated, True)
-        sed.add_info("sfh.age_main", self.age_main)
-        sed.add_info("sfh.tau_main", self.tau_main)
-        sed.add_info("sfh.age_bq", self.age_bq)
+        sed.add_info("sfh.integrated", self.sfr_integrated, True,
+                     unit='solMass')
+        sed.add_info("sfh.age_main", self.age_main, unit='Myr')
+        sed.add_info("sfh.tau_main", self.tau_main, unit='Myr')
+        sed.add_info("sfh.age_bq", self.age_bq, unit='Myr')
         sed.add_info("sfh.r_sfr", self.r_sfr)
 
 # CreationModule to be returned by get_module
