@@ -459,16 +459,17 @@ def build_bpassv2(base, bpassres):
         "chab300": 8
     }
 
-    basename = "{}{}/{}-{}-imf_{}.z{}.dat.gz"
+    basename = "{}{}-{}-imf_{}.z{}.dat.gz"
 
     for key_metal, key_imf, binary in itertools.product(metal, imf,
                                                         ['bin', 'sin']):
-        specname = basename.format(bpass_dir, key_imf, 'spectra', binary,
-                                   key_imf, key_metal)
-        ionname = basename.format(bpass_dir, key_imf, 'ionizing', binary,
-                                   key_imf, key_metal)
-        massname = basename.format(bpass_dir, key_imf, 'starmass', binary,
-                                   key_imf, key_metal)
+        specname = basename.format(bpass_dir, 'spectra', binary, key_imf,
+                                   key_metal)
+        ionname = basename.format(bpass_dir, 'ionizing', binary, key_imf,
+                                  key_metal)
+        massname = basename.format(bpass_dir, 'starmass', binary, key_imf,
+                                   key_metal)
+
         print("Importing {}...".format(specname))
 
         spec = np.genfromtxt(specname)
