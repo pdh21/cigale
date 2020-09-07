@@ -16,6 +16,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 import glob
 import io
 import itertools
+from pathlib import Path
 import numpy as np
 from scipy import interpolate
 import scipy.constants as cst
@@ -469,6 +470,11 @@ def build_bpassv2(base, bpassres):
                                   key_metal)
         massname = basename.format(bpass_dir, 'starmass', binary, key_imf,
                                    key_metal)
+
+        # As BPASS models are very large, it is unlikely that they are all
+        # available, so we skips the models that are not present
+        if not Path(specname).is_file():
+            continue
 
         print("Importing {}...".format(specname))
 
