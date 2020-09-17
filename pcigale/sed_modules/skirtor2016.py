@@ -132,6 +132,12 @@ class SKIRTOR2016(SedModule):
             "AGN fraction.",
             0.1
         )),
+        ('lambda_fracAGN', (
+            'float(min=0, max=500)',
+            'Wavelength in micron where to compute the AGN fraction. If zero '
+            'then the total dust luminosity is adopted.',
+            0
+        )),
         ('law', (
             'cigale_list(dtype=int, options=0 & 1 & 2)',
             "Extinction law of the polar dust: "
@@ -165,6 +171,7 @@ class SKIRTOR2016(SedModule):
         self.Mcl = float(self.parameters["Mcl"])
         self.i = int(self.parameters["i"])
         self.fracAGN = float(self.parameters["fracAGN"])
+        self.lambda_fracAGN = float(self.parameters["lambda_fracAGN"]) * 1e3
         self.law = int(self.parameters["law"])
         self.EBV = float(self.parameters["EBV"])
         self.temperature = float(self.parameters["temperature"])
@@ -229,6 +236,12 @@ class SKIRTOR2016(SedModule):
         # Integrate AGN luminosity for different components
         self.lumin_disk = np.trapz(self.SKIRTOR2016.disk, x=self.SKIRTOR2016.wave)
 
+        if self.lambda_fracAGN > 0.:
+            self.AGNfluxatlambda = np.interp(self.lambda_fracAGN,
+                                             self.SKIRTOR2016.wave,
+                                             self.SKIRTOR2016.dust +
+                                             self.SKIRTOR2016.disk)
+
     def process(self, sed):
         """Add the IR re-emission contributions
 
@@ -259,7 +272,13 @@ class SKIRTOR2016(SedModule):
 
         # Compute the AGN luminosity
         if self.fracAGN < 1.:
-            agn_power = luminosity * (1./(1.-self.fracAGN) - 1.)
+            if self.lambda_fracAGN > 0.:
+                scale = np.interp(self.lambda_fracAGN, sed.wavelength_grid,
+                                  sed.luminosity) / self.AGNfluxatlambda
+            else:
+                scale = luminosity
+
+            agn_power = scale * (1. / (1. - self.fracAGN) - 1.)
             lumin_dust = agn_power
             lumin_disk = agn_power * np.trapz(self.SKIRTOR2016.disk,
                                               x=self.SKIRTOR2016.wave)
