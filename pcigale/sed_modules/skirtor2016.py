@@ -66,6 +66,32 @@ def k_ext(wavelength, ext_law):
     else:
         raise KeyError("Extinction law is different from the expected ones")
 
+def disk(wl, limits, coefs):
+    ss = np.searchsorted(wl, limits)
+    wpl = [slice(lo, hi) for lo, hi in zip(ss[:-1], ss[1:])]
+
+    norms = np.ones_like(coefs)
+    for idx in range(1, coefs.size):
+        norms[idx] = norms[idx-1] * limits[idx] ** (coefs[idx-1] - coefs[idx])
+
+    spectrum = np.zeros_like(wl)
+    for w, coef, norm in zip(wpl, coefs, norms):
+        spectrum[w] = wl[w]**coef * norm
+
+    return spectrum  * (1. / np.trapz(spectrum, x=wl))
+
+def schartmann2005_disk(wl, delta=0.):
+    limits = np.array([1., 5., 125., 10000., 1e6])
+    coefs = np.array([1.0, -0.2, -1.5 + delta, -4.0])
+
+    return disk(wl, limits, coefs)
+
+def skirtor_disk(wl, delta=0.):
+    limits = np.array([1., 10., 100., 5000., 1e6])
+    coefs = np.array([0.2, -1.0, -1.5 + delta, -4.0])
+
+    return disk(wl, limits, coefs)
+
 
 class SKIRTOR2016(SedModule):
     """SKIRTOR 2016 (Stalevski et al., 2016) AGN dust torus emission
@@ -127,6 +153,17 @@ class SKIRTOR2016(SedModule):
             "Possible values are: 0, 10, 20, 30, 40, 50, 60, 70, 80, and 90.",
             40
         )),
+        ('disk_type', (
+            'integer(min=0, max=1)',
+            "Disk spectrum: 0 for the regular Skirtor spectrum, 1 for the "
+            "Schartmann (2005) spectrum.",
+            0
+        )),
+        ('delta', (
+            'cigale_list()',
+            "",
+            0.
+        )),
         ('fracAGN', (
             'cigale_list(minvalue=0., maxvalue=1.)',
             "AGN fraction.",
@@ -171,6 +208,8 @@ class SKIRTOR2016(SedModule):
         self.R = int(self.parameters["R"])
         self.Mcl = float(self.parameters["Mcl"])
         self.i = int(self.parameters["i"])
+        self.disk_type = int(self.parameters["disk_type"])
+        self.delta = float(self.parameters["delta"])
         self.fracAGN = float(self.parameters["fracAGN"])
         if self.fracAGN == 1.:
             raise ValueError("AGN fraction is exactly 1. Behaviour undefined.")
@@ -191,8 +230,28 @@ class SKIRTOR2016(SedModule):
             self.SKIRTOR2016 = base.get_skirtor2016(self.t, self.pl, self.q,
                                                     self.oa, self.R, self.Mcl,
                                                     self.i)
-            self.AGN1 = base.get_skirtor2016(self.t, self.pl, self.q, self.oa,
-                                             self.R, self.Mcl, 0.)
+            AGN1 = base.get_skirtor2016(self.t, self.pl, self.q, self.oa,
+                                        self.R, self.Mcl, 0.)
+
+        # We offer the possibility to modify the change the disk spectrum.
+        # To ensure the conservation of the energy we first normalize the new
+        # spectrum to that of an AGN 1 from skirtor. Then we multiply by the
+        # ratio of the emission spectrum of the AGN model to that of an AGN 1.
+        # This is done so that the “absorption curve” is reproduced. The exact
+        # distribution of the energy does not appear to have a strong effect on
+        # the actual absorbed luminosity, probably because very little radiation
+        # can escape the torus
+        if self.disk_type == 0:
+            disk = skirtor_disk(self.SKIRTOR2016.wave, delta=self.delta)
+        elif self.disk_type == 1:
+            disk = schartmann2005_disk(self.SKIRTOR2016.wave, delta=self.delta)
+        else:
+            raise ValueError("The parameter disk_type must be 0 or 1.")
+        disk *= np.trapz(AGN1.disk, x=AGN1.wave)
+
+        self.SKIRTOR2016.disk = np.nan_to_num(disk * self.SKIRTOR2016.disk /
+                                              AGN1.disk)
+        AGN1.disk = disk
 
         # Calculate the extinction
         ext_fac = 10 ** (-.4*k_ext(self.SKIRTOR2016.wave, self.law) * self.EBV)
@@ -220,8 +279,7 @@ class SKIRTOR2016(SedModule):
         # Integrating over λ gives the bolometric luminosity
         sin_oa = np.sin(np.deg2rad(self.oa))
         l_ext = (7./18. - sin_oa**2/6. - sin_oa**3*2./9.) * \
-                np.trapz(self.AGN1.disk * (1. - ext_fac),
-                         x=self.SKIRTOR2016.wave)
+                np.trapz(AGN1.disk * (1. - ext_fac), x=AGN1.wave)
 
         # Casey (2012) modified black body model
         c = cst.c * 1e9
