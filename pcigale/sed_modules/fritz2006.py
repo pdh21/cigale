@@ -95,15 +95,17 @@ class Fritz2006(SedModule):
         self.opening_angle = (180. - self.parameters["opening_angle"]) / 2.
         self.psy = float(self.parameters["psy"])
         self.fracAGN = float(self.parameters["fracAGN"])
+        if self.fracAGN == 1.:
+            raise ValueError("AGN fraction is exactly 1. Behaviour undefined.")
 
         with Database() as base:
             self.fritz2006 = base.get_fritz2006(self.r_ratio, self.tau,
                                                 self.beta, self.gamma,
                                                 self.opening_angle, self.psy)
-        self.l_agn_scatt = np.trapz(self.fritz2006.lumin_scatt,
-                                    x=self.fritz2006.wave)
-        self.l_agn_agn = np.trapz(self.fritz2006.lumin_agn,
-                                  x=self.fritz2006.wave)
+        self.fritz2006.lumin_disk = (self.fritz2006.lumin_scatt +
+                                     self.fritz2006.lumin_agn)
+        self.l_agn_disk = np.trapz(self.fritz2006.lumin_disk,
+                                   x=self.fritz2006.wave)
 
     def process(self, sed):
         """Add the IR re-emission contributions
@@ -130,29 +132,18 @@ class Fritz2006(SedModule):
         sed.add_info('agn.fracAGN', self.fracAGN)
 
         # Compute the AGN luminosity
-        if self.fracAGN < 1.:
-            agn_power = luminosity * (1./(1.-self.fracAGN) - 1.)
-            l_agn_therm = agn_power
-            l_agn_scatt = agn_power * self.l_agn_scatt
-            l_agn_agn = agn_power * self.l_agn_agn
-            l_agn_total = l_agn_therm + l_agn_scatt + l_agn_agn
+        agn_power = luminosity * (1./(1.-self.fracAGN) - 1.)
+        l_agn_dust = agn_power
+        l_agn_disk = agn_power * self.l_agn_disk
 
-        else:
-            raise Exception("AGN fraction is exactly 1. Behaviour "
-                            "undefined.")
+        sed.add_info('agn.dust_luminosity', l_agn_dust, True, unit='W')
+        sed.add_info('agn.disk_luminosity', l_agn_disk, True, unit='W')
+        sed.add_info('agn.luminosity', l_agn_dust + l_agn_disk, True, unit='W')
 
-        sed.add_info('agn.therm_luminosity', l_agn_therm, True, unit='W')
-        sed.add_info('agn.scatt_luminosity', l_agn_scatt, True, unit='W')
-        sed.add_info('agn.agn_luminosity', l_agn_agn, True, unit='W')
-        sed.add_info('agn.luminosity', l_agn_total, True, unit='W')
-
-        sed.add_contribution('agn.fritz2006_therm', self.fritz2006.wave,
+        sed.add_contribution('agn.fritz2006_dust', self.fritz2006.wave,
                              agn_power * self.fritz2006.lumin_therm)
-        sed.add_contribution('agn.fritz2006_scatt', self.fritz2006.wave,
-                             agn_power * self.fritz2006.lumin_scatt)
-        sed.add_contribution('agn.fritz2006_agn', self.fritz2006.wave,
-                             agn_power * self.fritz2006.lumin_agn)
-
+        sed.add_contribution('agn.fritz2006_disk', self.fritz2006.wave,
+                             agn_power * self.fritz2006.lumin_disk)
 
 # SedModule to be returned by get_module
 Module = Fritz2006
