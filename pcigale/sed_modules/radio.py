@@ -73,8 +73,6 @@ class Radio(SedModule):
         if 'dust.luminosity' not in sed.info:
             sed.add_info('dust.luminosity', 1., True, unit='W')
         luminosity = sed.info['dust.luminosity']
-        if 'agn.dust_luminosity' in sed.info:
-            luminosity -= sed.info['agn.dust_luminosity']
 
         sed.add_module(self.name, self.parameters)
         sed.add_info("radio.qir", self.qir)
