@@ -191,7 +191,7 @@ def _correct_scaling_ul(scaling, mod, obs, wz):
     # recreate a numpy array for each model
     modflux = {k: mod.flux[k][wz] for k in mod.flux.keys()}
     modextprop = {k: mod.extprop[k][wz] for k in mod.extprop.keys()}
-    for imod in range(scaling.size):
+    for imod in np.where(np.isfinite(scaling))[0]:
         moddata = [modflux[k][imod] for k in fluxkeys]
         moddata += [modextprop[k][imod] for k in extpropkeys]
         modlim = [modflux[k][imod] for k in fluxulkeys]
