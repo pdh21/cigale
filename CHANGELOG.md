@@ -10,6 +10,7 @@
 - Ensure that `pcigale-plots` correctly detects the `skirtor2016` AGN models. (Médéric Boquien, reported by Guang Yang)
 - Correct a typo in the `themis` module. (Médéric Boquien, reported by Alexandros Maragkoudakis)
 - Make sure that the best fit is also given for the bands for which `pdf\_analysis` provides a Bayesian estimate. (Médéric Boquien)
+- The `save_chi2` parameter was not correctly acknowledged in `pcigale-plots pdf`, leading to a crash as it tried to build the PDF of parameters for which the corresponding `chi2` files were not saved. (Médéric Boquien, reported by Laia Barrufet de Soto)
 ### Optimised
 - The estimation of the physical properties and the related uncertainties has been made up to 50% faster. The final gain in the analysis speed accounting for all the steps depends on the number of properties to be evaluated and the number of models but can be over 25% when estimating many properties over a large parameter space. (Médéric Boquien)
 
