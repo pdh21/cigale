@@ -215,12 +215,12 @@ class SKIRTOR2016(SedModule):
             raise ValueError("AGN fraction is exactly 1. Behaviour undefined.")
         lambda_fracAGN = str(self.parameters["lambda_fracAGN"]).split('/')
         self.lambdamin_fracAGN = float(lambda_fracAGN[0]) * 1e3
-        self.lamdamax_fracAGN = float(lambda_fracAGN[1]) * 1e3
+        self.lambdamax_fracAGN = float(lambda_fracAGN[1]) * 1e3
         if (self.lambdamin_fracAGN < 0 or
-            self.lambdamin_fracAGN  > self.lamdamax_fracAGN ):
+            self.lambdamin_fracAGN  > self.lambdamax_fracAGN ):
             raise ValueError("lambda_fracAGN incorrect. Constrain "
                              f"0 < {self.lambdamin_fracAGN} < "
-                             f"{self.lamdamax_fracAGN} not respected.")
+                             f"{self.lambdamax_fracAGN} not respected.")
         self.law = int(self.parameters["law"])
         self.EBV = float(self.parameters["EBV"])
         self.temperature = float(self.parameters["temperature"])
@@ -304,17 +304,17 @@ class SKIRTOR2016(SedModule):
         # Integrate AGN luminosity for different components
         self.lumin_disk = np.trapz(self.SKIRTOR2016.disk, x=self.SKIRTOR2016.wave)
 
-        if self.lambdamin_fracAGN < self.lamdamax_fracAGN:
+        if self.lambdamin_fracAGN < self.lambdamax_fracAGN:
             w = np.where((self.SKIRTOR2016.wave >= self.lambdamin_fracAGN) &
-                         (self.SKIRTOR2016.wave <= self.lamdamax_fracAGN))
+                         (self.SKIRTOR2016.wave <= self.lambdamax_fracAGN))
             wl = np.hstack([self.lambdamin_fracAGN, self.SKIRTOR2016.wave[w],
-                            self.lamdamax_fracAGN])
+                            self.lambdamax_fracAGN])
             spec = np.interp(wl, self.SKIRTOR2016.wave,
                              self.SKIRTOR2016.dust + self.SKIRTOR2016.disk)
             self.AGNlumin = np.trapz(spec, x=wl)
-        elif (self.lambdamin_fracAGN  == 0.) & (self.lamdamax_fracAGN == 0.):
+        elif (self.lambdamin_fracAGN  == 0.) & (self.lambdamax_fracAGN == 0.):
             self.AGNlumin = 1.
-        elif self.lambdamin_fracAGN == self.lamdamax_fracAGN:
+        elif self.lambdamin_fracAGN == self.lambdamax_fracAGN:
             self.AGNlumin = np.interp(self.lambdamin_fracAGN,
                                       self.SKIRTOR2016.wave,
                                       self.SKIRTOR2016.dust +
@@ -351,18 +351,18 @@ class SKIRTOR2016(SedModule):
         sed.add_info('agn.emissivity', self.emissivity)
 
         # Compute the AGN luminosity
-        if self.lambdamin_fracAGN < self.lamdamax_fracAGN:
+        if self.lambdamin_fracAGN < self.lambdamax_fracAGN:
             if self.wl is None:
                 w = np.where((sed.wavelength_grid >= self.lambdamin_fracAGN) &
-                             (sed.wavelength_grid <= self.lamdamax_fracAGN))
+                             (sed.wavelength_grid <= self.lambdamax_fracAGN))
                 self.wl = np.hstack([self.lambdamin_fracAGN,
                                      sed.wavelength_grid[w],
-                                     self.lamdamax_fracAGN])
+                                     self.lambdamax_fracAGN])
             spec = np.interp(self.wl, sed.wavelength_grid, sed.luminosity)
             scale = np.trapz(spec, x=self.wl) / self.AGNlumin
-        elif (self.lambdamin_fracAGN  == 0.) and (self.lamdamax_fracAGN == 0.):
+        elif (self.lambdamin_fracAGN  == 0.) and (self.lambdamax_fracAGN == 0.):
             scale = luminosity
-        elif self.lambdamin_fracAGN == self.lamdamax_fracAGN:
+        elif self.lambdamin_fracAGN == self.lambdamax_fracAGN:
             scale = np.interp(self.lambdamin_fracAGN, sed.wavelength_grid,
                               sed.luminosity) / self.AGNlumin
 
