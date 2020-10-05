@@ -12,6 +12,7 @@
 - Make sure that the best fit is also given for the bands for which `pdf\_analysis` provides a Bayesian estimate. (Médéric Boquien)
 - The `save_chi2` parameter was not correctly acknowledged in `pcigale-plots pdf`, leading to a crash as it tried to build the PDF of parameters for which the corresponding `chi2` files were not saved. (Médéric Boquien, reported by Laia Barrufet de Soto)
 - The help of `pcigale-plots sed` incorrectly reported that the values given to the `--xrange` option were in nm, rather than μm. (Médéric Boquien, reported by Guang Yang)
+- A run with an already existing `out/` directory led to a crash under Microsoft Windows. This was due to renaming `out/` to add the time with hours, minutes, and second separated by a colon. This is not allowed on this platform. The renamed directory has not been made compact and does not use colons anymore. (Médéric Boquien, reported by Samir Salim)
 ### Optimised
 - The estimation of the physical properties and the related uncertainties has been made up to 50% faster. The final gain in the analysis speed accounting for all the steps depends on the number of properties to be evaluated and the number of models but can be over 25% when estimating many properties over a large parameter space. (Médéric Boquien)
 - Invalid models (e.g., when the stellar populations are older than the universe) are now ignored when handling upper limits. The speedup is very variable but can be substantial in case there are many invalid models. (Médéric Boquien)
