@@ -161,7 +161,9 @@ class SKIRTOR2016(SedModule):
         )),
         ('delta', (
             'cigale_list()',
-            "",
+            "Power-law of index δ modifying the optical slop of the disk. "
+            "Negative values make the slope steeper where as positive values "
+            "make it shallower.",
             0.
         )),
         ('fracAGN', (
