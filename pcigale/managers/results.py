@@ -366,6 +366,25 @@ class ResultsManager(object):
 
         return merged
 
+    @staticmethod
+    def fluxunit(band):
+        """Help function to determine whether the band is a line or a filter
+        and returns the appropriate unit.
+
+        Parameters
+        ----------
+        band: str
+            Name of the band. For a line it must start with ".line".
+
+        Returns
+        -------
+        unit: astropy.unit.Unit
+            Unit of the band flux.
+        """
+        if band.startswith('line.') or band.startswith('linefilter.'):
+            return Unit('W/m^2')
+        return Unit('mJy')
+
     def save(self, filename):
         """Save the estimated values derived from the analysis of the PDF and
         the parameters associated with the best fit. A simple text file and a
@@ -399,11 +418,12 @@ class ResultsManager(object):
             table.add_column(Column(self.bayes.exterror[prop],
                                     name="bayes."+prop+"_err", unit=unit))
         for band in sorted(self.bayes.fluxmean):
+            unit = self.fluxunit(band)
             table.add_column(Column(self.bayes.fluxmean[band],
-                                    name="bayes."+band, unit=Unit('mJy')))
+                                    name="bayes."+band, unit=unit))
             table.add_column(Column(self.bayes.fluxerror[band],
                                     name="bayes."+band+"_err",
-                                    unit=Unit('mJy')))
+                                    unit=unit))
 
         table.add_column(Column(self.best.chi2, name="best.chi_square"))
         obs = [self.obs.table[obs].data for obs in self.obs.tofit]
@@ -421,12 +441,9 @@ class ResultsManager(object):
                                     unit=Unit(self.unit[prop])))
 
         for band in self.best.flux:
-            if band.startswith('line.') or band.startswith('linefilter.'):
-                unit = 'W/m^2'
-            else:
-                unit = 'mJy'
             table.add_column(Column(self.best.flux[band],
-                                    name="best."+band, unit=unit))
+                                    name="best."+band,
+                                    unit=self.fluxunit(band)))
 
 
         table.write(f"out/{filename}.txt", format='ascii.fixed_width',
