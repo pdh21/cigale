@@ -33,18 +33,24 @@ def pool_initializer(counter):
 def pdf(config, format, outdir):
     """Plot the PDF of analysed variables.
     """
-    input_data = read_table(path.join(path.dirname(outdir), config.configuration['data_file']))
-    pdf_vars = config.configuration['analysis_params']['variables']
-    pdf_vars += [band for band in config.configuration['bands']
-                 if band.endswith('_err') is False]
+    save_chi2 = config.configuration['analysis_params']['save_chi2']
 
-    items = list(product(input_data['id'], pdf_vars, [format], [outdir]))
-    counter = Counter(len(items))
-    with mp.Pool(processes=config.configuration['cores'], initializer=pool_initializer,
-                 initargs=(counter,)) as pool:
-        pool.starmap(_pdf_worker, items)
-        pool.close()
-        pool.join()
+    pdf_vars = []
+    if 'all' in save_chi2 or 'properties' in save_chi2:
+        pdf_vars += config.configuration['analysis_params']['variables']
+    if 'all' in save_chi2 or 'fluxes' in save_chi2:
+        pdf_vars += config.configuration['analysis_params']['bands']
+
+    input_data = read_table(path.join(path.dirname(outdir),
+                                      config.configuration['data_file']))
+    if len(pdf_vars) > 0:
+        items = list(product(input_data['id'], pdf_vars, [format], [outdir]))
+        counter = Counter(len(items))
+        with mp.Pool(processes=config.configuration['cores'],
+                     initializer=pool_initializer, initargs=(counter,)) as pool:
+            pool.starmap(_pdf_worker, items)
+            pool.close()
+            pool.join()
 
 
 def _pdf_worker(obj_name, var_name, format, outdir):

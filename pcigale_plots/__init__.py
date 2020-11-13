@@ -81,7 +81,7 @@ def main():
     sed_parser.add_argument('--format', default='pdf', help=fmtstr)
     sed_parser.add_argument('--outdir', default='out')
     sed_parser.add_argument('--xrange', default=':', type=parser_range,
-                            help='Wavelength range [<min>]:[<max>] in nm.')
+                            help='Wavelength range [<min>]:[<max>] in μm.')
     sed_parser.add_argument('--yrange', default=':', type=parser_range,
                             help='y-axis range [<min>]:[<max>].')
     sed_parser.add_argument('--series', nargs='*',
