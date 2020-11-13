@@ -81,7 +81,7 @@ def disk(wl, limits, coefs):
     return spectrum  * (1. / np.trapz(spectrum, x=wl))
 
 def schartmann2005_disk(wl, delta=0.):
-    limits = np.array([1., 5., 125., 10000., 1e6])
+    limits = np.array([1., 50., 125., 10000., 1e6])
     coefs = np.array([1.0, -0.2, -1.5 + delta, -4.0])
 
     return disk(wl, limits, coefs)
