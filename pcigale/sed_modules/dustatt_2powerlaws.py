@@ -141,6 +141,11 @@ class TwoPowerLawAtt(SedModule):
         self.slope_ISM = float(self.parameters['slope_ISM'])
         self.filter_list = [item.strip() for item in
                             self.parameters["filters"].split("&")]
+        self.Av_ISM = self.Av_BC / self.BC_to_ISM_factor
+        # We cannot compute the attenuation until we know the wavelengths. Yet,
+        # we reserve the object.
+        self.contatt = {}
+        self.lineatt = {}
 
     def process(self, sed):
         """Add the dust attenuation to the SED.
@@ -151,63 +156,63 @@ class TwoPowerLawAtt(SedModule):
 
         """
 
-        def ism_lumin_attenuation(wave):
-            """Compute the luminosity attenuation factor for the ISM"""
-            return 10 ** (self.Av_BC * self.BC_to_ISM_factor *
-                          alambda_av(wave, self.slope_ISM) / -2.5)
+        wl = sed.wavelength_grid
 
-        def bc_ism_lumin_attenuation(wave):
-            """Compute the luminosity attenuation factor for ISM + BC"""
-            return 10 ** (self.Av_BC *
-                          alambda_av(wave, self.slope_BC, self.slope_ISM,
-                                     self.BC_to_ISM_factor) / -2.5)
+        # Compute the attenuation curves on the continuum wavelength grid
+        if len(self.contatt) == 0:
+            self.contatt['old'] = 10. ** (-.4 * alambda_av(wl, self.slope_ISM) *
+                                          self.Av_ISM)
+            # Emission from the young population is attenuated by both
+            # components
+            self.contatt['young'] = 10. ** (-.4 * alambda_av(wl, self.slope_BC) *
+                                            self.Av_BC) * self.contatt['old']
 
-        wavelength = sed.wavelength_grid
+        # Compute the attenuation curves on the line wavelength grid
+        if len(self.lineatt) == 0:
+            names = [k for k in sed.lines]
+            linewl = np.array([sed.lines[k][0] for k in names])
+            old_curve =  10. ** (-.4 * alambda_av(linewl, self.slope_ISM) *
+                                 self.Av_ISM)
+            young_curve = 10. ** (-.4 * alambda_av(linewl, self.slope_BC) *
+                                  self.Av_BC) * old_curve
+
+            for name, old, young in zip(names, old_curve, young_curve):
+                self.lineatt[name] = (old, young)
 
         # Fλ fluxes in each filter before attenuation.
         flux_noatt = {filt: sed.compute_fnu(filt) for filt in self.filter_list}
 
-        attenuation_total = 0.
+        dust_lumin = 0.
         contribs = [contrib for contrib in sed.contribution_names if
                     'absorption' not in contrib]
 
         for contrib in contribs:
-
             age = contrib.split('.')[-1].split('_')[-1]
-
             luminosity = sed.get_lumin_contribution(contrib)
 
-            # Use the ISM attenuation unless we are dealing with young
-            # populations.
-            if age == 'young':
-                extinction_factor = bc_ism_lumin_attenuation(wavelength)
-            else:
-                extinction_factor = ism_lumin_attenuation(wavelength)
-
-            attenuated_luminosity = luminosity * extinction_factor
-            attenuation_spectrum = attenuated_luminosity - luminosity
-            # We integrate the amount of luminosity attenuated (-1 because the
-            # spectrum is negative).
-            attenuation = -1 * np.trapz(attenuation_spectrum, wavelength)
-            attenuation_total += attenuation
+            attenuation_spectrum = luminosity * (self.contatt[age] - 1.)
+            dust_lumin -= np.trapz(attenuation_spectrum, wl)
 
             sed.add_module(self.name, self.parameters)
-            sed.add_info("attenuation." + contrib, attenuation, True)
-            sed.add_contribution("attenuation." + contrib, wavelength,
+            sed.add_contribution("attenuation." + contrib, wl,
                                  attenuation_spectrum)
 
-        sed.add_info('attenuation.Av_BC', self.Av_BC)
-        sed.add_info('attenuation.slope_BC', self.slope_BC)
+        for name, (linewl, old, young) in sed.lines.items():
+            sed.lines[name] = (linewl, old * self.lineatt[name][0],
+                               young * self.lineatt[name][1])
+
+        sed.add_info('attenuation.Av_BC', self.Av_BC, unit='mag')
+        sed.add_info('attenuation.slope_BC', self.slope_BC, unit='mag')
         sed.add_info('attenuation.BC_to_ISM_factor', self.BC_to_ISM_factor)
         sed.add_info('attenuation.slope_ISM', self.slope_ISM)
 
         # Total attenuation
         if 'dust.luminosity' in sed.info:
             sed.add_info("dust.luminosity",
-                         sed.info["dust.luminosity"]+attenuation_total, True,
-                         True)
+                         sed.info["dust.luminosity"] + dust_lumin, True, True,
+                         unit='W')
         else:
-            sed.add_info("dust.luminosity", attenuation_total, True)
+            sed.add_info("dust.luminosity", dust_lumin, True, unit='W')
 
         # Fλ fluxes (only in continuum) in each filter after attenuation.
         flux_att = {filt: sed.compute_fnu(filt) for filt in self.filter_list}
@@ -215,7 +220,8 @@ class TwoPowerLawAtt(SedModule):
         # Attenuation in each filter
         for filt in self.filter_list:
             sed.add_info("attenuation." + filt,
-                         -2.5 * np.log10(flux_att[filt] / flux_noatt[filt]))
+                         -2.5 * np.log10(flux_att[filt] / flux_noatt[filt]),
+                         unit='mag')
 
 
 # CreationModule to be returned by get_module

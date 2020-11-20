@@ -15,7 +15,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from ..utils import read_table
+from utils.io import read_table
 from . import SedModule
 
 
@@ -59,9 +59,12 @@ class SfhFromFile(SedModule):
 
     def _init_code(self):
         filename = self.parameters['filename']
-        normalise = bool(self.parameters["normalise"])
         age = int(self.parameters['age'])
         self.sfr_column_number = int(self.parameters['sfr_column'])
+        if type(self.parameters["normalise"]) is str:
+            normalise = self.parameters["normalise"].lower() == 'true'
+        else:
+            normalise = bool(self.parameters["normalise"])
 
         table = read_table(filename)
         self.sfr = table.columns[self.sfr_column_number].data.astype(np.float)
@@ -95,7 +98,8 @@ class SfhFromFile(SedModule):
 
         sed.add_module(self.name, self.parameters)
         sed.sfh = self.sfr
-        sed.add_info("sfh.integrated", self.sfr_integrated, True)
+        sed.add_info("sfh.integrated", self.sfr_integrated, True,
+                     unit='solMass')
         sed.add_info("sfh.index", self.sfr_column_number)
 
 

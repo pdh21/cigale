@@ -1,5 +1,113 @@
 # Change Log
 
+## Unreleased
+### Added
+- The polar dust model of X-CIGALE (Yang et al., 2020) for the `skirtor2016` module has been integrated into the regular version. (Médéric Boquien, based on the initial work of Guang Yang)
+- An additional check is done when constructing the `pcigale.ini` and `pcigale.ini.spec` files to avoid the generation of an incorrect `pcigale.ini.spec` when `pcigale.ini` exists but `pcigale.ini.spec` does not, which is not supposed to happen under regular circumstances. (Médéric Boquien)
+- Now `pcigale check` also displays the number of models per redshift. (Médéric Boquien)
+### Changed
+### Fixed
+- Ensure that `pcigale-plots` correctly detects the `skirtor2016` AGN models. (Médéric Boquien, reported by Guang Yang)
+- Correct a typo in the `themis` module. (Médéric Boquien, reported by Alexandros Maragkoudakis)
+- Make sure that the best fit is also given for the bands for which `pdf\_analysis` provides a Bayesian estimate. (Médéric Boquien)
+- The `save_chi2` parameter was not correctly acknowledged in `pcigale-plots pdf`, leading to a crash as it tried to build the PDF of parameters for which the corresponding `chi2` files were not saved. (Médéric Boquien, reported by Laia Barrufet de Soto)
+- The help of `pcigale-plots sed` incorrectly reported that the values given to the `--xrange` option were in nm, rather than μm. (Médéric Boquien, reported by Guang Yang)
+- A run with an already existing `out/` directory led to a crash under Microsoft Windows. This was due to renaming `out/` to add the time with hours, minutes, and second separated by a colon. This is not allowed on this platform. The renamed directory has not been made compact and does not use colons anymore. (Médéric Boquien, reported by Samir Salim)
+- The units of line fluxes were not always correct for Bayesian estimates. (Médéric Boquien, reported by Katarzyna Małek)
+### Optimised
+- The estimation of the physical properties and the related uncertainties has been made up to 50% faster. The final gain in the analysis speed accounting for all the steps depends on the number of properties to be evaluated and the number of models but can be over 25% when estimating many properties over a large parameter space. (Médéric Boquien)
+- Invalid models (e.g., when the stellar populations are older than the universe) are now ignored when handling upper limits. The speedup is very variable but can be substantial in case there are many invalid models. (Médéric Boquien)
+
+## 2020.0 (2020-06-29)
+### Added
+- The (1+z1)/(1+z2) factor between observed and grid flux densities caused by the differential redshifting is now taken into account. With a default grid redshift rounding of two decimals this yields a difference of at most 0.5% in the estimated physical properties at z=0 and even less at higher z. (Médéric Boquien)
+- The list of bands for which to carry out a Bayesian flux estimate is now configurable. By default this corresponds to the fitted bands but it also supports bands that are not included in the fit. This can be set in the `fluxes` parameter of the `pdf\_analysis` module. (Médéric Boquien)
+- Implementation of the auto-detection of lines in the input flux file so they are automatically added to the list of bands in `pcigale.ini`. (Médéric Boquien)
+- The `dl2007` and `dl2014` modules now provide \<U\>. (Médéric Boquien)
+- Saving the χ² is now a bit more fine-grained. It is possible to save none, all, only the properties, or only the fluxes. (Médéric Boquien)
+- The database now includes the JWST MIRI and NIRCam filters. (Médéric Boquien)
+- The SKIRTOR AGN models (Stalevski et al. 2016) have been implemented as the `skirtor2016` module. (Médéric Boquien, with the support of Marko Stalevski)
+- The units are now given alongside the physical properties in the output FITS tables. (Médéric Boquien)
+### Changed
+- Python 3.6 is now the minimum required version. (Médéric Boquien)
+- The `pcigale-plots` executable has been largely rewritten for better modularity and to enable the various improvements indicated below. (Rodrigo González Castillo & Médéric Boquien)
+- The logo has now been moved to the lower-right corner of the figure so that it does not overlap with any information and it has been updated for a less pixelated version. (Médéric Boquien & Rodrigo González Castillo)
+- The wavelength range in SED plots is now dynamically adapted to cover the observed wavelengths. (Médéric Boquien)
+- The uncertainties on the SED plots now correspond only to 1σ rather than 3σ so they do not appear exceedingly large. (Médéric Boquien)
+- The lines linking the different bands in the residual SED plot have been eliminated to improve the readability. (Médéric Boquien)
+- Some lines have been made slightly thicker in SED plots so the different components are more visible. (Médéric Boquien)
+- The colours in the SED plots have been tweaked for aesthetic reasons. (Médéric Boquien)
+- The markers for the observed fluxes in the SED plots have been tweaked to improve readability. (Médéric Boquien)
+- The computation of all the cosmology-dependent quantities has been consolidated in pcigale/utils/cosmology.py and optimised. This leads to a slightly faster startup, in particular when there are many objects to fit, and it makes it easier to change the cosmology. (Médéric Boquien)
+- The time spent computing is now displayed in hours, minutes, and seconds rather than just seconds to improve legibility. (Médéric Boquien)
+- Some expected warnings have been silenced in `pcigale-plots` to avoid flooding the terminal. (Médéric Boquien)
+- The id given in the input files are now checked against duplications. In case there are duplications, an exception is emitted. This prevents possible crashes later in the run. (Médéric Boquien & Yannick Roehlly)
+### Fixed
+- Make sure we can plot the PDF of equivalent widths. (Médéric Boquien)
+- Fix a crash when generating a mock catalogue containing intensive properties. (Médéric Boquien)
+- In the `sfhdelayed` and `sfhdelayedbq` modules, provide the correct description for the sfr_A parameter (Médéric Boquien & Laure Ciesla)
+- Internally the luminosity distance was erroneously stored in Mpc rather than in m for non-zero redshifts. This has now been standardised to m. (Médéric Boquien)
+- As the best-fit properties are computed at the exact observed redshift, correct the scaling factor as it is computed at the grid redshift. This corrects for slight offsets on the best-fit properties when the input redshift has more decimals than the grid redshift. (Médéric Boquien)
+- Fix the pip install by making pcigale.managers discoverable. (Yannick Roehlly)
+- When using a parameters file, Boolean values were not correctly interpreted. (Médéric Boquien, reported by Eric Martínez, INAOE)
+- Make sure that the best-fit models are stored with the correct scaling factor when the distance is given explicitly (Médéric Boquien)
+- Some labels and the title for the SED plots has been improved to avoid overlaps and overflows. (Médéric Boquien)
+- Ensure that best models are properly computed when models are computed by blocks and that no fit could be made in one or more blocks. This can be case if all the models in the block are older than the age of the universe. (Médéric)
+- Make sure that the parameters are saved with the proper scale (linear or logarithmic) in the χ² files. (Médéric Boquien)
+- Some math libraries such as MKL or OpenBLAS sometimes try to be (too) smart, starting computation threads on their own. As cigale is already parallel, this just oversubscribes the CPU and can lead to important slowdowns. An environment variable could be set by the user to disable this, but this is cumbersome. Rather, we set these variables directly in the code at the startup of cigale. (Yannick Roehlly & Médéric Boquien)
+- Fix a crash in `pcigale-plots` when plotting the SED of models computed without stellar populations. (Médéric Boquien)
+- Make sure that upper limits on physical properties are correctly taken into account. (Médéric Boquien)
+- Improve the sanitation of input data so that upper limits of extensive properties are not eliminated from the quantities to be fitted when upper limits are activated. (Médéric Boquien)
+- Ensure that the radio module still works with recent versions of numpy. (Médéric Boquien & Laure Ciesla, reported by Wenjia Zhou)
+- The unphysical wavy structure of the nebular continuum in the mid-infrared has been eliminated. (Médéric Boquien)
+- The percentage of models with a low reduced χ² was too small by a factor 100. (Médéric Boquien, reported by Guang Yang)
+### Optimised
+- Slight speedup of the computation of the likelihood from the χ² using a multiplication rather than a division. (Médéric Boquien)
+- Speedup of the computation of the χ² by ~10% taking the opposite of a scalar rather than of an array. (Médéric Boquien)
+- Thanks to a change in the layout of the models storage in RAM, the computation of the χ² is now massively faster when the run contains multiple redshifts. (Médéric Boquien)
+- The computation of the weighted means and standard deviations has been made ~50% faster by normalising the likelihood. (Médéric Boquien)
+- The `fritz2006` module should now run faster thanks to an optimisation of the computation of the luminosity of the various AGN components (Médéric Boquien & Guang Yang)
+- Various optimisations have been made regarding shared arrays to make their access faster. The overall effect is a speedup of 3-4% for the computation of the models. (Médéric Boquien)
+- All the cores should now be used over the entire duration of the computation of the Bayesian and best-fit estimates. Before the number of active cores could drop towards the end of the computation. (Médéric Boquien)
+
+## 2018.0 (2018-11-06)
+### Added
+- It is now possible to optionally indicate the distance in Mpc in the input file. If present it will be used in lieu of the distance computed from the redshift. This is especially useful in the nearby universe where the redshift is a very poor indicator of the actual distance. (Médéric Boquien)
+- It is now possible to fit any physical property indicated by the code (e.g. equivalent width, dust luminosity, etc.). For this the physical property needs to be given in the input file and the properties to be fitted must be given in the properties filed in pcigale.ini. (Héctor Salas & Médéric Boquien)
+- It is now possible to fit emission lines. For this the line has to be indicated in the same way as any other band both in the input flux file (in units of W/m²) and in the list of bands in `pcigale.ini`. Lines are prefixed with `line.` followed by the name of the line, for instance `line.H-alpha` for Hɑ. The following lines are supported at the moment: `Ly-alpha`, `CII-133.5`, `SiIV-139.7`, `CIV-154.9`, `HeII-164.0`, `OIII-166.5`, `CIII-190.9`, `CII-232.6`, `MgII-279.8`, `OII-372.7`, `H-10`, `H-9`, `NeIII-386.9` `HeI-388.9`, `H-epsilon`, `SII-407.0`, `H-delta`, `H-gamma`, `H-beta`, `OIII-495.9`, `OIII-500.7`, `OI-630.0`, `NII-654.8`, `H-alpha`, `NII-658.4`, `SII-671.6`, `SII-673.1`. (Médéric Boquien)
+- When emission lines are not corrected for absorption lines (e.g., in the case of very low resolution spectroscopy) the previous method, which computes the theoretical line fluxes, is not optimal. Rather we offer the possibility to measure the fluxes through special filters that are used like regular filters. The idea is to define filters with a positive part on the line, a negative part on the continuum, and a zero-valued integral. In such case the integration over the spectrum directly gives the flux of the integral. So this works at all redshifts, the filter is automatically redshifted at runtime. (Médéric Boquien & David Corre)
+- Two new dust attenuation modules have been added: `dustatt\_modified\_CF00` and `dustatt\_modified\_starburst`. The former implements a modified 2-component Charlot & Fall (2000) model whereas the latter implements a modified starburst law with the continuum attenuated with a Calzetti (2000) curve and the lines extincted with a Milky Way or a Magellanic Cloud law. The previous models `dustatt\_powerlaw`, `dustatt\_2powerlaws`, and `dustatt\_calzleit` are still available but are deprecated. (Médéric Boquien & David Corre)
+- In addition to the physical properties, the fluxes are now also estimated through a Bayesian analysis. (Médéric Boquien)
+- The module `sfhdelayedbq` has been added. It implements a delayed SFH with a burst/quench. It is fully described in Ciesla et al. (2017).
+
+### Changed
+- The `sfhdelayed` module has been extended to optionally include an exponential burst to model the latest episode of star formation. (Médéric Boquien & Barbara Lo Faro)
+- On Linux platforms the method to start the parallel processes has been changed from "spawn" to "fork". This allows for a much faster startup. On other platforms is remains unchanged as Windows does not support "fork" and MacOS is bugged when using "fork", resulting in a free of cigale. (Médéric Boquien)
+- The list of modules has been made more explicit in the `pcigale.ini` file. (Médéric Boquien)
+
+### Fixed
+- The histogram bin width was not computed optimally when some models were invalid. (David Corre & Médéric Boquien)
+- Missing import in the `m2005` module. (Médéric Boquien, reported by Dominika Wylezalek)
+- The plot of the PDF could not be generated for physical properties estimated in log (Médéric Boquien)
+- We do not attempt anymore to estimate the physical properties of galaxies with insanely large χ² that lead to an underflow in the computation of the likelihood. (Médéric Boquien)
+- The best fit is now plotted at the exact redshift rather than at the rounded redshift. (Médéric Boquien)
+- It is now possible to plot the best fit obtained in redshifting mode. (Médéric Boquien)
+
+### Optimised
+- The estimation of the physical properties is made a bit faster when all the models are valid. (Médéric Boquien)
+- The access to the module cache has been made faster and the model cache has been made much simpler, avoiding plenty of complex computations. This results in a speedup of at least ~6% in the computation of the models. The speedup can be higher when using few photometric bands. At the same time it considerably reduces the number of page faults seen in some rare circumstances. (Médéric Boquien)
+- The models counter was a bottleneck when using many cores as updating it could stall other parallel processes. Now the internal counter is updated much less frequently. The speedup goes from between negligible (few cores) up to a factor of a few (many cores). The downside is the the updates on the screen may be a bit irregular. (Médéric Boquien)
+- It turns out that elevating an array to some power is an especially slow operation in python. The `dustatt_calzleit` module has been optimised leading to a massive speed improvement. This speedup is especially large for models that do not include dust emission. (Médéric Boquien)
+- Making copies of partially computed SED when storing them to the cache can be slow. Now we avoid making copies of the redshifted SED. The speedup should be especially noticeable when computing a set of models with numerous redshifts. (Médéric Boquien)
+
+## 0.12.1 (2018-02-27)
+### Fixed
+- The best fit could not be computed in photo-z mode because the redshift was negative. (Médéric Boquien)
+- The bayesian estimates could not be computed when some models were older than the age of the universe. (Médéric Boquien)
+- The usage of `dustatt\_cazleit` causes some confusion regarding the reddening of the stars and of the gas. We have clarified that they are both attenuated with the same law and switched the differential reddening to 1 by default. (Médéric Boquien & Véronique Buat)
+- When some models were invalid, it was not possible to plot the PDF. (Médéric Boquien & Denis Burgarella)
+
+
 ## 0.12.0 (2018-02-19)
 ### Added
 - Provide the possibility not to store a given module in cache. This can be useful on computers with a limited amount of memory. The downside is that when not caching the model generation will be slower. (Médéric Boquien)
@@ -9,7 +117,7 @@
 - Allow the observations to be analysed by blocks of models in `pdf\_analysis`. This is useful when computing a very large grid of models that would not fit in memory. The number of blocks is set with the `blocks` parameters in the pcigale.ini. (Médéric Boquien)
 - The integrated stellar luminosity is now provided as `stellar.lum`. (Médéric Boquien)
 - The high resolution BC03 models have been added. They can be activated when building the database by adding `--bc03res=hr` to the build command. In that case the low resolution models are not built. (Médéric Boquien)
-- Dust templates generated with THEMIS (Jones et al. 2017) have been contributed by the DustPedia team (Davis et al. 2017). Special acknowledgement to Angelos Nersesian and Frédéric Galliano for creating the dust templates and writing the code. (Dustpedia team)
+- Dust templates generated with THEMIS (Jones et al. 2017) have been contributed by the DustPedia team (Davies et al. 2017). Special acknowledgement to Angelos Nersesian and Frédéric Galliano for creating the dust templates and writing the code. (Dustpedia team)
 - The Herschel SPIRE filters for extended sources have been added. (Médéric Boquien)
 
 ### Changed
@@ -106,7 +214,7 @@
 - The output files providing estimates of the physical properties are now generated both in the form of text and FITS files. (Médéric Boquien)
 - When using the `dustatt_calzleit module`, choosing ẟ≠0 leads to an effective E(B-V) different from the one set by the user. Now the E(B-V) will always correspond to the one specified by the user. This means that at fixed E(B-V), A(V) depends on ẟ. (Médéric Boquien)
 - The pcigale-mock tool has been merged into pcigale-plots; the mock plots can be obtained with the "mock" command. (Médéric Boquien)
-- The `sfhdelayed` module is now initialised with _init_code() to be consistent with the way things are done in other modules. This should give a slight speedup under some sircumstances too. (Médéric Boquien)
+- The `sfhdelayed` module is now initialised with \_init_code() to be consistent with the way things are done in other modules. This should give a slight speedup under some sircumstances too. (Médéric Boquien)
 - In `sfhfromfile`, the specification of the time grid was vague and therefore could lead to incorrect results if it was not properly formatted by the end user. The description has been clarified and we now check that the time starts from 0 and that the time step is always 1 Myr. If it is not the case we raise an exception. (Médéric Boquien)
 - When the redshift is not indicated in pcigale.ini, the analysis module fills the list of redshifts from the redshifts indicated in the input flux file. This is inefficient as analysis modules should not have to modify the configuration. Now this is done when interpreting pcigale.ini before calling the relevant analysis module. As a side effect, "pigale check" now returns the total number of models that cigale will compute rather than the number of models per redshift bin. (Médéric Boquien)
 - The optionally saved spectra in the `pdf_analysis` and `savefluxes` modules were saved in the VO-table format. The most important downside is that it is very slow to write to, which proves to be a major bottleneck in the computing speed. To overcome this issue, we rather save the spectra using the FITS formation. Instead of having one file containing the spectra (including the various components) and the SFH in a single file, now we have one file for the spectra and one file for the SFH.
@@ -140,7 +248,7 @@
 
 ## 0.8.0 (2015-12-01)
 ### Added
-- The evaluation of the parameters is always done linearly. This can be a problem when estimating the SFR or the stellar mass for instance as it is usual to estimate their log rather. Because the log is non-linear, the likelihood-weighted mean of the log is not the log of the likelihood-weighted mean. Therefore the estimation of the log of these parameters has to be done during the analysis step. This is now possible. The variables to be analysed in log just need to be indicated with the suffix "_log", for instance "stellar.m\_star\_log". (Médéric Boquien, idea suggested by Samir Salim)
+- The evaluation of the parameters is always done linearly. This can be a problem when estimating the SFR or the stellar mass for instance as it is usual to estimate their log rather. Because the log is non-linear, the likelihood-weighted mean of the log is not the log of the likelihood-weighted mean. Therefore the estimation of the log of these parameters has to be done during the analysis step. This is now possible. The variables to be analysed in log just need to be indicated with the suffix "\_log", for instance "stellar.m\_star\_log". (Médéric Boquien, idea suggested by Samir Salim)
 
 ### Fixed
 - Running the scripts in parallel trigger a deadlock on OS X with python 3.5. A workaround has been implemented. (Médéric Boquien)

@@ -64,7 +64,10 @@ class MBB(SedModule):
         self.epsilon = float(self.parameters["epsilon_mbb"])
         self.T = float(self.parameters["t_mbb"])
         self.beta = float(self.parameters["beta_mbb"])
-        self.energy_balance = bool(self.parameters["energy_balance"])
+        if type(self.parameters["energy_balance"]) is str:
+            self.energy_balance = self.parameters["energy_balance"].lower() == 'true'
+        else:
+            self.energy_balance = bool(self.parameters["energy_balance"])
 
         if self.epsilon < 0.:
             raise Exception("Error, epsilon_mbb must be ≥ 0.")
@@ -75,7 +78,7 @@ class MBB(SedModule):
         c = cst.c * 1e9
         lambda_0 = 200e3
 
-        self.wave = np.logspace(3., 6., 1000.)
+        self.wave = np.logspace(3., 6., 1000)
         conv = c / (self.wave * self.wave)
 
         self.lumin_mbb = (conv * (1. - np.exp(-(lambda_0 / self.wave)
@@ -95,11 +98,11 @@ class MBB(SedModule):
 
         """
         if 'dust.luminosity' not in sed.info:
-            sed.add_info('dust.luminosity', 1., True)
+            sed.add_info('dust.luminosity', 1., True, unit='W')
         luminosity = sed.info['dust.luminosity']
 
         sed.add_module(self.name, self.parameters)
-        sed.add_info("dust.t_mbb", self.T)
+        sed.add_info("dust.t_mbb", self.T, unit='K')
         sed.add_info("dust.beta_mbb", self.beta)
         sed.add_info("dust.epsilon_mbb", self.epsilon)
 

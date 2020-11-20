@@ -68,7 +68,7 @@ class Casey2012(SedModule):
         Npl = ((1. - np.exp(-(lambda_0 / lambda_c) ** beta)) * (c / lambda_c)
                ** 3. / (np.exp(cst.h * c / (lambda_c * cst.k * T)) - 1.))
 
-        self.wave = np.logspace(3., 6., 1000.)
+        self.wave = np.logspace(3., 6., 1000)
         conv = c / (self.wave * self.wave)
 
         self.lumin_blackbody = (conv * (1. - np.exp(-(lambda_0 / self.wave)
@@ -97,11 +97,11 @@ class Casey2012(SedModule):
 
         """
         if 'dust.luminosity' not in sed.info:
-            sed.add_info('dust.luminosity', 1., True)
+            sed.add_info('dust.luminosity', 1., True, unit='W')
         luminosity = sed.info['dust.luminosity']
 
         sed.add_module(self.name, self.parameters)
-        sed.add_info("dust.temperature", self.temperature)
+        sed.add_info("dust.temperature", self.temperature, unit='K')
         sed.add_info("dust.beta", self.beta)
         sed.add_info("dust.alpha", self.alpha)
 

@@ -27,11 +27,11 @@ reduced χ²) is given for each observation.
 
 from collections import OrderedDict
 import multiprocessing as mp
-import time
 
 import numpy as np
 
 from .. import AnalysisModule
+from utils.counter import Counter
 from .workers import sed as worker_sed
 from .workers import init_sed as init_worker_sed
 from .workers import init_analysis as init_worker_analysis
@@ -55,16 +55,23 @@ class PdfAnalysis(AnalysisModule):
             "are many models).",
             ["sfh.sfr", "sfh.sfr10Myrs", "sfh.sfr100Myrs"]
         )),
+        ("bands", (
+            "cigale_string_list()",
+            "List of bands for which to estimate the fluxes. Note that this is "
+            "independent from the fluxes actually fitted to estimate the "
+            "physical properties.",
+            None
+        )),
         ("save_best_sed", (
             "boolean()",
             "If true, save the best SED for each observation to a file.",
             False
         )),
         ("save_chi2", (
-            "boolean()",
-            "If true, for each observation and each analysed property, save "
-            "the raw chi2. It occupies ~15 MB/million models/variable.",
-            False
+            "option('all', 'none', 'properties', 'fluxes')",
+            "Save the raw chi2. It occupies ~15 MB/million models/variable. "
+            "Allowed values are 'all', 'none', 'properties', and 'fluxes'.",
+            "none"
         )),
         ("lim_flag", (
             "boolean()",
@@ -95,32 +102,36 @@ class PdfAnalysis(AnalysisModule):
         ))
     ])
 
-
     def _compute_models(self, conf, obs, params, iblock):
         models = ModelsManager(conf, obs, params, iblock)
+        counter = Counter(len(params.blocks[iblock]), 50, 250)
+        initargs = (models, counter)
 
-        initargs = (models, time.time(), mp.Value('i', 0))
         self._parallel_job(worker_sed, params.blocks[iblock], initargs,
                            init_worker_sed, conf['cores'])
+
+        # Print the final value as it may not otherwise be printed
+        if counter.global_counter.value % 250 != 0:
+            counter.pprint(len(params.blocks[iblock]))
 
         return models
 
     def _compute_bayes(self, conf, obs, models):
         results = ResultsManager(models)
 
-        initargs = (models, results, time.time(), mp.Value('i', 0))
+        initargs = (models, results, Counter(len(obs)))
         self._parallel_job(worker_analysis, obs, initargs,
-                           init_worker_analysis, conf['cores'])
+                           init_worker_analysis, conf['cores'], 1)
 
         return results
 
     def _compute_best(self, conf, obs, params, results):
-        initargs = (conf, params, obs, results, time.time(),
-                    mp.Value('i', 0))
+        initargs = (conf, params, obs, results, Counter(len(obs)))
         self._parallel_job(worker_bestfit, obs, initargs,
-                           init_worker_bestfit, conf['cores'])
+                           init_worker_bestfit, conf['cores'], 1)
 
-    def _parallel_job(self, worker, items, initargs, initializer, ncores):
+    def _parallel_job(self, worker, items, initargs, initializer, ncores,
+                      chunksize=None):
         if ncores == 1:  # Do not create a new process
             initializer(*initargs)
             for idx, item in enumerate(items):
@@ -128,13 +139,13 @@ class PdfAnalysis(AnalysisModule):
         else:  # run in parallel
             with mp.Pool(processes=ncores, initializer=initializer,
                          initargs=initargs) as pool:
-                pool.starmap(worker, enumerate(items))
+                pool.starmap(worker, enumerate(items), chunksize)
 
     def _compute(self, conf, obs, params):
         results = []
         nblocks = len(params.blocks)
         for iblock in range(nblocks):
-            print('\nProcessing block {}/{}...'.format(iblock + 1, nblocks))
+            print(f"\nProcessing block {iblock + 1}/{nblocks}...")
             # We keep the models if there is only one block. This allows to
             # avoid recomputing the models when we do a mock analysis
             if not hasattr(self, '_models'):
@@ -181,17 +192,18 @@ class PdfAnalysis(AnalysisModule):
         # Rename the output directory if it exists
         self.prepare_dirs()
 
-        # Store the observations in a manager which sanitises the data, checks
-        # all the required fluxes are present, adding errors if needed,
-        # discarding invalid fluxes, etc.
-        obs = ObservationsManager(conf)
-        obs.save('observations')
-
         # Store the grid of parameters in a manager to facilitate the
         # computation of the models
         params = ParametersManager(conf)
 
+        # Store the observations in a manager which sanitises the data, checks
+        # all the required fluxes are present, adding errors if needed,
+        # discarding invalid fluxes, etc.
+        obs = ObservationsManager(conf, params)
+        obs.save('observations')
+
         results = self._compute(conf, obs, params)
+        print("\nSanity check of the analysis results...")
         results.best.analyse_chi2()
 
         print("\nSaving the analysis results...")
@@ -201,8 +213,8 @@ class PdfAnalysis(AnalysisModule):
             print("\nAnalysing the mock observations...")
 
             # For the mock analysis we do not save the ancillary files.
-            for k in ['best_sed', 'chi2', 'pdf']:
-                conf['analysis_params']["save_{}".format(k)] = False
+            for k in ['best_sed', 'chi2']:
+                conf['analysis_params'][f"save_{k}"] = False
 
             # We replace the observations with a mock catalogue..
             obs.generate_mock(results)

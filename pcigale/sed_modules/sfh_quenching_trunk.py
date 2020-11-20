@@ -52,7 +52,10 @@ class SfhQuenchTrunk(SedModule):
     def _init_code(self):
         self.quenching_age = int(self.parameters["quenching_age"])
         self.quenching_factor = float(self.parameters["quenching_factor"])
-        self.normalise = bool(self.parameters["normalise"])
+        if type(self.parameters["normalise"]) is str:
+            normalise = self.parameters["normalise"].lower() == 'true'
+        else:
+            normalise = bool(self.parameters["normalise"])
 
     def process(self, sed):
         """
@@ -85,11 +88,12 @@ class SfhQuenchTrunk(SedModule):
                 sfr_integrated = 1.
 
             sed.sfh = sfr
-            sed.add_info("sfh.integrated", sfr_integrated, True, force=True)
+            sed.add_info("sfh.integrated", sfr_integrated, True, force=True,
+                         unit='solMass')
 
         sed.add_module(self.name, self.parameters)
 
-        sed.add_info("sfh.quenching_age", self.quenching_age)
+        sed.add_info("sfh.quenching_age", self.quenching_age, unit='Myr')
         sed.add_info("sfh.quenching_factor", self.quenching_factor)
 
 

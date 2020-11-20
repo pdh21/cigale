@@ -10,12 +10,11 @@ of the models.
 """
 
 import ctypes
-from multiprocessing.sharedctypes import RawArray
 
 from astropy.table import Table, Column
-import numpy as np
+from astropy.units import Unit
 
-from ..warehouse import SedWarehouse
+from .utils import SharedArray, get_info
 
 
 class ModelsManager(object):
@@ -30,45 +29,31 @@ class ModelsManager(object):
         self.conf = conf
         self.obs = obs
         self.params = params
-        self.iblock = iblock
         self.block = params.blocks[iblock]
+        self.iblock = iblock
+        self.allpropnames, self.unit, self.allextpropnames = get_info(self)
+        self.allintpropnames = set(self.allpropnames) - self.allextpropnames
 
-        self.propertiesnames = conf['analysis_params']['variables']
-        self.allpropertiesnames, self.massproportional = self._get_info()
+        props_nolog = set([prop[:-4] if prop.endswith('log') else prop
+                           for prop in conf['analysis_params']['variables']])
+        self.intpropnames = (self.allintpropnames & set(obs.intprops) |
+                             self.allintpropnames & props_nolog)
+        self.extpropnames = (self.allextpropnames & set(obs.extprops) |
+                             self.allextpropnames & props_nolog)
+        if 'bands' in conf['analysis_params']:
+            bandnames = set(obs.bands+conf['analysis_params']['bands'])
+        else:
+            bandnames = obs.bands
 
-        self._fluxes_shape = (len(obs.bands), len(self.block))
-        self._props_shape = (len(self.propertiesnames), len(self.block))
+        size = len(params.blocks[iblock])
+        if conf['parameters_file'] == "":
+            self.nz = len(conf['sed_modules_params']['redshifting']['redshift'])
+            self.nm = size // self.nz
 
-        # Arrays where we store the data related to the models. For memory
-        # efficiency reasons, we use RawArrays that will be passed in argument
-        # to the pool. Each worker will fill a part of the RawArrays. It is
-        # important that there is no conflict and that two different workers do
-        # not write on the same section.
-        self._fluxes = self._shared_array(self._fluxes_shape)
-        self._properties = self._shared_array(self._props_shape)
-
-    @property
-    def fluxes(self):
-        """Returns a shared array containing the fluxes of the models.
-
-        """
-        return np.ctypeslib.as_array(self._fluxes).reshape(self._fluxes_shape)
-
-    @property
-    def properties(self):
-        """Returns a shared array containing the properties of the models.
-
-        """
-        return np.ctypeslib.as_array(self._properties).reshape(self._props_shape)
-
-    def _get_info(self):
-        warehouse = SedWarehouse()
-        sed = warehouse.get_sed(self.conf['sed_modules'],
-                                self.params.from_index(0))
-        info = list(sed.info.keys())
-        info.sort()
-
-        return (info, sed.mass_proportional_info)
+        self.flux = {band: SharedArray(size) for band in bandnames}
+        self.intprop = {prop: SharedArray(size) for prop in self.intpropnames}
+        self.extprop = {prop: SharedArray(size) for prop in self.extpropnames}
+        self.index = SharedArray(size, ctypes.c_uint32)
 
     def save(self, filename):
         """Save the fluxes and properties of all the models into a table.
@@ -79,15 +64,22 @@ class ModelsManager(object):
             Root of the filename where to save the data.
 
         """
-        table = Table(np.vstack((self.fluxes, self.properties)).T,
-                      names=self.obs.bands + self.propertiesnames)
+        table = Table()
+        table.add_column(Column(self.block, name='id'))
+        for band in sorted(self.flux.keys()):
+            if band.startswith('line.') or band.startswith('linefilter.'):
+                unit = 'W/m^2'
+            else:
+                unit = 'mJy'
+            table.add_column(Column(self.flux[band], name=band,
+                                    unit=Unit(unit)))
+        for prop in sorted(self.extprop.keys()):
+            table.add_column(Column(self.extprop[prop], name=prop,
+                                    unit=Unit(self.unit[prop])))
+        for prop in sorted(self.intprop.keys()):
+            table.add_column(Column(self.intprop[prop], name=prop,
+                                    unit=Unit(self.unit[prop])))
 
-        table.add_column(Column(self.block, name='id'), index=0)
-
-        table.write("out/{}.fits".format(filename))
-        table.write("out/{}.txt".format(filename), format='ascii.fixed_width',
+        table.write(f"out/{filename}.fits")
+        table.write(f"out/{filename}.txt", format='ascii.fixed_width',
                     delimiter=None)
-
-    @staticmethod
-    def _shared_array(shape):
-        return RawArray(ctypes.c_double, int(np.product(shape)))

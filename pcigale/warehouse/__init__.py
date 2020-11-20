@@ -3,10 +3,9 @@
 # Licensed under the CeCILL-v2 licence - see Licence_CeCILL_V2-en.txt
 # Author: Yannick Roehlly
 
-import marshal
-
 from ..sed import SED
 from .. import sed_modules
+from .sedcache import SedCache
 
 
 class SedWarehouse(object):
@@ -35,14 +34,8 @@ class SedWarehouse(object):
         else:
             raise TypeError("The nocache argument must be a list or an str.")
 
-        self.sed_cache = {}
+        self.sed_cache = SedCache()
         self.module_cache = {}
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
 
     def get_module_cached(self, name, **kwargs):
         """Get the SED module using the internal cache.
@@ -62,9 +55,10 @@ class SedWarehouse(object):
         if name in self.nocache:
             module = sed_modules.get_module(name, **kwargs)
         else:
-            # Marshal a tuple (name, parameters) to be used as a key for
-            # storing the module in the cache.
-            module_key = marshal.dumps((name, kwargs))
+            # Use the name of the module and the values of the parameters as a
+            # key to the cache. This works because the parameters are stored in
+            # ordered dictionaries.
+            module_key = (name, tuple(kwargs.values()))
             if module_key in self.module_cache:
                 module = self.module_cache[module_key]
             else:
@@ -72,28 +66,6 @@ class SedWarehouse(object):
                 self.module_cache[module_key] = module
 
         return module
-
-    def partial_clear_cache(self, n_modules_max):
-        """Clear the cache of SEDs that are not relevant anymore
-
-        To do partial clearing of the cache, we go through the entire cache
-        and delete the SEDs that have more than a given number of modules.
-        This is done by computing the index of the module that has a changed
-        parameter. This means that SEDs with this number of modules or more
-        are not needed anymore to compute new models and we can discard them.
-        Passing 0 as an argument empties the cache completely.
-
-        Parameters
-        ----------
-        n_modules_max: int
-            Maximum number of modules. All SED with at least this number of
-            modules have to be discarded
-
-        """
-        if n_modules_max > -1:
-            for k in list(self.sed_cache.keys()):
-                if len(marshal.loads(k)[0]) > n_modules_max:
-                    del self.sed_cache[k]
 
     def get_sed(self, module_list, parameter_list):
         """Get the SED corresponding to the module and parameter lists
@@ -120,11 +92,12 @@ class SedWarehouse(object):
         module_list = list(module_list)
         parameter_list = list(parameter_list)
 
-        # Marshal a tuple (module_list, parameter_list) to be used as a key
-        # for storing the SED in the cache.
-        key = marshal.dumps((module_list, parameter_list))
+        # Use the values of the parameters of all the modules as the key for
+        # the cache. This works because the parameters are stored in ordered
+        # dictionaries.
+        key = tuple(tuple(par.values()) for par in parameter_list)
 
-        sed = self.sed_cache.get(key)
+        sed = self.sed_cache[key]
         if sed is None:
             mod = self.get_module_cached(module_list.pop(),
                                          **parameter_list.pop())
@@ -132,9 +105,9 @@ class SedWarehouse(object):
             if (len(module_list) == 0):
                 sed = SED()
             else:
-                sed = self.get_sed(module_list, parameter_list)
+                sed = self.get_sed(module_list, parameter_list).copy()
 
             mod.process(sed)
             self.sed_cache[key] = sed
 
-        return sed.copy()
+        return sed

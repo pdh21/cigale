@@ -7,46 +7,33 @@
 # Author: Yannick Roehlly, Médéric Boquien & Denis Burgarella
 
 from copy import deepcopy
-import time
 
 import numpy as np
 
-from ..utils import nothread
 from .utils import save_chi2, compute_corr_dz, compute_chi2, weighted_param
 from ...warehouse import SedWarehouse
 
 
-def init_sed(models, t0, ncomputed):
+def init_sed(models, counter):
     """Initializer of the pool of processes to share variables between workers.
 
     Parameters
     ----------
     models: ModelsManagers
         Manages the storage of the computed models (fluxes and properties).
-    t0: float
-        Time of the beginning of the computation.
-    ncomputed: Value
-        Number of computed models. Shared among workers.
+    counter: Counter class object
+        Counter for the number of models computed
 
     """
-    global gbl_previous_idx, gbl_warehouse, gbl_models, gbl_obs
-    global gbl_properties, gbl_t0, gbl_ncomputed
+    global gbl_warehouse, gbl_models, gbl_counter
 
-    # Limit the number of threads to 1 if we use MKL in order to limit the
-    # oversubscription of the CPU/RAM.
-    nothread()
-
-    gbl_previous_idx = -1
     gbl_warehouse = SedWarehouse()
 
     gbl_models = models
-    gbl_obs = models.obs
-    gbl_properties = [prop[:-4] if prop.endswith('_log') else prop for prop in
-                      models.propertiesnames]
-    gbl_t0 = t0
-    gbl_ncomputed = ncomputed
+    gbl_counter = counter
 
-def init_analysis(models, results, t0, ncomputed):
+
+def init_analysis(models, results, counter):
     """Initializer of the pool of processes to share variables between workers.
 
     Parameters
@@ -55,21 +42,19 @@ def init_analysis(models, results, t0, ncomputed):
         Manages the storage of the computed models (fluxes and properties).
     results: ResultsManager
         Contains the estimates and errors on the properties.
-    t0: float
-        Time of the beginning of the computation.
-    ncomputed: Value
-        Number of computed models. Shared among workers.
+    counter: Counter class object
+        Counter for the number of objects analysed
 
     """
-    global gbl_models, gbl_results, gbl_t0, gbl_ncomputed
+    global gbl_models, gbl_obs, gbl_results, gbl_counter
 
     gbl_models = models
+    gbl_obs = models.obs
     gbl_results = results
-    gbl_t0 = t0
-    gbl_ncomputed = ncomputed
+    gbl_counter = counter
 
 
-def init_bestfit(conf, params, observations, results, t0, ncomputed):
+def init_bestfit(conf, params, observations, results, counter):
     """Initializer of the pool of processes to share variables between workers.
 
     Parameters
@@ -80,28 +65,23 @@ def init_bestfit(conf, params, observations, results, t0, ncomputed):
         Manages the parameters from a 1D index.
     observations: astropy.Table
         Contains the observations including the filter names.
-    ncomputed: Value
-        Number of computed models. Shared among workers.
-    t0: float
-        Time of the beginning of the computation.
     results: ResultsManager
         Contains the estimates and errors on the properties.
-    offset: integer
-        Offset of the block to retrieve the global model index.
+    counter: Counter class object
+        Counter for the number of objects analysed
 
     """
-    global gbl_previous_idx, gbl_warehouse, gbl_conf, gbl_params, gbl_obs
-    global gbl_results, gbl_t0, gbl_ncomputed
+    global gbl_warehouse, gbl_conf, gbl_params, gbl_obs
+    global gbl_results, gbl_counter
 
-    gbl_previous_idx = -1
     gbl_warehouse = SedWarehouse()
 
     gbl_conf = conf
     gbl_params = params
     gbl_obs = observations
     gbl_results = results
-    gbl_t0 = t0
-    gbl_ncomputed = ncomputed
+    gbl_counter = counter
+
 
 def sed(idx, midx):
     """Worker process to retrieve a SED and affect the relevant data to an
@@ -115,32 +95,30 @@ def sed(idx, midx):
         Global index of the model.
 
     """
-    global gbl_previous_idx
-    if gbl_previous_idx > -1:
-        gbl_warehouse.partial_clear_cache(
-            gbl_models.params.index_module_changed(gbl_previous_idx, midx))
-    gbl_previous_idx = midx
     sed = gbl_warehouse.get_sed(gbl_models.params.modules,
                                 gbl_models.params.from_index(midx))
 
+    # The redshift is the fastest varying variable but we want to store it
+    # as the slowest one so that models at a given redshift are contiguous
+    idx = (idx % gbl_models.nz) * gbl_models.nm + idx // gbl_models.nz
     if 'sfh.age' in sed.info and sed.info['sfh.age'] > sed.info['universe.age']:
-        gbl_models.fluxes[:, idx] = np.full(len(gbl_obs.bands), np.nan)
-        gbl_models.properties[:, idx] = np.full(len(gbl_properties), np.nan)
+        for band in gbl_models.flux:
+            gbl_models.flux[band][idx] = np.nan
+        for prop in gbl_models.extprop:
+            gbl_models.extprop[prop][idx] = np.nan
+        for prop in gbl_models.intprop:
+            gbl_models.intprop[prop][idx] = np.nan
     else:
-        gbl_models.fluxes[:, idx] = [sed.compute_fnu(filter_)
-                                     for filter_ in gbl_obs.bands]
-        gbl_models.properties[:, idx] = [sed.info[name]
-                                         for name in gbl_properties]
+        for band in gbl_models.flux:
+            gbl_models.flux[band][idx] = sed.compute_fnu(band)
+        for prop in gbl_models.extprop:
+            gbl_models.extprop[prop][idx] = sed.info[prop]
+        for prop in gbl_models.intprop:
+            gbl_models.intprop[prop][idx] = sed.info[prop]
+    gbl_models.index[idx] = midx
 
-    with gbl_ncomputed.get_lock():
-        gbl_ncomputed.value += 1
-        ncomputed = gbl_ncomputed.value
-    nmodels = len(gbl_models.block)
-    if ncomputed % 250 == 0 or ncomputed == nmodels:
-        dt = time.time() - gbl_t0
-        print("{}/{} models computed in {:.1f} seconds ({:.1f} models/s)".
-              format(ncomputed, nmodels, dt, ncomputed/dt),
-              end="\n" if ncomputed == nmodels else "\r")
+    gbl_counter.inc()
+
 
 def analysis(idx, obs):
     """Worker process to analyse the PDF and estimate parameters values and
@@ -157,63 +135,84 @@ def analysis(idx, obs):
     """
     np.seterr(invalid='ignore')
 
-    if obs['redshift'] >= 0.:
+    if obs.redshift >= 0.:
         # We pick the the models with the closest redshift using a slice to
         # work on views of the arrays and not on copies to save on RAM.
-        z = np.array(gbl_models.conf['sed_modules_params']['redshifting']['redshift'])
-        wz = slice(np.abs(obs['redshift']-z).argmin(), None, z.size)
-        corr_dz = compute_corr_dz(z[wz.start], obs['redshift'])
+        z = np.array(
+            gbl_models.conf['sed_modules_params']['redshifting']['redshift'])
+        length = gbl_models.nm
+        zidx = np.abs(obs.redshift-z).argmin()
+        wz = slice(zidx * length, (zidx + 1) * length, 1)
+        corr_dz = compute_corr_dz(z[zidx], obs)
     else:  # We do not know the redshift so we use the full grid
         wz = slice(0, None, 1)
         corr_dz = 1.
 
-    obs_fluxes = np.array([obs[name] for name in gbl_models.obs.bands])
-    obs_errors = np.array([obs[name + "_err"] for name in
-                           gbl_models.obs.bands])
-    chi2, scaling = compute_chi2(gbl_models.fluxes[:, wz], obs_fluxes,
-                                 obs_errors, gbl_models.conf['analysis_params']['lim_flag'])
+    chi2, scaling = compute_chi2(gbl_models, obs, corr_dz, wz,
+                                 gbl_models.conf['analysis_params']['lim_flag'])
 
-    if np.any(np.isfinite(chi2)):
+    if np.any(chi2 < -np.log(np.finfo(np.float64).tiny) * 2.):
         # We use the exponential probability associated with the χ² as
         # likelihood function.
-        likelihood = np.exp(-chi2 / 2.)
-        gbl_results.bayes.weights[idx] = np.nansum(likelihood)
+        likelihood = np.exp(-.5 * chi2)
+        wlikely = np.where(np.isfinite(likelihood))
+        # If all the models are valid, it is much more efficient to use a slice
+        if likelihood.size == wlikely[0].size:
+            wlikely = slice(None, None)
+        likelihood = likelihood[wlikely]
+        scaling_l = scaling[wlikely]
+
+        gbl_results.bayes.weight[idx] = np.nansum(likelihood)
+        likelihood *= 1. / gbl_results.bayes.weight[idx]
 
         # We compute the weighted average and standard deviation using the
         # likelihood as weight.
-        for i, variable in enumerate(gbl_results.bayes.propertiesnames):
-            if variable.endswith('_log'):
-                variable = variable[:-4]
+        for prop in gbl_results.bayes.intmean:
+            if prop.endswith('_log'):
+                values = gbl_models.intprop[prop[:-4]][wz]
                 _ = np.log10
             else:
+                values = gbl_models.intprop[prop][wz]
                 _ = lambda x: x
+            mean, std = weighted_param(_(values[wlikely]), likelihood)
+            gbl_results.bayes.intmean[prop][idx] = mean
+            gbl_results.bayes.interror[prop][idx] = std
+            if (gbl_models.conf['analysis_params']['save_chi2'] in
+                ['all', 'properties']):
+                save_chi2(obs, prop, gbl_models, chi2, _(values))
 
-            if variable in gbl_results.bayes.massproportional:
-                values = _(gbl_models.properties[i, wz] * scaling * corr_dz)
+        for prop in gbl_results.bayes.extmean:
+            if prop.endswith('_log'):
+                values = gbl_models.extprop[prop[:-4]][wz]
+                _ = np.log10
             else:
-                values = _(gbl_models.properties[i, wz])
+                values = gbl_models.extprop[prop][wz]
+                _ = lambda x: x
+            mean, std = weighted_param(_(values[wlikely] * scaling_l * corr_dz),
+                                       likelihood)
+            gbl_results.bayes.extmean[prop][idx] = mean
+            gbl_results.bayes.exterror[prop][idx] = std
+            if (gbl_models.conf['analysis_params']['save_chi2'] in
+                ['all', 'properties']):
+                save_chi2(obs, prop, gbl_models, chi2,
+                          _(values * scaling * corr_dz))
 
-            mean, std = weighted_param(values, likelihood)
-            gbl_results.bayes.means[idx, i] = mean
-            gbl_results.bayes.errors[idx, i] = std
-            if gbl_models.conf['analysis_params']['save_chi2'] is True:
-                save_chi2(obs, variable, gbl_models, chi2, values)
+        for band in gbl_results.bayes.fluxmean:
+            values = gbl_models.flux[band][wz]
+            mean, std = weighted_param(values[wlikely] * scaling_l,
+                                       likelihood)
+            gbl_results.bayes.fluxmean[band][idx] = mean
+            gbl_results.bayes.fluxerror[band][idx] = std
+            if (gbl_models.conf['analysis_params']['save_chi2'] in
+                ['all', 'fluxes']):
+                save_chi2(obs, band, gbl_models, chi2, values * scaling)
+
         best_idx_z = np.nanargmin(chi2)
         gbl_results.best.chi2[idx] = chi2[best_idx_z]
-        gbl_results.best.index[idx] = (wz.start + best_idx_z*wz.step +
-                                       gbl_models.block.start)
-    else:
-        # It sometimes happens because models are older than the Universe's age
-        print("No suitable model found for the object {}. One possible origin "
-              "is that models are older than the Universe.".format(obs['id']))
+        gbl_results.best.scaling[idx] = scaling[best_idx_z]
+        gbl_results.best.index[idx] = gbl_models.index[wz][best_idx_z]
 
-    with gbl_ncomputed.get_lock():
-        gbl_ncomputed.value += 1
-        ncomputed = gbl_ncomputed.value
-    dt = time.time() - gbl_t0
-    print("{}/{} objects analysed in {:.1f} seconds ({:.2f} objects/s)".
-          format(ncomputed, len(gbl_models.obs), dt, ncomputed/dt),
-          end="\n" if ncomputed == len(gbl_models.obs) else "\r")
+    gbl_counter.inc()
 
 def bestfit(oidx, obs):
     """Worker process to compute and save the best fit.
@@ -229,39 +228,49 @@ def bestfit(oidx, obs):
     """
     np.seterr(invalid='ignore')
 
-    best_index = int(gbl_results.best.index[oidx])
-    global gbl_previous_idx
-    if gbl_previous_idx > -1:
-        gbl_warehouse.partial_clear_cache(
-            gbl_params.index_module_changed(gbl_previous_idx, best_index))
-    gbl_previous_idx = best_index
+    if np.isfinite(gbl_results.best.index[oidx]):
+        best_index = int(gbl_results.best.index[oidx])
 
-    # We compute the model at the exact redshift not to have to correct for the
-    # difference between the object and the grid redshifts.
-    params = deepcopy(gbl_params.from_index(best_index))
-    params[-1]['redshift'] = obs['redshift']
-    sed = gbl_warehouse.get_sed(gbl_params.modules, params)
+        # We compute the model at the exact redshift not to have to correct for
+        # the difference between the object and the grid redshifts.
+        params = deepcopy(gbl_params.from_index(best_index))
+        if obs.redshift >= 0.:
+            model_z = params[gbl_params.modules.index('redshifting')]['redshift']
+            params[gbl_params.modules.index('redshifting')]['redshift'] = obs.redshift
+            # Correct fluxes for the fact that the scaling factor was computed
+            # on the grid redshift. Because of the difference in redshift the
+            # distance is different and must be reflected in the scaling
+            corr_scaling = compute_corr_dz(model_z, obs) / \
+                           compute_corr_dz(obs.redshift, obs)
+        else:  # The model redshift is always exact in redhisfting mode
+            corr_scaling = 1.
 
-    fluxes = np.array([sed.compute_fnu(filt) for filt in gbl_obs.bands])
-    obs_fluxes = np.array([obs[name] for name in gbl_obs.bands])
-    obs_errors = np.array([obs[name + '_err'] for name in gbl_obs.bands])
-    _, scaling = compute_chi2(fluxes[:, None], obs_fluxes, obs_errors,
-                              gbl_conf['analysis_params']['lim_flag'])
+        sed = deepcopy(gbl_warehouse.get_sed(gbl_params.modules, params))
 
-    gbl_results.best.properties[oidx, :] = [sed.info[k] for k in
-                                            gbl_results.best.propertiesnames]
-    iprop = [i for i, k in enumerate(gbl_results.best.propertiesnames)
-             if k in gbl_results.best.massproportional]
-    gbl_results.best.properties[oidx, iprop] *= scaling
-    gbl_results.best.fluxes[oidx, :] = fluxes * scaling
+        # Handle the case where the distance does not correspond to the redshift.
+        if obs.redshift >= 0.:
+            corr_dz = (obs.distance / sed.info['universe.luminosity_distance']) ** 2
+        else:
+            corr_dz = 1.
 
-    if gbl_conf['analysis_params']["save_best_sed"]:
-        sed.to_fits('out/{}'.format(obs['id']), scaling)
+        scaling = gbl_results.best.scaling[oidx] * corr_scaling
 
-    with gbl_ncomputed.get_lock():
-        gbl_ncomputed.value += 1
-        ncomputed = gbl_ncomputed.value
-    dt = time.time() - gbl_t0
-    print("{}/{} best fit spectra computed in {:.1f} seconds ({:.2f} objects/s)".
-          format(ncomputed, len(gbl_obs), dt, ncomputed/dt), end="\n" if
-          ncomputed == len(gbl_obs) else "\r")
+        for band in gbl_results.best.flux:
+            gbl_results.best.flux[band][oidx] = sed.compute_fnu(band) * scaling
+
+        # If the distance is user defined, the redshift-based luminosity distance
+        # of the model is probably incorrect so we replace it
+        if np.isfinite(obs.distance):
+            sed.add_info('universe.luminosity_distance', obs.distance,
+                         force=True)
+        for prop in gbl_results.best.intprop:
+            gbl_results.best.intprop[prop][oidx] = sed.info[prop]
+
+        for prop in gbl_results.best.extprop:
+            gbl_results.best.extprop[prop][oidx] = sed.info[prop] * scaling \
+                                                       * corr_dz
+
+        if gbl_conf['analysis_params']["save_best_sed"]:
+            sed.to_fits(f"out/{obs.id}", scaling * corr_dz)
+
+    gbl_counter.inc()

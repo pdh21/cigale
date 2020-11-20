@@ -73,7 +73,10 @@ class SfhPeriodic(SedModule):
         self.tau_bursts = float(self.parameters["tau_bursts"])
         age = int(self.parameters["age"])
         sfr_A = float(self.parameters["sfr_A"])
-        normalise = bool(self.parameters["normalise"])
+        if type(self.parameters["normalise"]) is str:
+            normalise = self.parameters["normalise"].lower() == 'true'
+        else:
+            normalise = bool(self.parameters["normalise"])
 
         time_grid = np.arange(0, age)
         self.sfr = np.zeros_like(time_grid, dtype=np.float)
@@ -87,7 +90,7 @@ class SfhPeriodic(SedModule):
             burst = np.zeros_like(time_grid)
             burst[:int(self.tau_bursts)+1] = 1.
         else:
-            raise Exception("Burst type {} unknown.".format(self.type_bursts))
+            raise Exception(f"Burst type {self.type_bursts} unknown.")
 
         for t_burst in np.arange(0, age, self.delta_bursts):
             self.sfr += burst
@@ -117,10 +120,11 @@ class SfhPeriodic(SedModule):
         sed.add_module(self.name, self.parameters)
 
         sed.sfh = self.sfr
-        sed.add_info("sfh.integrated", self.sfr_integrated, True)
+        sed.add_info("sfh.integrated", self.sfr_integrated, True,
+                     unit='solMass')
         sed.add_info("sfh.type_bursts", self.type_bursts)
         sed.add_info("sfh.delta_bursts", self.delta_bursts)
-        sed.add_info("sfh.tau_bursts", self.tau_bursts)
+        sed.add_info("sfh.tau_bursts", self.tau_bursts, unit='Myr')
 
 
 # SedModule to be returned by get_module
