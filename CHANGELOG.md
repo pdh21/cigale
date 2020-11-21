@@ -15,6 +15,7 @@
 - A run with an already existing `out/` directory led to a crash under Microsoft Windows. This was due to renaming `out/` to add the time with hours, minutes, and second separated by a colon. This is not allowed on this platform. The renamed directory has not been made compact and does not use colons anymore. (Médéric Boquien, reported by Samir Salim)
 - The units of line fluxes were not always correct for Bayesian estimates. (Médéric Boquien, reported by Katarzyna Małek)
 - An input redshift of integer type caused `pcigale-plots sed` to crash because it could not be formatted as a float. It is now explicitly converted to a float for safety. (Médéric Boquien)
+- SED plots could not be generated for runs without a dust attenuation module as `pcigale-plots sed` assumed there would be one. This case is now handled. (Médéric Boquien)
 ### Optimised
 - The estimation of the physical properties and the related uncertainties has been made up to 50% faster. The final gain in the analysis speed accounting for all the steps depends on the number of properties to be evaluated and the number of models but can be over 25% when estimating many properties over a large parameter space. (Médéric Boquien)
 - Invalid models (e.g., when the stellar populations are older than the universe) are now ignored when handling upper limits. The speedup is very variable but can be substantial in case there are many invalid models. (Médéric Boquien)

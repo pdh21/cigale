@@ -168,26 +168,21 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
             # Stellar emission
             if ('stellar_attenuated' in series
                 and 'stellar.young' in sed.columns):
-                if 'nebular.absorption_young' in sed.columns:
-                    ax1.loglog(wavelength_spec[wsed],
-                               (sed['stellar.young'][wsed] +
-                                sed['attenuation.stellar.young'][wsed] +
-                                sed['nebular.absorption_young'][wsed] +
-                                sed['stellar.old'][wsed] +
-                                sed['attenuation.stellar.old'][wsed] +
-                                sed['nebular.absorption_old'][wsed]),
-                               label="Stellar attenuated", color='gold',
-                               marker=None, nonposy='clip', linestyle='-',
-                               linewidth=1.0)
-                else:
-                    ax1.loglog(wavelength_spec[wsed],
-                               (sed['stellar.young'][wsed] +
-                                sed['attenuation.stellar.young'][wsed] +
-                                sed['stellar.old'][wsed] +
-                                sed['attenuation.stellar.old'][wsed]),
-                               label="Stellar attenuated", color='gold',
-                               marker=None, nonposy='clip', linestyle='-',
-                               linewidth=1.0)
+                spectrum = (sed['stellar.young'][wsed] +
+                            sed['stellar.old'][wsed])
+
+                if 'nebular.absoroption_young' in sed.columns:
+                    spectrum += sed['nebular.absortion_young'][wsed]
+                    spectrum += sed['nebular.absorption_old'][wsed]
+
+                if 'attenuation.stellar.young' in sed.columns:
+                    spectrum += sed['attenuation.stellar.young'][wsed]
+                    spectrum += sed['attenuation.stellar.old'][wsed]
+
+                ax1.loglog(wavelength_spec[wsed], spectrum,
+                           label="Stellar attenuated", color='gold',
+                           marker=None, nonpositive='clip', linestyle='-',
+                           linewidth=1.0)
 
             if ('stellar_unattenuated' in series
                 and 'stellar.young' in sed.columns):
@@ -200,15 +195,18 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
 
             # Nebular emission
             if 'nebular' in series and 'nebular.lines_young' in sed.columns:
-                ax1.loglog(wavelength_spec[wsed],
-                           (sed['nebular.lines_young'][wsed] +
+                spectrum = (sed['nebular.lines_young'][wsed] +
                             sed['nebular.lines_old'][wsed] +
                             sed['nebular.continuum_young'][wsed] +
-                            sed['nebular.continuum_old'][wsed] +
-                            sed['attenuation.nebular.lines_young'][wsed] +
-                            sed['attenuation.nebular.lines_old'][wsed] +
-                            sed['attenuation.nebular.continuum_young'][wsed] +
-                            sed['attenuation.nebular.continuum_old'][wsed]),
+                            sed['nebular.continuum_old'][wsed])
+
+                if 'attenuation.nebular.lines_young' in sed.columns:
+                    spectrum += sed['attenuation.nebular.lines_young'][wsed]
+                    spectrum += sed['attenuation.nebular.lines_old'][wsed]
+                    spectrum += sed['attenuation.nebular.continuum_young'][wsed]
+                    spectrum += sed['attenuation.nebular.continuum_old'][wsed]
+
+                ax1.loglog(wavelength_spec[wsed], spectrum,
                            label="Nebular emission", color='xkcd:true green',
                            marker=None, nonposy='clip', linewidth=1.0)
 
