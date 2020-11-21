@@ -127,9 +127,9 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                                if "best."+filt in mod.colnames else np.nan
                                for filt in filters.keys()])
         if obs['redshift'] >= 0:
-            z = obs['redshift']
+            z = float(obs['redshift'])
         else:  # Redshift mode
-            z = mod['best.universe.redshift']
+            z = float(mod['best.universe.redshift'])
         zp1 = 1. + z
         surf = 4. * np.pi * mod['best.universe.luminosity_distance'] ** 2
 
