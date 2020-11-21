@@ -191,7 +191,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                             sed['stellar.young'][wsed]),
                            label="Stellar unattenuated",
                            color='xkcd:deep sky blue', marker=None,
-                           nonposy='clip', linestyle='--', linewidth=1.0)
+                           nonpositive='clip', linestyle='--', linewidth=1.0)
 
             # Nebular emission
             if 'nebular' in series and 'nebular.lines_young' in sed.columns:
@@ -208,7 +208,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
 
                 ax1.loglog(wavelength_spec[wsed], spectrum,
                            label="Nebular emission", color='xkcd:true green',
-                           marker=None, nonposy='clip', linewidth=1.0)
+                           marker=None, nonpositive='clip', linewidth=1.0)
 
             # Dust emission Draine & Li
             if 'dust' in series and 'dust.Umin_Umin' in sed.columns:
@@ -216,14 +216,14 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                            (sed['dust.Umin_Umin'][wsed] +
                             sed['dust.Umin_Umax'][wsed]),
                            label="Dust emission", color='xkcd:bright red',
-                           marker=None, nonposy='clip', linestyle='-',
+                           marker=None, nonpositive='clip', linestyle='-',
                            linewidth=1.0)
 
             # Dust emission Dale
             if 'dust' in series and 'dust' in sed.columns:
                 ax1.loglog(wavelength_spec[wsed], sed['dust'][wsed],
                            label="Dust emission", color='xkcd:bright red',
-                           marker=None, nonposy='clip', linestyle='-',
+                           marker=None, nonpositive='clip', linestyle='-',
                            linewidth=1.0)
 
             # AGN emission Fritz
@@ -233,7 +233,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                             sed['agn.fritz2006_scatt'][wsed] +
                             sed['agn.fritz2006_agn'][wsed]),
                            label="AGN emission", color='xkcd:apricot',
-                           marker=None, nonposy='clip', linestyle='-',
+                           marker=None, nonpositive='clip', linestyle='-',
                            linewidth=1.0)
 
             # AGN emission SKIRTOR
@@ -242,7 +242,7 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                            (sed['agn.SKIRTOR2016_dust'][wsed] +
                             sed['agn.SKIRTOR2016_disk'][wsed]),
                            label="AGN emission", color='xkcd:apricot',
-                           marker=None, nonposy='clip', linestyle='-',
+                           marker=None, nonpositive='clip', linestyle='-',
                            linewidth=1.0)
 
             # Radio emission
@@ -250,13 +250,13 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                 ax1.loglog(wavelength_spec[wsed],
                            sed['radio_nonthermal'][wsed],
                            label="Radio nonthermal", color='brown',
-                           marker=None, nonposy='clip', linestyle='-',
+                           marker=None, nonpositive='clip', linestyle='-',
                            linewidth=1.0)
 
             if 'model' in series:
                 ax1.loglog(wavelength_spec[wsed], sed['L_lambda_total'][wsed],
-                           label="Model spectrum", color='k', nonposy='clip',
-                           linestyle='-', linewidth=1.5)
+                           label="Model spectrum", color='k',
+                           nonpositive='clip', linestyle='-', linewidth=1.5)
 
             ax1.set_autoscale_on(False)
             s = np.argsort(filters_wl)
