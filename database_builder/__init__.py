@@ -760,7 +760,7 @@ def build_nebular(base):
 
     # Convert wavelength from Å to nm
     wave_lines *= 0.1
-    wave_cont = cont[:3729, 0] * 0.1
+    wave_cont = cont[:1600, 0] * 0.1
 
     # Get the list of metallicities
     metallicities = np.unique(lines[:, 1])
@@ -782,7 +782,7 @@ def build_nebular(base):
 
     # Import lines
     for idx, metallicity in enumerate(metallicities):
-        spectra = lines[idx::6, :]
+        spectra = lines[idx::25, :]
         for logU, spectrum in zip(np.around(np.arange(-4., -.9, .1), 1),
                                   spectra.T):
             models_lines.append(NebularLines(metallicity, logU, name_lines,
@@ -790,7 +790,7 @@ def build_nebular(base):
 
     # Import continuum
     for idx, metallicity in enumerate(metallicities):
-        spectra = cont[3729 * idx: 3729 * (idx+1), :]
+        spectra = cont[1600 * idx: 1600 * (idx+1), :]
         for logU, spectrum in zip(np.around(np.arange(-4., -.9, .1), 1),
                                   spectra.T):
             models_cont.append(NebularContinuum(metallicity, logU, wave_cont,
