@@ -65,6 +65,14 @@ class NebularEmission(SedModule):
             "Ionisation parameter",
             -2.
         )),
+        ('zgas', (
+            'cigale_list(options=0.0001 & 0.0004 & 0.001 & 0.002 & 0.0025 & '
+            '0.003 & 0.004 & 0.005 & 0.006 & 0.007 & 0.008 & 0.009 & 0.011 & '
+            '0.012 & 0.014 & 0.016 & 0.019 & 0.022 & 0.025 & 0.03 & 0.033 & '
+            '0.037 & 0.041 & 0.046 & 0.051)',
+            "Gas metallicity",
+            0.02
+        )),
         ('f_esc', (
             'cigale_list(minvalue=0., maxvalue=1.)',
             "Fraction of Lyman continuum photons escaping the galaxy",
@@ -92,6 +100,7 @@ class NebularEmission(SedModule):
            them to see the line profile. Compute scaling coefficients.
         """
         self.logU = float(self.parameters['logU'])
+        self.zgas = float(self.parameters['zgas'])
         self.fesc = float(self.parameters['f_esc'])
         self.fdust = float(self.parameters['f_dust'])
         self.lines_width = float(self.parameters['lines_width'])
@@ -191,13 +200,14 @@ class NebularEmission(SedModule):
             NLy_old = sed.info['stellar.n_ly_old']
             NLy_young = sed.info['stellar.n_ly_young']
             NLy_tot = NLy_old + NLy_young
-            metallicity = sed.info['stellar.metallicity']
+            metallicity = self.zgas
             lines = self.lines_template[metallicity]
             linesdict = self.linesdict[metallicity]
             cont = self.cont_template[metallicity]
 
             sed.add_info('nebular.lines_width', self.lines_width, unit='km/s')
             sed.add_info('nebular.logU', self.logU)
+            sed.add_info('nebular.zgas', self.zgas)
 
             for line in default_lines:
                 wave, ratio = linesdict[line]
