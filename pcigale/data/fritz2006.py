@@ -13,7 +13,7 @@ class Fritz2006(object):
     """
 
     def __init__(self, r_ratio, tau, beta, gamma, opening_angle, psy, wave,
-                 lumin_therm, lumin_scatt, lumin_agn, lumin_intrin_agn):
+                 lumin_therm, lumin_scatt, lumin_agn):
         """Create a new AGN model
 
         Parameters
@@ -42,4 +42,3 @@ class Fritz2006(object):
         self.lumin_therm = lumin_therm
         self.lumin_scatt = lumin_scatt
         self.lumin_agn = lumin_agn
-        self.lumin_intrin_agn = lumin_intrin_agn
