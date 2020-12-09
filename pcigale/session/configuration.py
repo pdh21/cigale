@@ -36,17 +36,28 @@ class Configuration(object):
             Name of the configuration file (pcigale.conf by default).
 
         """
-        self.spec = configobj.ConfigObj(filename+'.spec',
-                                        write_empty_values=True,
-                                        indent_type='  ',
-                                        encoding='UTF8',
-                                        list_values=False,
-                                        _inspec=True)
-        self.config = configobj.ConfigObj(filename,
-                                          write_empty_values=True,
-                                          indent_type='  ',
-                                          encoding='UTF8',
-                                          configspec=self.spec)
+        # We should never be in the case when there is a pcigale.ini but no
+        # pcigale.ini.spec. While this seems to work when doing the pcigale
+        # genconf, it actually generates an incorrect pcigale.ini.spec. The only
+        # clean solution is to rebuild both files.
+        if os.path.isfile(filename) and not os.path.isfile(filename+'.spec'):
+            raise Exception("The pcigale.ini.spec file appears to be missing. "
+                            "Please delete the pcigale.ini file and regenrate "
+                            "it with 'pcigale init' and then 'pcigale genconf' "
+                            "after having filled the initial pcigale.ini "
+                            "template.")
+        else:
+            self.spec = configobj.ConfigObj(filename+'.spec',
+                                            write_empty_values=True,
+                                            indent_type='  ',
+                                            encoding='UTF8',
+                                            list_values=False,
+                                            _inspec=True)
+            self.config = configobj.ConfigObj(filename,
+                                              write_empty_values=True,
+                                              indent_type='  ',
+                                              encoding='UTF8',
+                                              configspec=self.spec)
 
         # We validate the configuration so that the variables are converted to
         # the expected that. We do not handle errors at the point but only when
@@ -275,9 +286,6 @@ class Configuration(object):
             sys.exit(1)
 
         self.complete_redshifts()
-        # Add alpha_ox parameters when xray module is used
-        if 'xray' in self.config.items()[2][1]:
-            self.complete_xray()
         self.complete_analysed_parameters()
 
         vdt = validate.Validator(validation.functions)
@@ -369,12 +377,6 @@ class Configuration(object):
             else:
                 raise Exception("No flux file and no redshift indicated. "
                                 "The spectra cannot be computed. Aborting.")
-
-    def complete_xray(self):
-        """Add alpha_ox for internal usage.
-        """
-        self.config['sed_modules_params']['xray']['alpha_ox'] = \
-                [-1.9, -1.8, -1.7, -1.6, -1.5, -1.4, -1.3, -1.2, -1.1]
 
     def complete_analysed_parameters(self):
         """Complete the configuration when the variables are missing from the

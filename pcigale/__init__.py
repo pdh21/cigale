@@ -46,8 +46,9 @@ def check(config):
     configuration = config.configuration
 
     if configuration:
+        pm = ParametersManager(configuration)
         print(f"With this configuration cigale will compute "
-              f"{ParametersManager(configuration).size} models.")
+              f"{pm.size} models ({pm.size // pm.shape[-1]} per redshift).")
 
 
 def run(config):

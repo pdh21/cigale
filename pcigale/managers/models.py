@@ -40,7 +40,7 @@ class ModelsManager(object):
         if 'xray' in self.params.modules:
             if 'xray.alpha_ox' not in props_nolog: props_nolog.add('xray.alpha_ox')
             if 'xray.max_dev_alpha_ox' not in props_nolog: props_nolog.add('xray.max_dev_alpha_ox')
-            if 'agn.intrin_Lnu_2500A' not in props_nolog: props_nolog.add('agn.intrin_Lnu_2500A')
+            if 'agn.intrin_Lnu_2500A_30deg' not in props_nolog: props_nolog.add('agn.intrin_Lnu_2500A_30deg')
 
         self.intpropnames = (self.allintpropnames & set(obs.intprops) |
                              self.allintpropnames & props_nolog)

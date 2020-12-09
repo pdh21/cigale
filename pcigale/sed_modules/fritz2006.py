@@ -171,15 +171,17 @@ class Fritz2006(SedModule):
         self.EBV = float(self.parameters["EBV"])
         self.temperature = float(self.parameters["temperature"])
         self.emissivity = float(self.parameters["emissivity"])
+        if self.fracAGN == 1.:
+            raise ValueError("AGN fraction is exactly 1. Behaviour undefined.")
 
         with Database() as base:
             self.fritz2006 = base.get_fritz2006(self.r_ratio, self.tau,
                                                 self.beta, self.gamma,
                                                 self.opening_angle, self.psy)
-        self.l_agn_scatt = np.trapz(self.fritz2006.lumin_scatt,
-                                    x=self.fritz2006.wave)
-        self.l_agn_agn = np.trapz(self.fritz2006.lumin_agn,
-                                  x=self.fritz2006.wave)
+        self.fritz2006.lumin_disk = (self.fritz2006.lumin_scatt +
+                                     self.fritz2006.lumin_agn)
+        self.l_agn_disk = np.trapz(self.fritz2006.lumin_disk,
+                                   x=self.fritz2006.wave)
 
         # Apply wavelength cut to avoid X-ray wavelength
         lam_cut = 10**0.9
@@ -189,8 +191,7 @@ class Fritz2006(SedModule):
             np.trapz(self.fritz2006.lumin_intrin_agn[lam_idxs], x=self.fritz2006.wave[lam_idxs])
         # Perform the cut
         self.fritz2006.wave = self.fritz2006.wave[lam_idxs]
-        self.fritz2006.lumin_agn = self.fritz2006.lumin_agn[lam_idxs]*norm_fac
-        self.fritz2006.lumin_scatt = self.fritz2006.lumin_scatt[lam_idxs]*norm_fac
+        self.fritz2006.lumin_disk = self.fritz2006.lumin_disk[lam_idxs]*norm_fac
         self.fritz2006.lumin_therm  = self.fritz2006.lumin_therm[lam_idxs]
         self.fritz2006.lumin_intrin_agn = self.fritz2006.lumin_intrin_agn[lam_idxs]*norm_fac
 
@@ -198,21 +199,18 @@ class Fritz2006(SedModule):
         # We define various constants necessary to compute the model
         self.c = cst.c * 1e9
         lambda_0 = 200e3
-        # Calculate the extinction (SMC)
-        # The analytical formula is from Bongiorno+2012
+        # Calculate the polar-dust extinction
         k_lam = k_ext(self.fritz2006.wave, self.law)
         A_lam = k_lam * self.EBV
         # The extinction factor, flux_1/flux_0
         ext_fac = 10**(A_lam/-2.5)
         # Calculate the new AGN SED shape after extinction
         if self.psy > (90-self.opening_angle):
-            # The direct and scattered components (line-of-sight) are extincted for type-1 AGN
-            lumin_agn_new = self.fritz2006.lumin_agn * ext_fac
-            lumin_scatt_new = self.fritz2006.lumin_scatt * ext_fac
+            # The disk components (line-of-sight) are extincted for type-1 AGN
+            lumin_disk_new = self.fritz2006.lumin_disk * ext_fac
         else:
-            # Keep the direct and scatter components for type-2
-            lumin_agn_new = self.fritz2006.lumin_agn
-            lumin_scatt_new = self.fritz2006.lumin_scatt
+            # Keep the disk components for type-2
+            lumin_disk_new = self.fritz2006.lumin_disk
         # Calculate the total extincted luminosity averaged over all directions
         # note that self.opening_angle is different from Fritz's definiting!
         l_ext = np.trapz(self.fritz2006.lumin_intrin_agn * (1-ext_fac),
@@ -234,90 +232,15 @@ class Fritz2006(SedModule):
         lumin_therm_new = self.fritz2006.lumin_therm + lumin_blackbody
         # Normalize direct, scatter, and thermal components
         norm = np.trapz(lumin_therm_new, x=self.fritz2006.wave)
-        lumin_therm_new /= norm
-        lumin_scatt_new /= norm
-        lumin_agn_new /= norm
+        lumin_therm_new *= 1./norm
+        lumin_disk_new *= 1./norm
         # Update fritz2006 lumin
         self.fritz2006.lumin_therm = lumin_therm_new
-        self.fritz2006.lumin_scatt = lumin_scatt_new
-        self.fritz2006.lumin_agn = lumin_agn_new
-        self.fritz2006.lumin_intrin_agn /= norm
+        self.fritz2006.lumin_disk = lumin_disk_new
+        self.fritz2006.lumin_intrin_agn *= 1./norm
 
         # Integrate AGN luminosity for different components
-        self.l_agn_scatt = np.trapz(self.fritz2006.lumin_scatt, x=self.fritz2006.wave)
-        self.l_agn_agn = np.trapz(self.fritz2006.lumin_agn, x=self.fritz2006.wave)
-        # Intrinsic (de-reddened) AGN luminosity from the central source
-        self.l_agn_intrin_agn = np.trapz(self.fritz2006.lumin_intrin_agn, x=self.fritz2006.wave)
-        # Calculate L_lam(2500A)
-        self.l_agn_2500A = np.interp(250, self.fritz2006.wave, self.fritz2006.lumin_intrin_agn)
-        # Convert L_lam to L_nu
-        self.l_agn_2500A *= 250**2/self.c
-
-        # Apply wavelength cut to avoid X-ray wavelength
-        lam_cut = 10**0.9
-        lam_idxs = self.fritz2006.wave>=lam_cut
-        # Calculate the re-normalization factor to keep energy conservation
-        norm_fac = np.trapz(self.fritz2006.lumin_intrin_agn, x=self.fritz2006.wave) /\
-            np.trapz(self.fritz2006.lumin_intrin_agn[lam_idxs], x=self.fritz2006.wave[lam_idxs])
-        # Perform the cut
-        self.fritz2006.wave = self.fritz2006.wave[lam_idxs]
-        self.fritz2006.lumin_agn = self.fritz2006.lumin_agn[lam_idxs]*norm_fac
-        self.fritz2006.lumin_scatt = self.fritz2006.lumin_scatt[lam_idxs]*norm_fac
-        self.fritz2006.lumin_therm  = self.fritz2006.lumin_therm[lam_idxs]
-        self.fritz2006.lumin_intrin_agn = self.fritz2006.lumin_intrin_agn[lam_idxs]*norm_fac
-
-        # Apply polar-dust obscuration
-        # We define various constants necessary to compute the model
-        self.c = cst.c * 1e9
-        lambda_0 = 200e3
-        # Calculate the extinction (SMC)
-        # The analytical formula is from Bongiorno+2012
-        k_lam = k_ext(self.fritz2006.wave, self.law)
-        A_lam = k_lam * self.EBV
-        # The extinction factor, flux_1/flux_0
-        ext_fac = 10**(A_lam/-2.5)
-        # Calculate the new AGN SED shape after extinction
-        if self.psy > (90-self.opening_angle):
-            # The direct and scattered components (line-of-sight) are extincted for type-1 AGN
-            lumin_agn_new = self.fritz2006.lumin_agn * ext_fac
-            lumin_scatt_new = self.fritz2006.lumin_scatt * ext_fac
-        else:
-            # Keep the direct and scatter components for type-2
-            lumin_agn_new = self.fritz2006.lumin_agn
-            lumin_scatt_new = self.fritz2006.lumin_scatt
-        # Calculate the total extincted luminosity averaged over all directions
-        # note that self.opening_angle is different from Fritz's definiting!
-        l_ext = np.trapz(self.fritz2006.lumin_intrin_agn * (1-ext_fac),
-                         x=self.fritz2006.wave) * \
-                        (1 - np.cos( np.deg2rad(self.opening_angle) ))
-        # Casey (2012) modified black body model
-        conv = self.c / (self.fritz2006.wave * self.fritz2006.wave)
-        # To avoid inf occurance in exponential, set blackbody=0 when h*c/lam*k*T is large
-        hc_lkt = cst.h * self.c / (self.fritz2006.wave * cst.k * self.temperature)
-        non_0_idxs = hc_lkt<100
-        # Generate the blackbody
-        lumin_blackbody = np.zeros(len(self.fritz2006.wave))
-        lumin_blackbody[non_0_idxs] = conv[non_0_idxs] * \
-            (1. - np.exp(-(lambda_0 / self.fritz2006.wave[non_0_idxs])** self.emissivity)) * \
-            (self.c / self.fritz2006.wave[non_0_idxs]) ** 3. / \
-            (np.exp(hc_lkt[non_0_idxs]) - 1.)
-        lumin_blackbody *= l_ext / np.trapz(lumin_blackbody, x=self.fritz2006.wave)
-        # Add the black body to dust thermal emission
-        lumin_therm_new = self.fritz2006.lumin_therm + lumin_blackbody
-        # Normalize direct, scatter, and thermal components
-        norm = np.trapz(lumin_therm_new, x=self.fritz2006.wave)
-        lumin_therm_new /= norm
-        lumin_scatt_new /= norm
-        lumin_agn_new /= norm
-        # Update fritz2006 lumin
-        self.fritz2006.lumin_therm = lumin_therm_new
-        self.fritz2006.lumin_scatt = lumin_scatt_new
-        self.fritz2006.lumin_agn = lumin_agn_new
-        self.fritz2006.lumin_intrin_agn /= norm
-
-        # Integrate AGN luminosity for different components
-        self.l_agn_scatt = np.trapz(self.fritz2006.lumin_scatt, x=self.fritz2006.wave)
-        self.l_agn_agn = np.trapz(self.fritz2006.lumin_agn, x=self.fritz2006.wave)
+        self.l_agn_disk = np.trapz(self.fritz2006.lumin_disk, x=self.fritz2006.wave)
         # Intrinsic (de-reddened) AGN luminosity from the central source
         self.l_agn_intrin_agn = np.trapz(self.fritz2006.lumin_intrin_agn, x=self.fritz2006.wave)
         # Calculate L_lam(2500A)
@@ -349,37 +272,28 @@ class Fritz2006(SedModule):
         sed.add_info('agn.psy', self.psy, unit='deg')
         sed.add_info('agn.fracAGN', self.fracAGN)
         sed.add_info('agn.law', self.law)
-        sed.add_info('agn.EBV', self.EBV)
+        sed.add_info('agn.EBV', self.EBV, unit='mag')
         sed.add_info('agn.temperature', self.temperature, unit='K')
         sed.add_info('agn.emissivity', self.emissivity)
 
         # Compute the AGN luminosity
-        if self.fracAGN < 1.:
-            agn_power = luminosity * (1./(1.-self.fracAGN) - 1.)
-            l_agn_therm = agn_power
-            l_agn_scatt = agn_power * self.l_agn_scatt
-            l_agn_agn = agn_power * self.l_agn_agn
-            l_agn_total = l_agn_therm + l_agn_scatt + l_agn_agn
-            l_agn_intrin_agn = agn_power * self.l_agn_intrin_agn
-            l_agn_2500A = agn_power * self.l_agn_2500A
-        else:
-            raise Exception("AGN fraction is exactly 1. Behaviour "
-                            "undefined.")
+        agn_power = luminosity * (1./(1.-self.fracAGN) - 1.)
+        l_agn_dust = agn_power
+        l_agn_disk = agn_power * self.l_agn_disk
+        l_agn_total = l_agn_dust + l_agn_disk
+        l_agn_intrin_agn = agn_power * self.l_agn_intrin_agn
+        l_agn_2500A = agn_power * self.l_agn_2500A
 
-        sed.add_info('agn.therm_luminosity', l_agn_therm, True, unit='W')
-        sed.add_info('agn.scatt_luminosity', l_agn_scatt, True, unit='W')
-        sed.add_info('agn.disk_luminosity', l_agn_agn, True, unit='W')
+        sed.add_info('agn.dust_luminosity', l_agn_dust, True, unit='W')
+        sed.add_info('agn.disk_luminosity', l_agn_disk, True, unit='W')
         sed.add_info('agn.luminosity', l_agn_total, True, unit='W')
         sed.add_info('agn.accretion_power', l_agn_intrin_agn, True, unit='W')
-        sed.add_info('agn.intrin_Lnu_2500A', l_agn_2500A, True, unit='W/Hz')
+        sed.add_info('agn.intrin_Lnu_2500A_30deg', l_agn_2500A, True, unit='W/Hz')
 
-        sed.add_contribution('agn.fritz2006_therm', self.fritz2006.wave,
+        sed.add_contribution('agn.fritz2006_dust', self.fritz2006.wave,
                              agn_power * self.fritz2006.lumin_therm)
-        sed.add_contribution('agn.fritz2006_scatt', self.fritz2006.wave,
-                             agn_power * self.fritz2006.lumin_scatt)
-        sed.add_contribution('agn.fritz2006_agn', self.fritz2006.wave,
-                             agn_power * self.fritz2006.lumin_agn)
-
+        sed.add_contribution('agn.fritz2006_disk', self.fritz2006.wave,
+                             agn_power * self.fritz2006.lumin_disk)
 
 # SedModule to be returned by get_module
 Module = Fritz2006

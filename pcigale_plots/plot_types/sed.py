@@ -228,30 +228,28 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                            marker=None, nonposy='clip', linestyle='-',
                            linewidth=1.0)
 
-            # AGN emission Fritz
-            if 'agn' in series and 'agn.fritz2006_therm' in sed.columns:
+            # AGN emission
+            if 'agn' in series and ('agn.fritz2006_dust' in sed.columns or \
+                                    'agn.SKIRTOR2016_dust' in sed.columns):
+                if 'agn.fritz2006_dust' in sed.columns:
+                    agn_sed = sed['agn.fritz2006_dust'] + sed['agn.fritz2006_disk']
+                elif 'agn.SKIRTOR2016_dust' in sed.columns:
+                    agn_sed = sed['agn.SKIRTOR2016_dust'] + sed['agn.SKIRTOR2016_disk']
+                if 'xray.agn' in sed.columns:
+                    agn_sed += sed['xray.agn']
+                if 'radio.agn' in sed.columns:
+                    agn_sed += sed['radio.agn']
                 ax1.loglog(wavelength_spec[wsed],
-                           (sed['agn.fritz2006_therm'][wsed] +
-                            sed['agn.fritz2006_scatt'][wsed] +
-                            sed['agn.fritz2006_agn'][wsed]),
-                           label="AGN emission", color='xkcd:apricot',
-                           marker=None, nonposy='clip', linestyle='-',
-                           linewidth=1.0)
-
-            # AGN emission SKIRTOR
-            if 'agn' in series and 'agn.SKIRTOR2016_dust' in sed.columns:
-                ax1.loglog(wavelength_spec[wsed],
-                           (sed['agn.SKIRTOR2016_dust'][wsed] +
-                            sed['agn.SKIRTOR2016_disk'][wsed]),
+                           agn_sed[wsed],
                            label="AGN emission", color='xkcd:apricot',
                            marker=None, nonposy='clip', linestyle='-',
                            linewidth=1.0)
 
             # Radio emission
-            if 'radio' in series and 'radio_nonthermal' in sed.columns:
+            if 'radio' in series and 'radio.sf_nonthermal' in sed.columns:
                 ax1.loglog(wavelength_spec[wsed],
-                           sed['radio_nonthermal'][wsed],
-                           label="Radio nonthermal", color='brown',
+                           sed['radio.sf_nonthermal'][wsed],
+                           label="Radio SF nonthermal", color='brown',
                            marker=None, nonposy='clip', linestyle='-',
                            linewidth=1.0)
 

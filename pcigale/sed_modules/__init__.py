@@ -42,11 +42,6 @@ def complete_parameters(given_parameters, parameter_list):
         if (key not in given_parameters) and (
                 parameter_list[key][2] is not None):
             given_parameters[key] = parameter_list[key][2]
-    # alpha_ox is added internally to given_parameters
-    # Now, add it to parameter_list for consistency
-    if 'alpha_ox' in given_parameters:
-        parameter_list['alpha_ox'] = ('cigale_list()', 'power-law slope connecting L_nu at rest-frame 2500 A and 2 keV', \
-                                      given_parameters['alpha_ox'])
     # Check parameter consistency between the parameter list and the given
     # parameters.
     if not set(given_parameters) == set(parameter_list):

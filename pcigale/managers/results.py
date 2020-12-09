@@ -183,7 +183,9 @@ class BestResultsManager(object):
         # to the pool. Each worker will fill a part of the RawArrays. It is
         # important that there is no conflict and that two different workers do
         # not write on the same section.
-        self.flux = {band: SharedArray(nobs) for band in models.obs.bands}
+        fluxnames = list(dict.fromkeys(models.obs.bands +
+                                       models.conf['analysis_params']['bands']))
+        self.flux = {band: SharedArray(nobs) for band in fluxnames}
         allintpropnames = models.allintpropnames
         allextpropnames = models.allextpropnames
         self.intprop = {prop: SharedArray(nobs)
@@ -418,7 +420,7 @@ class ResultsManager(object):
                                     name="best."+prop,
                                     unit=Unit(self.unit[prop])))
 
-        for band in self.obs.bands:
+        for band in self.best.flux:
             if band.startswith('line.') or band.startswith('linefilter.'):
                 unit = 'W/m^2'
             else:
