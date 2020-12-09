@@ -254,6 +254,18 @@ def compute_chi2(models, obs, corr_dz, wz, lim_flag):
         model = models.flux[band][wz]
         chi2 += ((model * scaling - flux) * inv_flux_err) ** 2.
 
+    # Penalize det_alpha_ox which lie out of the user-set range
+    if 'xray' in models.params.modules:
+        # Get the model indice that have valid AGN component
+        agn_idxs = np.where( models.extprop['agn.intrin_Lnu_2500A'][wz]>0 )[0]
+        # Calculate expected alpha_ox from Lnu_2500 (Just et al. 2007)
+        exp_alpha_ox = -0.137*np.log10(models.extprop['agn.intrin_Lnu_2500A'][wz][agn_idxs]*1e7*scaling[agn_idxs])+2.638
+        # Calculate det_alpha_ox = alpha_ox - alpha_ox(Lnu_2500)
+        det_alpha_ox = models.intprop['xray.alpha_ox'][wz][agn_idxs] - exp_alpha_ox
+        # If det_alpha_ox out of range, set corresponding chi2 to nan
+        nan_idxs = agn_idxs[ np.abs(det_alpha_ox) > models.intprop['xray.max_dev_alpha_ox'][wz][agn_idxs] ]
+        chi2[nan_idxs] = np.nan
+
     # Computation of the χ² from intensive properties
     for name, prop in obs.intprop.items():
         model = models.intprop[name][wz]

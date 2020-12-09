@@ -38,7 +38,7 @@ class BayesResultsManager(object):
         intpropnames = [prop for prop in models.obs.conf['analysis_params']['variables']
                         if (prop in models.allintpropnames or
                             prop[:-4] in models.allintpropnames)]
-        fluxnames = [name for name in models.conf['analysis_params']['bands']]
+        fluxnames = [name for name in models.flux.keys()]
         self.nproperties = len(intpropnames) + len(extpropnames)
 
         # Arrays where we store the data related to the models. For memory

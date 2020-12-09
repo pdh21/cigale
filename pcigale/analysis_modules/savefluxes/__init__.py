@@ -64,7 +64,7 @@ class SaveFluxes(AnalysisModule):
             for idx, item in enumerate(items):
                 worker(idx, item)
         else:  # run in parallel
-            with mp.Pool(processes=ncores, initializer=initializer,
+            with mp.Pool(processes=int(ncores), initializer=initializer,
                          initargs=initargs) as pool:
                 pool.starmap(worker, enumerate(items))
 

@@ -239,10 +239,10 @@ def _sed_worker(obs, mod, filters, sed_type, logo, xrange, yrange, series,
                            linewidth=1.0)
 
             # AGN emission SKIRTOR
-            if 'agn' in series and 'agn.SKIRTOR2016.dust' in sed.columns:
+            if 'agn' in series and 'agn.SKIRTOR2016_dust' in sed.columns:
                 ax1.loglog(wavelength_spec[wsed],
-                           (sed['agn.SKIRTOR2016.dust'][wsed] +
-                            sed['agn.SKIRTOR2016.disk'][wsed]),
+                           (sed['agn.SKIRTOR2016_dust'][wsed] +
+                            sed['agn.SKIRTOR2016_disk'][wsed]),
                            label="AGN emission", color='xkcd:apricot',
                            marker=None, nonposy='clip', linestyle='-',
                            linewidth=1.0)

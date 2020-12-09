@@ -189,6 +189,7 @@ class _Fritz2006(BASE):
     lumin_therm = Column(PickleType)
     lumin_scatt = Column(PickleType)
     lumin_agn = Column(PickleType)
+    lumin_intrin_agn = Column(PickleType)
 
     def __init__(self, agn):
         self.r_ratio = agn.r_ratio
@@ -201,6 +202,7 @@ class _Fritz2006(BASE):
         self.lumin_therm = agn.lumin_therm
         self.lumin_scatt = agn.lumin_scatt
         self.lumin_agn = agn.lumin_agn
+        self.lumin_intrin_agn = agn.lumin_intrin_agn
 
 
 class _SKIRTOR2016(BASE):
@@ -218,6 +220,7 @@ class _SKIRTOR2016(BASE):
     wave = Column(PickleType)
     disk = Column(PickleType)
     dust = Column(PickleType)
+    intrin_disk = Column(PickleType)
 
     def __init__(self, agn):
         self.t = agn.t
@@ -230,6 +233,7 @@ class _SKIRTOR2016(BASE):
         self.wave = agn.wave
         self.disk = agn.disk
         self.dust = agn.dust
+        self.intrin_disk = agn.intrin_disk
 
 
 class _NebularLines(BASE):
@@ -728,6 +732,9 @@ class Database(object):
             in W/nm.
         lumin_agn: array of float
             Luminosity density of the central AGN at each wavelength in W/nm.
+        lumin_inrin_agn: array of float
+            Luminosity density of the intrinsic (de-reddened) central AGN
+            at each wavelength in W/nm.
 
 
         Returns
@@ -752,7 +759,8 @@ class Database(object):
             return Fritz2006(result.r_ratio, result.tau, result.beta,
                              result.gamma, result.opening_angle, result.psy,
                              result.wave, result.lumin_therm,
-                             result.lumin_scatt, result.lumin_agn)
+                             result.lumin_scatt, result.lumin_agn,
+                             result.lumin_intrin_agn)
         else:
             raise DatabaseLookupError(
                 "The Fritz2006 model is not in the database.")
@@ -819,6 +827,8 @@ class Database(object):
             Luminosity of the accretion disk in W/nm
         dust: array of float
             Luminosity of the dust in W/nm
+        intrin_disk: array of float
+            Luminosity of the intrinsic isotropic disk emission in W/nm
 
         Returns
         -------
@@ -842,7 +852,7 @@ class Database(object):
         if result:
             return SKIRTOR2016(result.t, result.pl, result.q, result.oa,
                                result.R, result.Mcl, result.i, result.wave,
-                               result.disk, result.dust)
+                               result.disk, result.dust, result.intrin_disk)
         else:
             raise DatabaseLookupError(
                 "The SKIRTOR2016 model is not in the database.")

@@ -33,7 +33,7 @@ class Dale2014(SedModule):
         ('fracAGN', (
             'cigale_list(minvalue=0., maxvalue=1.)',
             "AGN fraction. It is not recommended to combine this AGN emission "
-            "with the of Fritz et al. (2006) models.",
+            "with the of Fritz et al. (2006) or SKIRTOR models.",
             0.0
         )),
         ('alpha', (

@@ -668,6 +668,19 @@ def build_fritz2006(base):
         data = datafile.readlines()
         datafile.close()
 
+        # Get intrinsic (de-reddened) AGN luminosity, i.e.,
+        # central AGN luminosity at psy=89.990
+        n = len(psy)-1
+        block = data[nskip + blocksize * n + 4 * (n + 1) - 1:
+                     nskip + blocksize * (n+1) + 4 * (n + 1) - 1]
+        foo1, foo2, lumin_intrin_agn_unnormed = np.genfromtxt(
+                io.BytesIO("".join(block).encode()), usecols=(2, 3, 4),
+                unpack=True)
+        # Remove NaN for AGN luminosity
+        lumin_intrin_agn_unnormed = np.nan_to_num(lumin_intrin_agn_unnormed)
+        # Conversion from erg/s/microns to W/nm
+        lumin_intrin_agn_unnormed *= 1e-4
+
         for n in range(len(psy)):
             block = data[nskip + blocksize * n + 4 * (n + 1) - 1:
                          nskip + blocksize * (n+1) + 4 * (n + 1) - 1]
@@ -687,10 +700,13 @@ def build_fritz2006(base):
             lumin_therm /= norm
             lumin_scatt /= norm
             lumin_agn /= norm
+            # The intrinsic (de-reddened) AGN luminosity
+            lumin_intrin_agn = lumin_intrin_agn_unnormed/norm
 
             models.append(Fritz2006(params[4], params[3], params[2],
                                          params[1], params[0], psy[n], wave,
-                                         lumin_therm, lumin_scatt, lumin_agn))
+                                         lumin_therm, lumin_scatt, lumin_agn,
+                                         lumin_intrin_agn))
 
     base.add_fritz2006(models)
 
@@ -720,26 +736,83 @@ def build_skirtor2016(base):
                    for p6 in Mcl
                    for p7 in i)
 
+    # Extract the intrinsic AGN disk luminosity
+    filename = skirtor2016_dir+"t9_p1_q1_oa80_R30_Mcl0.97_i0_sed.dat"
+    wl_uncut, intrin_disk_unnormed = np.genfromtxt(filename, unpack=True, usecols=(0, 6))
+    # Convert to nm units
+    wl_uncut *= 1e3
+    # Convert from F_lam*lam to F_lam
+    intrin_disk_unnormed /= wl_uncut
+    # The old disk SED, total energy normalized to 1
+    disk_old_unnormed = intrin_disk_unnormed / np.trapz(intrin_disk_unnormed, x=wl_uncut)
+
+    # Define the new disk SED shape
+    # Modify the disk SED to Feltre et al. (2012), following the method in
+    # https://sites.google.com/site/skirtorus/sed-library
+    # Set the broken power law shape
+    # 1st part: < 50 nm
+    disk_new_unnormed = wl_uncut.copy()
+    # 2nd part: 50-125 nm
+    wave_idxs = (wl_uncut>=50) & (wl_uncut<125)
+    # Here, norm_fac is to re-nomalize for continuity
+    norm_fac = 50**1.2
+    disk_new_unnormed[wave_idxs] = disk_new_unnormed[wave_idxs]**-0.2 * norm_fac
+    # 3rd part: 125-1e4 nm
+    norm_fac *= 125**1.3
+    wave_idxs = (wl_uncut>=125) & (wl_uncut<1e4)
+    disk_new_unnormed[wave_idxs] = disk_new_unnormed[wave_idxs]**-1.5 * norm_fac
+    # 4th part: >1e4 nm
+    norm_fac *= 1e4**2.5
+    wave_idxs = wl_uncut>=1e4
+    disk_new_unnormed[wave_idxs] = disk_new_unnormed[wave_idxs]**-4 * norm_fac
+    # Normalize the new disk SED, so that its total energy is 1
+    disk_new_unnormed /= np.trapz(disk_new_unnormed, x=wl_uncut)
+
+    # Change the SED shape of intrinsic disk luminosity
+    intrin_disk_unnormed = disk_new_unnormed * np.trapz(intrin_disk_unnormed, x=wl_uncut)
+    # Convert to the value at i=30 deg
+    intrin_disk_unnormed *= np.cos(30*np.pi/180)*(2*np.cos(30*np.pi/180)+1)/3
+
     for params in iter_params:
         filename = skirtor2016_dir + \
                 "t{}_p{}_q{}_oa{}_R{}_Mcl{}_i{}_sed.dat".format(*params)
         print("Importing {}...".format(filename))
+        # Convert some useful parameters to float
+        i_float, oa_float = float(params[6]), float(params[3])
+        i_rad = i_float * np.pi/180
 
-        wl, disk, scatt, dust = np.genfromtxt(filename, unpack=True,
-                                              usecols=(0, 2, 3, 4))
-        wl *= 1e3
-        disk += scatt
-        disk /= wl
-        dust /= wl
+        disk, scatt, dust = np.genfromtxt(filename, unpack=True, usecols=(2, 3, 4))
+        disk /= wl_uncut
+        scatt /= wl_uncut
+        dust /= wl_uncut
 
         # Normalization of the lumin_therm to 1W
-        norm = np.trapz(dust, x=wl)
+        norm = np.trapz(dust, x=wl_uncut)
         disk /= norm
+        scatt /= norm
         dust /= norm
+        intrin_disk = intrin_disk_unnormed / norm
+
+        # Add the scatter component to disk for simplicity
+        disk += scatt
+        # Apply the new disk SED shape
+        disk = np.nan_to_num(disk*disk_new_unnormed/disk_old_unnormed)
+
+        # Apply wavelength cut to avoid X-ray wavelength
+        lam_cut = 10**0.9
+        lam_idxs = wl_uncut>=lam_cut
+        # Calculate the re-normalization factor to keep energy conservation
+        norm_fac = np.trapz(intrin_disk, x=wl_uncut) / \
+                   np.trapz(intrin_disk[lam_idxs], x=wl_uncut[lam_idxs])
+        # Perform the cut
+        wl = wl_uncut[lam_idxs]
+        disk = disk[lam_idxs]*norm_fac
+        dust = dust[lam_idxs]
+        intrin_disk = intrin_disk[lam_idxs]*norm_fac
 
         models.append(SKIRTOR2016(params[0], params[1], params[2], params[3],
                                   params[4], params[5], params[6], wl, disk,
-                                  dust))
+                                  dust, intrin_disk))
 
     base.add_skirtor2016(models)
 

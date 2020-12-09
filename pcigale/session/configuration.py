@@ -122,6 +122,9 @@ class Configuration(object):
             ["* themis (Themis dust emission models from Jones et al. 2017)"] +
             ["AGN:"] +
             ["* fritz2006 (AGN models from Fritz et al. 2006)"] +
+            ["* skirtor2016 (AGN models from Stalevski et al. 2012, 2016)"] +
+            ["X-ray:"] +
+            ["* xray (from AGN and galaxies; fritz2006 or skirtor2016 should be used)"] +
             ["Radio:"] +
             ["* radio (synchrotron emission)"] +
             ["Restframe parameters:"] +
@@ -272,6 +275,9 @@ class Configuration(object):
             sys.exit(1)
 
         self.complete_redshifts()
+        # Add alpha_ox parameters when xray module is used
+        if 'xray' in self.config.items()[2][1]:
+            self.complete_xray()
         self.complete_analysed_parameters()
 
         vdt = validate.Validator(validation.functions)
@@ -312,6 +318,7 @@ class Configuration(object):
                                                   'dl2007', 'dl2014',
                                                   'themis']),
                                ('AGN', ['fritz2006', 'skirtor2016']),
+                               ('X-ray', ['xray']),
                                ('radio', ['radio']),
                                ('restframe_parameters',
                                 ['restframe_parameters']),
@@ -325,6 +332,7 @@ class Configuration(object):
                     'dust attenuation': "No dust attenuation module found.",
                     'dust emission': "No dust emission module found.",
                     'AGN': "No AGN module found.",
+                    'X-ray': "No X-ray module found.",
                     'radio': "No radio module found.",
                     'restframe_parameters': "No restframe parameters module "
                                             "found",
@@ -361,6 +369,12 @@ class Configuration(object):
             else:
                 raise Exception("No flux file and no redshift indicated. "
                                 "The spectra cannot be computed. Aborting.")
+
+    def complete_xray(self):
+        """Add alpha_ox for internal usage.
+        """
+        self.config['sed_modules_params']['xray']['alpha_ox'] = \
+                [-1.9, -1.8, -1.7, -1.6, -1.5, -1.4, -1.3, -1.2, -1.1]
 
     def complete_analysed_parameters(self):
         """Complete the configuration when the variables are missing from the
